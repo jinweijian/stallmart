@@ -1,0 +1,51 @@
+# ================================================
+# StallMart 管理端前端 Dockerfile
+# ================================================
+# 构建：docker build -f src/docker/Dockerfile.admin-web -t stallmart-admin-web .
+# 运行：docker compose up -d admin-web
+# ================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 安装依赖
+COPY package*.json ./
+RUN npm ci
+
+# 复制源码
+COPY . .
+
+# 构建（生产模式）
+RUN npm run build
+
+# ================================================
+# 运行阶段（使用 node server）
+# ================================================
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 安装生产依赖
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# 复制构建产物
+COPY .next ./.next
+COPY public ./public
+COPY nuxt.config.ts ./
+
+# 创建非 root 用户
+RUN addgroup -g 1001 -S stallmart && \
+    adduser -u 1001 -S stallmart -G stallmart
+USER stallmart
+
+# 暴露端口
+EXPOSE 3000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+# 启动命令
+CMD ["node", ".output/server/index.mjs"]

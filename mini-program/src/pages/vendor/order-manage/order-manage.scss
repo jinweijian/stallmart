@@ -1,0 +1,382 @@
+// order-manage.scss - Order Management Styles
+@import '@/app.scss';
+
+.order-manage-page {
+  min-height: 100vh;
+  background-color: #FFF8F0;
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Not Vendor State ──────────────────────────────────────────────────────
+.not-vendor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 60rpx;
+
+  .not-vendor-icon {
+    font-size: 120rpx;
+    margin-bottom: 32rpx;
+  }
+
+  .not-vendor-title {
+    font-size: 36rpx;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 16rpx;
+  }
+
+  .not-vendor-desc {
+    font-size: 28rpx;
+    color: #999;
+    margin-bottom: 60rpx;
+    text-align: center;
+  }
+
+  .btn-primary {
+    width: 100%;
+    max-width: 600rpx;
+  }
+}
+
+// ─── Loading State ─────────────────────────────────────────────────────────
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 200rpx;
+
+  .loading-spinner {
+    width: 64rpx;
+    height: 64rpx;
+    border: 4rpx solid #E5E5E5;
+    border-top-color: #FF6B35;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 24rpx;
+  }
+
+  .loading-text {
+    font-size: 28rpx;
+    color: #999;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ─── Tabs Bar ─────────────────────────────────────────────────────────────
+.tabs-bar {
+  display: flex;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.tab-item {
+  flex: 1;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  gap: 6rpx;
+
+  .tab-text {
+    font-size: 28rpx;
+    color: #999;
+    transition: color 0.2s;
+  }
+
+  &.active .tab-text {
+    color: #FF6B35;
+    font-weight: 600;
+  }
+}
+
+.tab-badge {
+  min-width: 32rpx;
+  height: 32rpx;
+  background: #FF4D4F;
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: 600;
+  border-radius: 16rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6rpx;
+  margin-top: -4rpx;
+}
+
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 4rpx;
+  background: #FF6B35;
+  border-radius: 2rpx;
+}
+
+// ─── Empty State ───────────────────────────────────────────────────────────
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 200rpx;
+
+  .empty-icon {
+    font-size: 120rpx;
+    margin-bottom: 24rpx;
+    opacity: 0.6;
+  }
+
+  .empty-title {
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12rpx;
+  }
+
+  .empty-desc {
+    font-size: 26rpx;
+    color: #999;
+  }
+}
+
+// ─── Orders Scroll ─────────────────────────────────────────────────────────
+.orders-scroll {
+  flex: 1;
+  padding: 20rpx 24rpx;
+}
+
+// ─── Order Card ────────────────────────────────────────────────────────────
+.order-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+// ─── Order Header ─────────────────────────────────────────────────────────
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.order-id-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.order-no {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.order-time {
+  font-size: 22rpx;
+  color: #BBB;
+}
+
+.order-status {
+  font-size: 22rpx;
+  font-weight: 500;
+  padding: 4rpx 14rpx;
+  border-radius: 14rpx;
+  flex-shrink: 0;
+}
+
+.status-new {
+  background: #FFF1F0;
+  color: #FF4D4F;
+}
+
+.status-accepted {
+  background: #FFF7E6;
+  color: #FA8C16;
+}
+
+.status-preparing {
+  background: #FFF3E6;
+  color: #FF9500;
+}
+
+.status-ready {
+  background: #E6F7FF;
+  color: #1890FF;
+}
+
+.status-completed {
+  background: #F6FFED;
+  color: #52C41A;
+}
+
+.status-rejected {
+  background: #F5F5F5;
+  color: #999;
+}
+
+// ─── Confirm Code ─────────────────────────────────────────────────────────
+.confirm-code-section {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #FFF8F0;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.confirm-code-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.confirm-code-value {
+  font-size: 48rpx;
+  font-weight: 800;
+  color: #FF6B35;
+  letter-spacing: 4rpx;
+  line-height: 1;
+}
+
+// ─── Card Divider ──────────────────────────────────────────────────────────
+.card-divider {
+  height: 1rpx;
+  background: #F0F0F0;
+  margin: 16rpx 0;
+}
+
+// ─── Order Items ───────────────────────────────────────────────────────────
+.order-items {
+  margin-bottom: 8rpx;
+}
+
+.order-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  padding: 6rpx 0;
+
+  .item-qty {
+    font-size: 26rpx;
+    color: #999;
+    width: 40rpx;
+    flex-shrink: 0;
+  }
+
+  .item-name {
+    font-size: 28rpx;
+    color: #333;
+    flex: 1;
+  }
+
+  .item-spec {
+    font-size: 22rpx;
+    color: #999;
+  }
+
+  .item-price {
+    font-size: 26rpx;
+    color: #666;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Remark ────────────────────────────────────────────────────────────────
+.order-remark {
+  background: #FAFAFA;
+  border-radius: 8rpx;
+  padding: 10rpx 14rpx;
+  margin-top: 8rpx;
+
+  .remark-label {
+    font-size: 22rpx;
+    color: #999;
+  }
+
+  .remark-text {
+    font-size: 22rpx;
+    color: #666;
+  }
+}
+
+// ─── Order Footer ─────────────────────────────────────────────────────────
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-total {
+  font-size: 26rpx;
+  color: #666;
+
+  .total-price {
+    font-size: 32rpx;
+    font-weight: 700;
+    color: #FF6B35;
+    margin-left: 8rpx;
+  }
+}
+
+.order-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
+// ─── Action Buttons ────────────────────────────────────────────────────────
+.action-btn {
+  height: 60rpx;
+  line-height: 60rpx;
+  padding: 0 28rpx;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  border: none;
+  margin: 0;
+
+  &::after {
+    border: none;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+
+  &[disabled] {
+    opacity: 0.5;
+  }
+}
+
+.action-btn.primary {
+  background: #FF6B35;
+  color: #fff;
+}
+
+.action-btn.secondary {
+  background: #F5F5F5;
+  color: #666;
+}
+
+.action-btn.reject {
+  background: #F5F5F5;
+  color: #FF4D4F;
+}

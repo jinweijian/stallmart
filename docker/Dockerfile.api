@@ -1,0 +1,46 @@
+# ================================================
+# StallMart Java 后端 Dockerfile
+# ================================================
+# 构建：docker build -f src/docker/Dockerfile.api -t stallmart-api .
+# 运行：docker compose up -d api
+# ================================================
+
+FROM eclipse-temurin:26-jdk-alpine AS builder
+
+WORKDIR /app
+
+# 安装 Maven
+RUN apk add --no-cache maven
+
+# 复制 pom.xml 并下载依赖（利用缓存）
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# 复制源码并构建
+COPY src ./src
+RUN mvn clean package -DskipTests -B
+
+# ================================================
+# 运行阶段
+# ================================================
+FROM eclipse-temurin:26-jre-alpine
+
+WORKDIR /app
+
+# 创建非 root 用户（安全最佳实践）
+RUN addgroup -g 1001 -S stallmart && \
+    adduser -u 1001 -S stallmart -G stallmart
+USER stallmart
+
+# 复制构建产物
+COPY --from=builder /app/target/*.jar app.jar
+
+# 暴露端口
+EXPOSE 8080
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+# 启动命令
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-dev}", "app.jar"]
