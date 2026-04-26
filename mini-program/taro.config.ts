@@ -1,6 +1,8 @@
 import type { UserConfig } from '@tarojs/cli'
 import { defineConfig } from 'taro-plugin-vue3'
-import type { IConfig } from '@tarojs/service'
+import path from 'node:path'
+
+const resolveSrc = (...segments: string[]) => path.resolve(__dirname, 'src', ...segments)
 
 export default defineConfig({
   appType: 'vue3',
@@ -20,13 +22,11 @@ export default defineConfig({
   sourceRoot: 'src',
   outputRoot: 'dist',
 
-  plugins: [
-    '@tarojs/plugin-framework-vue3',
-  ],
+  plugins: ['@tarojs/plugin-framework-vue3'],
 
   alias: {
-    '@': 'C:/Users/myclaw/.openclaw/workspace/projects/StallMart/src/mini-program/src',
-    '@/config': 'C:/Users/myclaw/.openclaw/workspace/projects/StallMart/src/mini-program/src/app-config',
+    '@': resolveSrc(),
+    '@/config': resolveSrc('app-config'),
   },
 
   mini: {
@@ -61,12 +61,8 @@ export default defineConfig({
       mode: 'hash',
     },
   },
-  
-  webpackChain (chain, data) {
-    const { entry } = data
-    // Force resolve.alias to work around @ scope issue
-    chain.resolve.alias
-      .set('@', 'C:/Users/myclaw/.openclaw/workspace/projects/StallMart/src/mini-program/src')
-      .set('@/config', 'C:/Users/myclaw/.openclaw/workspace/projects/StallMart/src/mini-program/src/app-config')
+
+  webpackChain(chain) {
+    chain.resolve.alias.set('@', resolveSrc()).set('@/config', resolveSrc('app-config'))
   },
 } as UserConfig)

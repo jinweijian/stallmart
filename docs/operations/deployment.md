@@ -79,7 +79,7 @@ mini-program/dist/
 - 统一 Java 版本。
 - 修复前后端成功码不一致问题。
 - 修复缺失 endpoint 常量。
-- 删除本机绝对路径 alias。
+- 复核 Taro alias 不含本机绝对路径。
 - 合并数据库初始化脚本。
 - 增加生产环境 Spring profile。
 - 使用强随机 `JWT_SECRET`。

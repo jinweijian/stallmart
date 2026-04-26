@@ -94,7 +94,7 @@ docker/.env
 
 ## 配置风险
 
-- `mini-program/taro.config.ts` 当前包含本机绝对路径 alias，需要改为 `path.resolve(__dirname, 'src')` 之类的相对解析。
+- `mini-program/taro.config.ts` 已使用相对路径解析；新增 alias 必须沿用 `path.resolve(__dirname, ...)`。
 - `docker/docker-compose.yml` 引用 `admin-web/`，但该目录当前不存在。
 - `backend/pom.xml` 声明 Java 26，文档和本地环境必须与该值保持一致，或统一调整。
 - `backend/mysql/init.sql` 与 `docker/mysql/init/01-init.sql` 不一致，需要合并或明确权威来源。

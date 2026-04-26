@@ -1,6 +1,6 @@
 # StallMart Docker 本地环境
 
-本目录用于本地开发环境编排，包含 MySQL、Redis、API 和管理端服务定义。
+本目录用于本地开发环境编排，包含 MySQL、Redis、API 和计划中的管理端服务定义。
 
 ## 文件结构
 
@@ -12,6 +12,15 @@ docker/
   Dockerfile.admin-web
   mysql/init/01-init.sql
 ```
+
+## 先读哪些文档
+
+| 工作类型 | 必读文档 |
+| --- | --- |
+| 修改环境变量或端口 | [../docs/operations/configuration.md](../docs/operations/configuration.md) |
+| 修改部署方式 | [../docs/operations/deployment.md](../docs/operations/deployment.md) |
+| 修改数据库初始化脚本 | [../docs/overview/system-architecture.md](../docs/overview/system-architecture.md), [../docs/quality/project-health.md](../docs/quality/project-health.md) |
+| 提交前安全检查 | [../docs/standards/security.md](../docs/standards/security.md) |
 
 ## 快速启动
 
@@ -59,7 +68,7 @@ docker compose down -v
 | `mysql` | 主数据库 | `127.0.0.1:3306` |
 | `redis` | 缓存和 token 相关存储 | `127.0.0.1:6379` |
 | `api` | Spring Boot API | `127.0.0.1:8080` |
-| `admin-web` | 管理端前端 | `127.0.0.1:3000` |
+| `admin-web` | 管理端前端，当前仓库尚未提供对应目录 | `127.0.0.1:3000` |
 
 ## 环境变量
 
@@ -81,6 +90,6 @@ docker compose down -v
 
 ## 当前注意事项
 
-- `admin-web` 服务引用 `../admin-web`，但当前仓库尚未提供该目录。没有补齐前不要直接启动全部服务。
+- `admin-web` 服务引用 `../admin-web`，但当前仓库尚未提供该目录。补齐前不要直接启动全部服务。
 - `api` 的 healthcheck 使用 `/actuator/health`，但后端当前未看到 Actuator 依赖，需要补齐或调整 healthcheck。
-- 所有端口默认绑定到 `127.0.0.1`，不要在本地开发环境暴露到公网。
+- 所有端口默认绑定到 `127.0.0.1`，本地开发环境不要暴露到公网。

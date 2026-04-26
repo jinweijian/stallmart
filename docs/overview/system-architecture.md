@@ -1,4 +1,4 @@
-# 架构说明
+# 系统架构说明
 
 ## 总览
 
@@ -100,7 +100,6 @@ StallMart 当前由三部分组成：
 ## 当前架构风险
 
 - `docker/docker-compose.yml` 引用 `../admin-web`，但当前仓库没有该目录。
-- `mini-program/taro.config.ts` 中存在本机绝对路径 alias，不利于多人协作。
 - 小程序请求封装期望后端成功响应 `code === 0`，但后端 `Result.success` 返回 `code === 200`。
 - 前端代码引用了未定义的 `API_ENDPOINTS.USER_BIND_PHONE` 和 `API_ENDPOINTS.STORE_INFO`。
 - 两套数据库初始化脚本不一致，容易导致本地和容器环境行为不同。

@@ -15,7 +15,7 @@ cd backend
 mvn test
 ```
 
-小程序当前 `package.json` 没有单元测试脚本，只有 lint 和格式化：
+小程序当前 `package.json` 没有单元测试脚本，已有 lint 和格式化脚本：
 
 ```bash
 cd mini-program
@@ -58,11 +58,13 @@ docker compose config
 - 后端测试依赖 Spring 上下文和数据库，运行前需要可用 MySQL/Redis 或测试专用配置。
 - `backend/pom.xml` 使用 Java 26，测试环境 JDK 版本不匹配时会直接失败。
 - 小程序未配置明确的单元测试框架。
-- 小程序 lint 脚本存在，但当前仓库未看到独立 ESLint 配置文件，首次运行可能需要补齐配置。
+- 小程序已有 `.eslintrc.cjs`，当前作为可运行基线：`npm run lint` 通过，但仍有历史 warning 需要逐步清理。
+- 小程序 `npm run build:weapp` 在当前 PowerShell 环境触发 esbuild `spawn EPERM`，需要在本机权限或 CI 环境中复核。
 
 ## 建议补充测试
 
 - 后端 Controller 层 WebMvc 测试，覆盖认证、成功响应和错误响应。
 - Service 层测试使用测试数据库或 Testcontainers。
 - 小程序请求封装测试，覆盖成功码、401 refresh、logout。
+- 小程序 auth/storage/store 单元测试。
 - API endpoint 常量和后端路由的一致性检查。

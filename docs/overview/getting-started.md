@@ -72,6 +72,6 @@ export const API_BASE_URL_DEV = 'http://localhost:8080/api/v1'
 首次进入项目后，建议先处理这些基础问题：
 
 - 确认团队实际使用 Java 版本，并同步 `backend/pom.xml`、Dockerfile 和文档。
-- 修正 `mini-program/taro.config.ts` 的本机绝对路径 alias。
+- 保持 `mini-program/taro.config.ts` 使用相对路径解析，新增 alias 不得写入本机路径。
 - 统一后端 `Result.code` 与小程序请求封装的成功码判断。
 - 在两套 SQL 初始化脚本中选择一个作为权威版本。

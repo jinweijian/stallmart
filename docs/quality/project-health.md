@@ -1,6 +1,23 @@
 # 项目健康检查
 
-本文件记录当前规范化过程中发现的项目问题，只描述已从代码或配置中确认的事实。
+本文记录规范化过程中发现的项目问题，只描述已从代码、配置或既有文档中确认的事实。
+
+## 已处理事项
+
+### Taro alias 本机绝对路径
+
+处理结果：
+
+- `mini-program/taro.config.ts` 已改为使用 `path.resolve(__dirname, 'src')` 和 `path.resolve(__dirname, 'src', 'app-config')`。
+- 后续不得在配置中写入 Windows 用户目录这类本机绝对路径。
+
+### 文档目录初步规范化
+
+处理结果：
+
+- `docs/` 已拆分为 `overview`、`mini-program`、`backend`、`standards`、`operations`、`quality`。
+- 每个一级文档目录都有 `README.md`。
+- 根 `README.md` 和 `AGENTS.md` 已挂载主要 README 入口。
 
 ## 高优先级
 
@@ -29,25 +46,11 @@
 
 影响：
 
-- TypeScript 编译或运行时会失败。
+- TypeScript 编译或运行时可能失败。
 
 建议：
 
 - 补齐 endpoint 常量，或改用已存在的 `AUTH_BIND_PHONE`、`STORE_DETAIL` 等常量。
-
-### Taro alias 使用本机绝对路径
-
-证据：
-
-- `mini-program/taro.config.ts` 中 alias 指向 `C:/Users/myclaw/...`。
-
-影响：
-
-- 换机器或 CI 环境后路径失效。
-
-建议：
-
-- 使用 `path.resolve(__dirname, 'src')` 和 `path.resolve(__dirname, 'src/app-config')`。
 
 ## 中优先级
 
@@ -64,7 +67,7 @@
 
 建议：
 
-- 明确目标版本。如果目标是 Java 21，需要同步修改 Maven、Dockerfile 和文档。
+- 明确目标版本。若目标是 Java 21，需要同步修改 Maven、Dockerfile 和文档。
 
 ### Docker Compose 引用缺失模块
 
@@ -100,25 +103,12 @@
 
 ## 低优先级
 
-### 模块 README 存在编码可读性问题
-
-证据：
-
-- `backend/README.md` 和 `docker/README.md` 中大量中文显示为乱码。
-
-影响：
-
-- 新成员阅读成本高。
-
-建议：
-
-- 用 UTF-8 重写模块 README，或让根目录文档成为唯一入口。
-
 ### 小程序测试体系未落地
 
 证据：
 
 - `mini-program/package.json` 有 lint 和 format 脚本，但没有 test 脚本。
+- `npm run lint` 当前可运行通过，但仍输出历史 warning。
 
 影响：
 
@@ -127,3 +117,17 @@
 建议：
 
 - 增加前端测试框架，至少覆盖 `utils/request.ts`、`utils/auth.ts`、store 和核心页面流程。
+
+### 后端测试覆盖范围有限
+
+证据：
+
+- 当前仅看到 `backend/src/test/java/com/stallmart/service/UserServiceTest.java`。
+
+影响：
+
+- Controller、认证链路、订单状态流转、数据库脚本一致性缺少自动化保障。
+
+建议：
+
+- 逐步补充 Controller 集成测试、认证测试、订单状态流转测试和数据库初始化验证。
