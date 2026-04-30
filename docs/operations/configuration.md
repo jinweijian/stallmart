@@ -81,6 +81,7 @@ docker/.env
 | --- | --- |
 | `mini-program/project.config.json` | 微信开发者工具项目配置。 |
 | `mini-program/project.private.config.json` | 本地私有配置，已忽略。 |
+| `mini-program/config/index.js` | Taro CLI 实际读取的项目构建配置。 |
 | `mini-program/taro.config.ts` | Taro 构建配置。 |
 | `mini-program/src/app-config/index.ts` | API 地址、endpoint、设计 token、存储 key。 |
 | `mini-program/src/app.config.ts` | 小程序页面、分包、tabBar、权限配置。 |
@@ -94,7 +95,7 @@ docker/.env
 
 ## 配置风险
 
-- `mini-program/taro.config.ts` 已使用相对路径解析；新增 alias 必须沿用 `path.resolve(__dirname, ...)`。
+- `mini-program/config/index.js` 和 `mini-program/taro.config.ts` 都包含 Taro 构建配置；当前 CLI 构建以 `config/index.js` 为准，alias 变更必须保持两处一致。
 - `docker/docker-compose.yml` 引用 `admin-web/`，但该目录当前不存在。
 - `backend/pom.xml` 声明 Java 26，文档和本地环境必须与该值保持一致，或统一调整。
 - `backend/mysql/init.sql` 与 `docker/mysql/init/01-init.sql` 不一致，需要合并或明确权威来源。

@@ -623,6 +623,6 @@ function getMockOrders(): Order[] {
   </view>
 </template>
 
-<style>
+<style lang="scss">
 @import './my-orders.scss';
 </style>

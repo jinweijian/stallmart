@@ -3,7 +3,7 @@
  * Contains API base URLs, app constants, and environment settings
  */
 
-export const APP_ENV = import.meta.env.NODE_ENV || 'development'
+export const APP_ENV = process.env.NODE_ENV || 'development'
 
 // API Base URLs
 export const API_BASE_URL_DEV = 'http://localhost:8080/api/v1'
@@ -79,6 +79,115 @@ export const COLORS = {
   ERROR: '#F5222D',
   INFO: '#1890FF',
 } as const
+
+// Storefront style packages. Backend can return one of these style codes on store detail.
+export const STORE_STYLE_CODES = {
+  HAWAIIAN: 'hawaiian',
+  BBQ: 'BBQ',
+  MARKET: 'market',
+  OCEAN: 'ocean',
+  FRESH: 'fresh',
+  FOREST_FRUIT_TEA_CRAYON: 'forestFruitTeaCrayon',
+} as const
+
+export type StoreStyleCode = (typeof STORE_STYLE_CODES)[keyof typeof STORE_STYLE_CODES]
+
+export interface StoreThemePackage {
+  code: StoreStyleCode
+  name: string
+  primary: string
+  secondary: string
+  accent: string
+  background: string
+  surface: string
+  text: string
+  mutedText: string
+  border: string
+  heroGradient: string
+}
+
+export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
+  hawaiian: {
+    code: STORE_STYLE_CODES.HAWAIIAN,
+    name: '夏威夷风',
+    primary: '#2ECC71',
+    secondary: '#F9D66E',
+    accent: '#FF8E5E',
+    background: '#FEF9E7',
+    surface: '#FFFFFF',
+    text: '#2D3436',
+    mutedText: '#7A7A6A',
+    border: '#E8E2C8',
+    heroGradient: 'linear-gradient(135deg, #FEF9E7 0%, #DFF5C8 100%)',
+  },
+  BBQ: {
+    code: STORE_STYLE_CODES.BBQ,
+    name: '烧烤风',
+    primary: '#E74C3C',
+    secondary: '#F39C12',
+    accent: '#8E3B2D',
+    background: '#FDEDEC',
+    surface: '#FFFFFF',
+    text: '#2D3436',
+    mutedText: '#8A6A64',
+    border: '#F0C8BE',
+    heroGradient: 'linear-gradient(135deg, #FDEDEC 0%, #F7B08A 100%)',
+  },
+  market: {
+    code: STORE_STYLE_CODES.MARKET,
+    name: '市集风',
+    primary: '#F39C12',
+    secondary: '#8BC34A',
+    accent: '#D35400',
+    background: '#FFF8E7',
+    surface: '#FFFFFF',
+    text: '#2D3436',
+    mutedText: '#7E725A',
+    border: '#EADDBB',
+    heroGradient: 'linear-gradient(135deg, #FFF8E7 0%, #FFE1A6 100%)',
+  },
+  ocean: {
+    code: STORE_STYLE_CODES.OCEAN,
+    name: '海洋风',
+    primary: '#3498DB',
+    secondary: '#2EC4B6',
+    accent: '#FFB84D',
+    background: '#EBF5FB',
+    surface: '#FFFFFF',
+    text: '#263A4A',
+    mutedText: '#6D8090',
+    border: '#CFE6F2',
+    heroGradient: 'linear-gradient(135deg, #EBF5FB 0%, #C8EEF0 100%)',
+  },
+  fresh: {
+    code: STORE_STYLE_CODES.FRESH,
+    name: '清新风',
+    primary: '#27AE60',
+    secondary: '#B8E986',
+    accent: '#F7C948',
+    background: '#F4FCF8',
+    surface: '#FFFFFF',
+    text: '#263A2B',
+    mutedText: '#6B806F',
+    border: '#D7ECDD',
+    heroGradient: 'linear-gradient(135deg, #F4FCF8 0%, #DFF5E6 100%)',
+  },
+  forestFruitTeaCrayon: {
+    code: STORE_STYLE_CODES.FOREST_FRUIT_TEA_CRAYON,
+    name: '森系水果茶',
+    primary: '#6F9646',
+    secondary: '#B8C77A',
+    accent: '#F2B94B',
+    background: '#FBFAEF',
+    surface: '#FFFDF4',
+    text: '#4C6040',
+    mutedText: '#7A866D',
+    border: '#DCE6C7',
+    heroGradient: 'linear-gradient(180deg, #F9FAEA 0%, #EAF4D8 48%, #F9F2D8 100%)',
+  },
+} as const
+
+export const DEFAULT_STORE_THEME = STORE_THEME_PACKAGES.hawaiian
 
 // WeChat Mini Program Config
 export const WECHAT_CONFIG = {

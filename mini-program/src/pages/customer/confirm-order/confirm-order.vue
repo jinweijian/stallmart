@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Taro from '@tarojs/taro'
 import { post } from '@/utils/request'
 
@@ -63,7 +63,7 @@ const canSubmit = computed(() => !isEmpty.value && !isSubmitting.value)
 // ============================================================
 // Lifecycle
 // ============================================================
-onMount(() => {
+onMounted(() => {
   loadCartItems()
 })
 
@@ -387,6 +387,6 @@ function getItemSubtotal(item: CartItem): number {
   </view>
 </template>
 
-<style>
+<style lang="scss">
 @import './confirm-order.scss';
 </style>

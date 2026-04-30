@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onLoad } from 'vue'
+import { computed, ref } from 'vue'
 import { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
+import { API_ENDPOINTS, DEFAULT_STORE_THEME, STORE_THEME_PACKAGES, type StoreStyleCode } from '@/config'
 import { get } from '@/utils/request'
 
-// ============================================================
-// Types
-// ============================================================
 interface StoreInfo {
   id: string
   name: string
@@ -14,9 +12,13 @@ interface StoreInfo {
   description: string
   rating: number
   sales: number
-  styleCode: 'hawaiian' | 'BBQ' | 'market' | 'ocean' | 'fresh'
+  styleCode: StoreStyleCode
   isOpen?: boolean
   distance?: string
+  branchName?: string
+  heroEyebrow?: string
+  heroTitle?: string
+  heroSubtitle?: string
 }
 
 interface Product {
@@ -31,11 +33,16 @@ interface Product {
   status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT'
   isHot?: boolean
   isNew?: boolean
+  tags?: string[]
+  flavor?: string
+  rank?: number
+  illustration?: string
 }
 
 interface Category {
   id: string
   name: string
+  icon: string
 }
 
 interface CartItem {
@@ -43,80 +50,52 @@ interface CartItem {
   quantity: number
 }
 
-// ============================================================
-// Style Package Color Map
-// ============================================================
-const STYLE_COLORS: Record<string, { primary: string; gradient: string }> = {
-  hawaiian: { primary: '#FF6B35', gradient: 'linear-gradient(135deg, #FF6B35 0%, #FF8E5E 100%)' },
-  BBQ: { primary: '#E67E22', gradient: 'linear-gradient(135deg, #E67E22 0%, #F0A04B 100%)' },
-  market: { primary: '#F39C12', gradient: 'linear-gradient(135deg, #F39C12 0%, #F5B841 100%)' },
-  ocean: { primary: '#2EC4B6', gradient: 'linear-gradient(135deg, #2EC4B6 0%, #5DD4C8 100%)' },
-  fresh: { primary: '#52C41A', gradient: 'linear-gradient(135deg, #52C41A 0%, #73D13D 100%)' },
-}
+const categories = ref<Category[]>([
+  { id: 'recommend', name: '人气推荐', icon: '★' },
+  { id: 'citrus', name: '清爽柠檬', icon: '🍋' },
+  { id: 'grape', name: '多肉葡萄', icon: '🍇' },
+  { id: 'mango', name: '香甜芒果', icon: '🥭' },
+  { id: 'tea', name: '鲜果茶桶', icon: '🥤' },
+  { id: 'extra', name: '加料小料', icon: '🍯' },
+])
 
-const DEFAULT_STYLE = STYLE_COLORS['hawaiian']
-
-// ============================================================
-// State
-// ============================================================
 const storeInfo = ref<StoreInfo | null>(null)
 const products = ref<Product[]>([])
-const categories = ref<Category[]>([
-  { id: 'all', name: '全部' },
-  { id: 'hot', name: '🔥 热销' },
-  { id: 'drink', name: '饮品' },
-  { id: 'snack', name: '小吃' },
-  { id: 'meal', name: '主食' },
-  { id: 'extra', name: '加料' },
-  { id: 'other', name: '其他' },
-])
-const activeCategory = ref('all')
-const searchQuery = ref('')
+const activeCategory = ref('recommend')
 const isLoading = ref(false)
-const showSearch = ref(false)
 const cartItems = ref<CartItem[]>([])
 const cartTotal = ref(0)
 const cartCount = ref(0)
 
-// ============================================================
-// Computed
-// ============================================================
-const styleColors = computed(() => {
-  if (!storeInfo.value?.styleCode) return DEFAULT_STYLE
-  return STYLE_COLORS[storeInfo.value.styleCode] || DEFAULT_STYLE
+const currentTheme = computed(() => {
+  const styleCode = storeInfo.value?.styleCode
+  return styleCode ? STORE_THEME_PACKAGES[styleCode] || DEFAULT_STORE_THEME : DEFAULT_STORE_THEME
 })
+
+const themeVars = computed(() => ({
+  '--style-primary': currentTheme.value.primary,
+  '--style-secondary': currentTheme.value.secondary,
+  '--style-accent': currentTheme.value.accent,
+  '--style-background': currentTheme.value.background,
+  '--style-surface': currentTheme.value.surface,
+  '--style-text': currentTheme.value.text,
+  '--style-muted-text': currentTheme.value.mutedText,
+  '--style-border': currentTheme.value.border,
+  '--style-hero': currentTheme.value.heroGradient,
+}))
 
 const filteredProducts = computed(() => {
-  let list = products.value
-
-  // Category filter
-  if (activeCategory.value === 'hot') {
-    list = list.filter((p) => p.isHot)
-  } else if (activeCategory.value !== 'all') {
-    // Map category id to category name
-    const catMap: Record<string, string> = {
-      drink: '饮品',
-      snack: '小吃',
-      meal: '主食',
-      extra: '加料',
-      other: '其他',
-    }
-    const catName = catMap[activeCategory.value] || activeCategory.value
-    list = list.filter((p) => p.category === catName)
+  if (activeCategory.value === 'recommend') {
+    return products.value.filter((product) => product.isHot || product.rank)
   }
 
-  // Search filter
-  if (searchQuery.value.trim()) {
-    const q = searchQuery.value.trim().toLowerCase()
-    list = list.filter((p) => p.name.toLowerCase().includes(q))
-  }
-
-  return list
+  return products.value.filter((product) => product.category === activeCategory.value)
 })
 
-// ============================================================
-// Lifecycle
-// ============================================================
+const storeTitle = computed(() => storeInfo.value?.heroTitle || storeInfo.value?.name || '小新の水果茶屋')
+const storeSubtitle = computed(() => storeInfo.value?.heroSubtitle || '自然水果 · 新鲜现制')
+const branchLabel = computed(() => storeInfo.value?.branchName || storeInfo.value?.name || '上海环球港店')
+
 useDidShow(() => {
   loadData()
   loadCart()
@@ -128,27 +107,18 @@ usePullDownRefresh(() => {
   })
 })
 
-onLoad(() => {
-  // Support onLoad params if storeId passed
-})
-
-// ============================================================
-// Data Loading
-// ============================================================
 async function loadData() {
   isLoading.value = true
   try {
-    const storeId = Taro.getStorageSync('current_store_id') || '1'
-
+    const storeId = getStoreId()
     const [storeRes, productsRes] = await Promise.all([
-      get<StoreInfo>('/stores/' + storeId),
-      get<Product[]>('/stores/' + storeId + '/products'),
+      get<StoreInfo>(API_ENDPOINTS.STORE_DETAIL(storeId)),
+      get<Product[]>(API_ENDPOINTS.PRODUCTS(storeId)),
     ])
 
     storeInfo.value = storeRes.data
     products.value = productsRes.data || []
-  } catch (e) {
-    // fallback to mock
+  } catch (error) {
     storeInfo.value = getMockStore()
     products.value = getMockProducts()
   } finally {
@@ -159,148 +129,123 @@ async function loadData() {
 function getStoreId(): string {
   const pages = Taro.getCurrentPages()
   const current = pages[pages.length - 1]
-  const options = (current as any)?.options || {}
-  return options.storeId || '1'
+  const options = (current as { options?: Record<string, string> })?.options || {}
+  return options.storeId || Taro.getStorageSync('current_store_id') || '1'
 }
 
-// ============================================================
-// Mock Data
-// ============================================================
 function getMockStore(): StoreInfo {
   return {
     id: '1',
-    name: '老王煎饼摊',
-    logo: 'https://picsum.photos/200?random=store1',
-    description: '专注传统煎饼20年，用料实在，口碑保证',
-    rating: 4.8,
-    sales: 2341,
-    styleCode: 'BBQ',
+    name: '小新の水果茶屋',
+    logo: '/static/default-avatar.png',
+    description: '当季鲜果茶，清爽一夏',
+    rating: 4.9,
+    sales: 3286,
+    styleCode: 'forestFruitTeaCrayon',
     isOpen: true,
-    distance: '320m',
+    distance: '1.3km',
+    branchName: '上海环球港店',
+    heroEyebrow: '小新の',
+    heroTitle: '水果茶屋',
+    heroSubtitle: '自然水果 · 新鲜现制',
   }
 }
 
 function getMockProducts(): Product[] {
   return [
     {
-      id: '1',
-      name: '招牌煎饼果子',
-      basePrice: 8.0,
-      originalPrice: 10.0,
-      image: 'https://picsum.photos/300/200?random=p1',
-      category: '主食',
-      stock: 50,
+      id: 'fruit-tea-1',
+      name: '霸气西柚柠檬茶',
+      basePrice: 18,
+      originalPrice: 22,
+      image: '',
+      category: 'citrus',
+      stock: 30,
       sales: 1280,
       status: 'ACTIVE',
       isHot: true,
+      isNew: true,
+      rank: 1,
+      flavor: '西柚果肉 + 香水柠檬 + 茉莉绿茶',
+      tags: ['清爽解腻', '维C满满'],
+      illustration: '🍹',
     },
     {
-      id: '2',
-      name: '现磨豆浆（甜/咸）',
-      basePrice: 3.0,
-      originalPrice: 4.0,
-      image: 'https://picsum.photos/300/200?random=p2',
-      category: '饮品',
-      stock: 100,
-      sales: 856,
+      id: 'fruit-tea-2',
+      name: '阳光青提多多',
+      basePrice: 16,
+      originalPrice: 19,
+      image: '',
+      category: 'grape',
+      stock: 42,
+      sales: 956,
       status: 'ACTIVE',
       isHot: true,
+      rank: 2,
+      flavor: '阳光玫瑰青提 + 乳酸菌 + 绿茶',
+      tags: ['清甜多汁', '人气TOP'],
+      illustration: '🥤',
     },
     {
-      id: '3',
-      name: '香酥油条',
-      basePrice: 2.0,
-      originalPrice: 2.5,
-      image: 'https://picsum.photos/300/200?random=p3',
-      category: '小吃',
-      stock: 60,
+      id: 'fruit-tea-3',
+      name: '芒芒百香绿茶',
+      basePrice: 17,
+      originalPrice: 20,
+      image: '',
+      category: 'mango',
+      stock: 26,
+      sales: 820,
+      status: 'ACTIVE',
+      isHot: true,
+      rank: 3,
+      flavor: '大颗芒果肉 + 百香果 + 茉莉绿茶',
+      tags: ['香甜浓郁', '果肉满满'],
+      illustration: '🧋',
+    },
+    {
+      id: 'fruit-tea-4',
+      name: '整颗柠檬冰茶桶',
+      basePrice: 24,
+      originalPrice: 29,
+      image: '',
+      category: 'tea',
+      stock: 18,
       sales: 620,
       status: 'ACTIVE',
       isNew: true,
+      flavor: '香水柠檬 + 冰萃绿茶 + 清甜果露',
+      tags: ['大杯分享', '冰爽'],
+      illustration: '🍋',
     },
     {
-      id: '4',
-      name: '鲜肉包子（3个）',
-      basePrice: 4.0,
-      originalPrice: 5.0,
-      image: 'https://picsum.photos/300/200?random=p4',
-      category: '主食',
-      stock: 40,
-      sales: 430,
+      id: 'fruit-tea-5',
+      name: '葡萄冻冻加料',
+      basePrice: 4,
+      originalPrice: 5,
+      image: '',
+      category: 'extra',
+      stock: 88,
+      sales: 360,
       status: 'ACTIVE',
-    },
-    {
-      id: '5',
-      name: '秘制辣酱',
-      basePrice: 1.0,
-      originalPrice: 1.5,
-      image: 'https://picsum.photos/300/200?random=p5',
-      category: '加料',
-      stock: 200,
-      sales: 380,
-      status: 'ACTIVE',
-    },
-    {
-      id: '6',
-      name: '卤蛋',
-      basePrice: 2.0,
-      originalPrice: 2.5,
-      image: 'https://picsum.photos/300/200?random=p6',
-      category: '加料',
-      stock: 80,
-      sales: 290,
-      status: 'ACTIVE',
-    },
-    {
-      id: '7',
-      name: '紫米粥',
-      basePrice: 3.5,
-      originalPrice: 4.5,
-      image: 'https://picsum.photos/300/200?random=p7',
-      category: '饮品',
-      stock: 30,
-      sales: 210,
-      status: 'ACTIVE',
-    },
-    {
-      id: '8',
-      name: '炸鸡柳',
-      basePrice: 5.0,
-      originalPrice: 7.0,
-      image: 'https://picsum.photos/300/200?random=p8',
-      category: '小吃',
-      stock: 25,
-      sales: 175,
-      status: 'ACTIVE',
-      isNew: true,
-    },
-    {
-      id: '9',
-      name: '生菜沙拉',
-      basePrice: 3.0,
-      originalPrice: 4.0,
-      image: 'https://picsum.photos/300/200?random=p9',
-      category: '其他',
-      stock: 0,
-      sales: 50,
-      status: 'SOLD_OUT',
+      flavor: '手作葡萄冻',
+      tags: ['Q弹', '推荐搭配'],
+      illustration: '🍇',
     },
   ]
 }
 
-// ============================================================
-// Cart Operations
-// ============================================================
+function selectCategory(id: string) {
+  activeCategory.value = id
+}
+
 function loadCart() {
   try {
     const stored = Taro.getStorageSync('cart_items')
-    if (stored) {
-      const items = JSON.parse(stored) as CartItem[]
-      cartItems.value = items
-      recalcCart()
-    }
-  } catch (e) {
-    console.error('[Cart] Load failed:', e)
+    cartItems.value = stored ? (JSON.parse(stored) as CartItem[]) : []
+    recalcCart()
+  } catch (error) {
+    cartItems.value = []
+    recalcCart()
   }
 }
 
@@ -315,12 +260,8 @@ function recalcCart() {
 }
 
 function addToCart(product: Product) {
-  if (product.status === 'SOLD_OUT') {
-    Taro.showToast({ title: '已售罄', icon: 'none' })
-    return
-  }
-  if (product.stock <= 0) {
-    Taro.showToast({ title: '库存不足', icon: 'none' })
+  if (isProductDisabled(product)) {
+    Taro.showToast({ title: getStatusText(product) || '暂不可加购', icon: 'none' })
     return
   }
 
@@ -330,318 +271,208 @@ function addToCart(product: Product) {
       Taro.showToast({ title: '已达购买上限', icon: 'none' })
       return
     }
-    existing.quantity++
+    existing.quantity += 1
   } else {
     cartItems.value.push({ product, quantity: 1 })
   }
 
   saveCart()
-  Taro.showToast({ title: '已加入购物车', icon: 'none', duration: 1000 })
-}
-
-function getProductQuantity(productId: string): number {
-  const item = cartItems.value.find((i) => i.product.id === productId)
-  return item?.quantity || 0
-}
-
-// ============================================================
-// Navigation
-// ============================================================
-function goToProduct(id: string) {
-  // Navigate to product detail; if page not yet created, show a toast
-  const url = `/pages/customer/product/detail?id=${id}`
-  const pages = Taro.getCurrentPages()
-  const hasPage = pages.some((p) => p.route?.includes('product/detail'))
-
-  if (hasPage) {
-    Taro.navigateTo({ url })
-  } else {
-    // Product detail page not yet built — show placeholder toast
-    Taro.showToast({ title: '商品详情开发中', icon: 'none', duration: 1500 })
-  }
+  Taro.showToast({ title: '已加入购物车', icon: 'none', duration: 900 })
 }
 
 function goToCart() {
   Taro.switchTab({ url: '/pages/customer/cart/cart' })
 }
 
-function goToSearch() {
-  showSearch.value = true
-}
-
-function closeSearch() {
-  showSearch.value = false
-  searchQuery.value = ''
-}
-
-// ============================================================
-// Category Selection
-// ============================================================
-function selectCategory(id: string) {
-  activeCategory.value = id
-}
-
-// ============================================================
-// Formatting
-// ============================================================
-function formatPrice(price: number): string {
-  return price.toFixed(2)
-}
-
-function formatSales(sales: number): string {
-  if (sales >= 1000) {
-    return (sales / 1000).toFixed(1) + 'k'
+function goToProduct(product: Product) {
+  if (isProductDisabled(product)) {
+    Taro.showToast({ title: getStatusText(product) || '暂不可购买', icon: 'none' })
+    return
   }
-  return sales.toString()
+  Taro.showToast({ title: '商品详情开发中', icon: 'none', duration: 1400 })
+}
+
+function goToCheckout() {
+  if (cartCount.value <= 0) {
+    Taro.showToast({ title: '先选一杯吧', icon: 'none' })
+    return
+  }
+  Taro.switchTab({ url: '/pages/customer/cart/cart' })
+}
+
+function formatPrice(price: number): string {
+  return price.toFixed(0)
 }
 
 function getStatusText(product: Product): string {
-  switch (product.status) {
-    case 'SOLD_OUT':
-      return '售罄'
-    case 'INACTIVE':
-      return '下架'
-    default:
-      return ''
-  }
+  if (product.status === 'SOLD_OUT' || product.stock <= 0) return '已售罄'
+  if (product.status === 'INACTIVE') return '已下架'
+  return ''
 }
 
 function isProductDisabled(product: Product): boolean {
-  return product.status === 'SOLD_OUT' || product.status === 'INACTIVE' || product.stock <= 0
+  return product.status !== 'ACTIVE' || product.stock <= 0
 }
 </script>
 
 <template>
-  <view class="storefront-page" :style="{ '--style-primary': styleColors.primary, '--style-gradient': styleColors.gradient }">
-    <!-- ==================== Status Bar Spacer ==================== -->
-    <view class="status-bar-spacer" />
+  <view class="fruit-tea-page" :style="themeVars">
+    <view class="hero-section">
+      <view class="hero-leaves hero-leaves-left" />
+      <view class="hero-leaves hero-leaves-right" />
 
-    <!-- ==================== Top Navigation ==================== -->
-    <view class="top-nav">
-      <view class="nav-left">
-        <!-- Back button -->
-        <view class="nav-icon-btn" @tap="Taro.navigateBack({ fail: () => {} })">
-          <text class="nav-arrow">←</text>
+      <view class="mini-program-pill">
+        <text class="pill-dot">●●●</text>
+        <view class="pill-line" />
+        <text class="pill-ring">◎</text>
+      </view>
+
+      <view class="location-card">
+        <text class="location-pin">⌖</text>
+        <view class="location-copy">
+          <text class="location-store">{{ branchLabel }}</text>
+          <text class="location-distance">距离您 {{ storeInfo?.distance || '1.3km' }}</text>
         </view>
       </view>
 
-      <view class="nav-title-wrap">
-        <text class="nav-title">{{ storeInfo?.name || '店铺主页' }}</text>
-        <view class="nav-rating" v-if="storeInfo">
-          <text class="star-icon">★</text>
-          <text class="rating-text">{{ storeInfo.rating }}</text>
-        </view>
+      <view class="hero-title-block">
+        <text class="hero-eyebrow">{{ storeInfo?.heroEyebrow || '小新の' }}</text>
+        <text class="hero-title">{{ storeTitle }}</text>
+        <text class="hero-subtitle">{{ storeSubtitle }}</text>
       </view>
 
-      <view class="nav-right">
-        <!-- Search icon -->
-        <view class="nav-icon-btn" @tap="goToSearch">
-          <text class="nav-icon-text">🔍</text>
+      <view class="hero-stage">
+        <view class="fruit-basket">
+          <text class="basket-fruits">🍍🍎🍊🍇</text>
         </view>
-      </view>
-    </view>
-
-    <!-- ==================== Store Header Banner ==================== -->
-    <view class="store-banner">
-      <view class="banner-bg" />
-      <view class="banner-content">
-        <view class="store-info-row">
-          <image
-            class="store-logo"
-            :src="storeInfo?.logo || '/static/default-avatar.png'"
-            mode="aspectFill"
-            @error="(e: any) => { e.target.src = '/static/default-avatar.png' }"
-          />
-          <view class="store-details">
-            <text class="store-name">{{ storeInfo?.name }}</text>
-            <text class="store-desc">{{ storeInfo?.description }}</text>
-            <view class="store-tags">
-              <text class="store-tag open" v-if="storeInfo?.isOpen !== false">营业中</text>
-              <text class="store-tag closed" v-else>休息中</text>
-              <text class="store-distance" v-if="storeInfo?.distance">📍 {{ storeInfo.distance }}</text>
+        <view class="mascot-pair">
+          <view class="white-pet">◔ᴥ◔</view>
+          <view class="crayon-boy">
+            <view class="boy-head">
+              <view class="boy-brow boy-brow-left" />
+              <view class="boy-brow boy-brow-right" />
+              <view class="boy-eye boy-eye-left" />
+              <view class="boy-eye boy-eye-right" />
+              <view class="boy-mouth" />
             </view>
-          </view>
-        </view>
-
-        <view class="store-stats">
-          <view class="stat-item">
-            <text class="stat-value">{{ storeInfo?.rating || '0.0' }}</text>
-            <text class="stat-label">评分</text>
-          </view>
-          <view class="stat-divider" />
-          <view class="stat-item">
-            <text class="stat-value">{{ storeInfo?.sales || 0 }}</text>
-            <text class="stat-label">已售</text>
-          </view>
-          <view class="stat-divider" />
-          <view class="stat-item">
-            <text class="stat-value">{{ products.length }}</text>
-            <text class="stat-label">商品</text>
+            <view class="boy-shirt" />
           </view>
         </view>
       </view>
     </view>
 
-    <!-- ==================== Search Bar (Sticky) ==================== -->
-    <view class="search-bar-wrap">
-      <view class="search-bar" @tap="goToSearch">
-        <text class="search-icon">🔍</text>
-        <text class="search-placeholder">搜索商品...</text>
+    <view class="promo-card">
+      <view class="promo-copy">
+        <text class="promo-title">鲜果时令上新</text>
+        <text class="promo-subtitle">当季水果 · 清爽一夏</text>
+        <view class="promo-button" @tap="selectCategory('recommend')">
+          <text>立即尝鲜</text>
+          <text class="promo-arrow">›</text>
+        </view>
+      </view>
+      <view class="promo-drink">
+        <text class="promo-cup">🍹</text>
+        <text class="promo-label">小新の水果茶屋</text>
       </view>
     </view>
 
-    <!-- ==================== Category Tabs ==================== -->
-    <view class="category-tabs-wrap">
-      <scroll-view class="category-scroll" scroll-x enable-flex>
+    <view class="carousel-dots">
+      <view class="carousel-dot active" />
+      <view class="carousel-dot" />
+    </view>
+
+    <view class="ordering-shell">
+      <scroll-view class="category-rail" scroll-y :show-scrollbar="false">
         <view
-          v-for="cat in categories"
-          :key="cat.id"
-          class="category-tab"
-          :class="{ active: activeCategory === cat.id }"
-          @tap="selectCategory(cat.id)"
+          v-for="category in categories"
+          :key="category.id"
+          class="rail-item"
+          :class="{ active: activeCategory === category.id }"
+          @tap="selectCategory(category.id)"
         >
-          {{ cat.name }}
+          <text class="rail-icon">{{ category.icon }}</text>
+          <text class="rail-text">{{ category.name }}</text>
         </view>
       </scroll-view>
-    </view>
 
-    <!-- ==================== Product Grid ==================== -->
-    <scroll-view
-      class="product-scroll"
-      scroll-y
-      enhanced
-      :show-scrollbar="false"
-      :thumbs="[{ direction: 'vertical' }]"
-      @scrolltolower="() => {}"
-    >
-      <!-- Loading State -->
-      <view v-if="isLoading" class="loading-state">
-        <text class="loading-text">加载中...</text>
-      </view>
-
-      <!-- Empty State -->
-      <view v-else-if="filteredProducts.length === 0" class="empty-state">
-        <text class="empty-icon">📦</text>
-        <text class="empty-text">暂无商品</text>
-      </view>
-
-      <!-- Products Grid -->
-      <view v-else class="product-grid">
-        <view
-          v-for="product in filteredProducts"
-          :key="product.id"
-          class="product-card"
-          :class="{ disabled: isProductDisabled(product) }"
-          @tap="goToProduct(product.id)"
-        >
-          <!-- Product Image -->
-          <view class="product-image-wrap">
-            <image
-              class="product-image"
-              :src="product.image"
-              mode="aspectFill"
-              lazy-load
-              @error="(e: any) => { e.target.src = '/static/product-placeholder.png' }"
-            />
-            <!-- Tags -->
-            <view class="product-tags">
-              <text class="product-tag hot" v-if="product.isHot">🔥 热销</text>
-              <text class="product-tag new" v-if="product.isNew">新品</text>
-            </view>
-            <!-- Sold out overlay -->
-            <view class="soldout-overlay" v-if="product.status === 'SOLD_OUT'">
-              <text class="soldout-text">已售罄</text>
-            </view>
-          </view>
-
-          <!-- Product Content -->
-          <view class="product-content">
-            <text class="product-name line-clamp-2">{{ product.name }}</text>
-
-            <view class="product-bottom">
-              <view class="price-wrap">
-                <text class="price-symbol">¥</text>
-                <text class="price-integer">{{ formatPrice(product.basePrice).split('.')[0] }}</text>
-                <text class="price-decimal">.{{ formatPrice(product.basePrice).split('.')[1] }}</text>
-                <text class="original-price" v-if="product.originalPrice > product.basePrice">
-                  ¥{{ formatPrice(product.originalPrice) }}
-                </text>
-              </view>
-
-              <view
-                class="add-btn"
-                :class="{ soldout: isProductDisabled(product) }"
-                @tap.stop="addToCart(product)"
-              >
-                <text v-if="getProductQuantity(product.id) > 0" class="add-count">
-                  {{ getProductQuantity(product.id) }}
-                </text>
-                <text v-else class="add-icon">+</text>
-              </view>
-            </view>
-
-            <view class="product-meta">
-              <text class="sales-count">已售 {{ formatSales(product.sales) }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- Bottom Safe Area -->
-      <view class="bottom-safe-area" />
-    </scroll-view>
-
-    <!-- ==================== Floating Cart Button ==================== -->
-    <view
-      class="floating-cart-btn"
-      :class="{ 'has-items': cartCount > 0 }"
-      @tap="goToCart"
-    >
-      <text class="cart-icon">🛒</text>
-      <view class="cart-badge" v-if="cartCount > 0">
-        <text class="cart-badge-text">{{ cartCount > 99 ? '99+' : cartCount }}</text>
-      </view>
-    </view>
-
-    <!-- ==================== Search Modal ==================== -->
-    <view class="search-modal" :class="{ active: showSearch }" @tap.self="closeSearch">
-      <view class="search-modal-content">
-        <view class="search-input-row">
-          <view class="search-input-wrap">
-            <text class="search-icon-sm">🔍</text>
-            <input
-              class="search-input"
-              v-model="searchQuery"
-              placeholder="搜索商品..."
-              confirm-type="search"
-              :focus="showSearch"
-              @confirm="closeSearch"
-            />
-          </view>
-          <text class="search-cancel-btn" @tap="closeSearch">取消</text>
+      <view class="menu-panel">
+        <view class="section-heading">
+          <text class="section-title">人气推荐</text>
+          <text class="section-leaf">⌁</text>
         </view>
 
-        <!-- Search results preview -->
-        <view class="search-results" v-if="searchQuery.trim() && filteredProducts.length > 0">
+        <view v-if="isLoading" class="loading-state">
+          <text>加载中...</text>
+        </view>
+
+        <view v-else-if="filteredProducts.length === 0" class="empty-state">
+          <text class="empty-icon">🍵</text>
+          <text class="empty-text">暂无商品</text>
+        </view>
+
+        <scroll-view v-else class="product-list" scroll-y :show-scrollbar="false">
           <view
-            v-for="product in filteredProducts.slice(0, 5)"
+            v-for="product in filteredProducts"
             :key="product.id"
-            class="search-result-item"
-            @tap="goToProduct(product.id); closeSearch()"
+            class="product-row"
+            :class="{ disabled: isProductDisabled(product) }"
+            @tap="goToProduct(product)"
           >
-            <text class="search-result-name">{{ product.name }}</text>
-            <text class="search-result-price">¥{{ formatPrice(product.basePrice) }}</text>
-          </view>
-        </view>
+            <view v-if="product.rank" class="rank-badge">
+              <text>TOP</text>
+              <text>{{ product.rank }}</text>
+            </view>
 
-        <view class="search-empty" v-else-if="searchQuery.trim() && filteredProducts.length === 0">
-          <text class="search-empty-text">未找到相关商品</text>
-        </view>
+            <view class="drink-art">
+              <image v-if="product.image" class="drink-image" :src="product.image" mode="aspectFill" />
+              <text v-else class="drink-emoji">{{ product.illustration || '🥤' }}</text>
+            </view>
+
+            <view class="product-info">
+              <view class="product-title-row">
+                <text class="product-name">{{ product.name }}</text>
+                <text v-if="product.isNew" class="new-pill">NEW</text>
+              </view>
+              <text class="product-flavor">{{ product.flavor }}</text>
+              <view class="product-tags">
+                <text v-for="tag in product.tags || []" :key="tag" class="product-tag">{{ tag }}</text>
+              </view>
+              <text class="product-price">¥{{ formatPrice(product.basePrice) }}</text>
+            </view>
+
+            <view
+              class="add-button"
+              :class="{ disabled: isProductDisabled(product) }"
+              @tap.stop="addToCart(product)"
+            >
+              <text>+</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+
+    <view class="cart-bar">
+      <view class="cart-mascot" @tap="goToCart">
+        <text class="cart-face">しん</text>
+        <view v-if="cartCount > 0" class="cart-count">{{ cartCount }}</view>
+      </view>
+      <view class="cart-summary" @tap="goToCart">
+        <text class="cart-total">¥{{ formatPrice(cartTotal) }}</text>
+        <text class="cart-link">去结算 ›</text>
+      </view>
+      <view class="checkout-button" :class="{ disabled: cartCount <= 0 }" @tap="goToCheckout">
+        <text class="checkout-icon">▣</text>
+        <text>去结算</text>
+      </view>
+      <view class="delivery-button">
+        <text class="delivery-icon">🛵</text>
+        <text>外卖</text>
       </view>
     </view>
   </view>
 </template>
 
-<style>
+<style lang="scss">
 @import './index.scss';
 </style>

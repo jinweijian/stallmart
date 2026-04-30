@@ -4,6 +4,8 @@
  */
 const path = require('path')
 
+const resolveSrc = (...segments) => path.resolve(__dirname, '..', 'src', ...segments)
+
 module.exports = {
   appid: 'wxe4f198ad2958a1fe',
   projectName: 'stallmart-mini',
@@ -14,4 +16,11 @@ module.exports = {
   framework: 'vue3',
   plugins: [],
   presets: [],
+  alias: {
+    '@': resolveSrc(),
+    '@/config': resolveSrc('app-config'),
+  },
+  webpackChain(chain) {
+    chain.resolve.alias.set('@', resolveSrc()).set('@/config', resolveSrc('app-config'))
+  },
 }

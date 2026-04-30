@@ -24,6 +24,6 @@ onHide(() => {
   <view class="app-container"></view>
 </template>
 
-<style>
+<style lang="scss">
 @import './app.scss';
 </style>

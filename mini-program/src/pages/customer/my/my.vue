@@ -322,6 +322,6 @@ function maskPhone(phone: string): string {
   </view>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 @import './my.scss';
 </style>
