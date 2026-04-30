@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useDidShow, usePullDownRefresh, onReachBottom } from '@tarojs/taro'
+import { useDidShow, usePullDownRefresh, useReachBottom } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { get, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
@@ -35,6 +35,30 @@ interface Order {
   remark?: string
   createdAt: string
   items: OrderItem[]
+}
+
+interface BackendOrderItem {
+  id?: number | string
+  productId: number | string
+  productName: string
+  price?: number
+  unitPrice?: number
+  quantity: number
+  specName?: string
+  specs?: OrderItemSpec[]
+}
+
+interface BackendOrder {
+  id: number | string
+  orderNo: string
+  storeId: number | string
+  storeName?: string
+  status: string
+  confirmCode: string
+  totalAmount: number
+  remark?: string
+  createdAt: string
+  items?: BackendOrderItem[]
 }
 
 interface StatusTab {
@@ -124,7 +148,7 @@ usePullDownRefresh(() => {
   }, 1000)
 })
 
-onReachBottom(() => {
+useReachBottom(() => {
   if (!isLoadingMore.value && hasMore.value) {
     loadOrders(false)
   }
@@ -144,8 +168,8 @@ async function loadOrders(isRefresh = false) {
   }
 
   try {
-    const res = await get<any[]>('/orders')
-    const list = res.data || []
+    const res = await get<BackendOrder[]>('/orders')
+    const list = (res.data || []).map(normalizeOrder)
 
     if (isRefresh) {
       orders.value = list
@@ -285,6 +309,38 @@ function formatTime(dateStr: string): string {
 
 function getStatusInfo(order: Order) {
   return statusMap[order.status] || { label: order.status, color: '#999999' }
+}
+
+function normalizeOrder(raw: BackendOrder): Order {
+  return {
+    id: String(raw.id),
+    orderNo: raw.orderNo,
+    storeId: String(raw.storeId),
+    storeName: raw.storeName || '小新の水果茶屋',
+    status: normalizeOrderStatus(raw.status),
+    confirmCode: raw.confirmCode,
+    totalAmount: Number(raw.totalAmount || 0),
+    remark: raw.remark,
+    createdAt: raw.createdAt,
+    items: (raw.items || []).map((item) => ({
+      productId: String(item.productId),
+      productName: item.productName,
+      quantity: item.quantity,
+      unitPrice: Number(item.unitPrice ?? item.price ?? 0),
+      specs: item.specs || (item.specName ? [{ name: '规格', option: item.specName, extraPrice: 0 }] : undefined),
+    })),
+  }
+}
+
+function normalizeOrderStatus(status: string): OrderStatus {
+  const normalized = status.toUpperCase()
+  if (normalized === 'PENDING') return 'NEW'
+  if (normalized === 'ACCEPTED') return 'ACCEPTED'
+  if (normalized === 'PREPARING') return 'PREPARING'
+  if (normalized === 'READY') return 'READY'
+  if (normalized === 'COMPLETED') return 'COMPLETED'
+  if (normalized === 'REJECTED' || normalized === 'CANCELLED') return 'REJECTED'
+  return 'NEW'
 }
 
 function getSpecsText(item: OrderItem): string {

@@ -8,11 +8,13 @@ import { get } from '@/utils/request'
 interface StoreInfo {
   id: string
   name: string
-  logo: string
+  logo?: string
+  avatarUrl?: string
   description: string
   rating: number
   sales: number
   styleCode: StoreStyleCode
+  styleId?: number
   isOpen?: boolean
   distance?: string
   branchName?: string
@@ -23,14 +25,18 @@ interface StoreInfo {
 
 interface Product {
   id: string
+  storeId?: string | number
   name: string
   basePrice: number
+  price?: number
   originalPrice: number
   image: string
+  imageUrl?: string
+  description?: string
   category: string
   stock: number
   sales: number
-  status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT'
+  status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT' | 'active' | 'off_sale' | 'sold_out'
   isHot?: boolean
   isNew?: boolean
   tags?: string[]
@@ -116,14 +122,59 @@ async function loadData() {
       get<Product[]>(API_ENDPOINTS.PRODUCTS(storeId)),
     ])
 
-    storeInfo.value = storeRes.data
-    products.value = productsRes.data || []
+    storeInfo.value = normalizeStore(storeRes.data)
+    products.value = (productsRes.data || []).map(normalizeProduct)
+    Taro.setStorageSync('current_store_id', storeInfo.value.id)
   } catch (error) {
     storeInfo.value = getMockStore()
     products.value = getMockProducts()
   } finally {
     isLoading.value = false
   }
+}
+
+function normalizeStore(store: StoreInfo): StoreInfo {
+  return {
+    ...store,
+    id: String(store.id),
+    logo: store.logo || store.avatarUrl || '/static/default-avatar.png',
+    rating: store.rating || 4.9,
+    sales: store.sales || 3286,
+    styleCode: store.styleCode || (store.styleId === 6 ? 'forestFruitTeaCrayon' : 'forestFruitTeaCrayon'),
+    isOpen: store.isOpen ?? store.status !== 'closed',
+    distance: store.distance || '1.3km',
+    branchName: store.branchName || store.name,
+    heroEyebrow: store.heroEyebrow || '小新の',
+    heroTitle: store.heroTitle || store.name || '水果茶屋',
+    heroSubtitle: store.heroSubtitle || store.description || '自然水果 · 新鲜现制',
+  }
+}
+
+function normalizeProduct(product: Product): Product {
+  const basePrice = Number(product.basePrice ?? product.price ?? 0)
+  const normalizedStatus = normalizeProductStatus(product.status)
+
+  return {
+    ...product,
+    id: String(product.id),
+    basePrice,
+    originalPrice: product.originalPrice || basePrice,
+    image: product.image || product.imageUrl || '',
+    category: product.category || 'citrus',
+    stock: product.stock ?? 99,
+    sales: product.sales ?? 0,
+    status: normalizedStatus,
+    flavor: product.flavor || product.description || '',
+    tags: product.tags || [],
+    isHot: product.isHot ?? !!product.rank,
+    illustration: product.illustration || '🥤',
+  }
+}
+
+function normalizeProductStatus(status: Product['status']): 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT' {
+  if (status === 'active' || status === 'ACTIVE') return 'ACTIVE'
+  if (status === 'sold_out' || status === 'SOLD_OUT') return 'SOLD_OUT'
+  return 'INACTIVE'
 }
 
 function getStoreId(): string {
@@ -305,13 +356,14 @@ function formatPrice(price: number): string {
 }
 
 function getStatusText(product: Product): string {
-  if (product.status === 'SOLD_OUT' || product.stock <= 0) return '已售罄'
-  if (product.status === 'INACTIVE') return '已下架'
+  const status = normalizeProductStatus(product.status)
+  if (status === 'SOLD_OUT' || product.stock <= 0) return '已售罄'
+  if (status === 'INACTIVE') return '已下架'
   return ''
 }
 
 function isProductDisabled(product: Product): boolean {
-  return product.status !== 'ACTIVE' || product.stock <= 0
+  return normalizeProductStatus(product.status) !== 'ACTIVE' || product.stock <= 0
 }
 </script>
 

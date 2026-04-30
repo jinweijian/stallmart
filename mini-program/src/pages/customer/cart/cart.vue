@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, useDidShow } from '@tarojs/taro'
+import { ref, computed } from 'vue'
+import { useDidShow } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 
 // ============================================================

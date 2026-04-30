@@ -75,7 +75,20 @@ Authorization: Bearer <access_token>
 
 ## 前后端一致性问题
 
-当前小程序请求封装在 `mini-program/src/utils/request.ts` 中判断 `data.code === 0` 才算成功，而后端 `Result.success` 返回 `code === 200`。两边必须统一，否则所有成功请求都会被前端当作失败处理。
+当前小程序请求封装已兼容 `data.code === 200` 和历史 `data.code === 0`。后端当前权威成功码仍为 `code === 200`。
+
+## 顾客端页面接口契约
+
+| 页面 | 方法 | 路径 | 关键响应字段 |
+| --- | --- | --- | --- |
+| 首页 | `GET` | `/stores/{id}` | `id`, `name`, `description`, `avatarUrl`, `styleId`, `status` |
+| 首页 | `GET` | `/stores/{storeId}/products` | `id`, `storeId`, `name`, `description`, `price`, `imageUrl`, `status`, `sortOrder` |
+| 购物车 | 本地 Storage | `cart_items` | 商品快照、数量。 |
+| 确认订单 | `POST` | `/orders` | `id`, `orderNo`, `status`, `confirmCode`, `totalAmount`, `items` |
+| 我的订单 | `GET` | `/orders` | `orderNo`, `storeId`, `status`, `confirmCode`, `totalAmount`, `createdAt`, `items` |
+| 我的 | `GET` | `/user/profile` | `id`, `nickname`, `avatarUrl`, `phone`, `hasPhone`, `role` |
+
+前端当前在合法 request 域名未配置时开启 mock，mock 数据文件为 `mini-program/src/mock/customer-api.ts`，字段形状按本节契约维护。
 
 当前小程序还引用了未定义 endpoint：
 

@@ -1,7 +1,8 @@
 import Taro from '@tarojs/taro'
-import { API_BASE_URL, API_ENDPOINTS } from '@/config'
+import { API_BASE_URL, API_ENDPOINTS, ENABLE_API_MOCK } from '@/config'
 import { getAccessToken, setAccessToken, getRefreshToken, clearAuthTokens } from './storage'
 import { useUserStore } from '@/store/user'
+import { getMockApiResponse } from '@/mock/customer-api'
 
 export interface RequestOptions {
   url: string
@@ -78,7 +79,7 @@ function responseInterceptor(
     }
 
     if (statusCode >= 200 && statusCode < 300) {
-      if (data?.code === 0) {
+      if (data?.code === 200 || data?.code === 0) {
         resolve(data)
       } else {
         reject({ code: data?.code || statusCode, message: data?.message || '请求失败', detail: data })
@@ -110,7 +111,7 @@ function responseInterceptor(
 
         const refreshData = refreshResponse.data as ApiResponse
 
-        if (refreshData?.code === 0 && refreshData?.data?.accessToken) {
+        if ((refreshData?.code === 200 || refreshData?.code === 0) && refreshData?.data?.accessToken) {
           const newToken = refreshData.data.accessToken
           setAccessToken(newToken)
           onTokenRefreshed(newToken)
@@ -152,6 +153,13 @@ function responseInterceptor(
 
 async function doRequest(options: RequestOptions, token?: string): Promise<ApiResponse> {
   const { url, method = 'GET', data, params, header = {}, timeout } = options
+
+  if (ENABLE_API_MOCK) {
+    const mockResponse = getMockApiResponse(options)
+    if (mockResponse) {
+      return Promise.resolve(mockResponse)
+    }
+  }
 
   const fullUrl = buildUrl(url, params)
 

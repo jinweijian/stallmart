@@ -11,6 +11,9 @@ export const API_BASE_URL_PROD = 'https://api.stallmart.com/api/v1'
 
 export const API_BASE_URL = APP_ENV === 'production' ? API_BASE_URL_PROD : API_BASE_URL_DEV
 
+// Local preview mode: keep true until WeChat request legal domains are configured.
+export const ENABLE_API_MOCK = true
+
 // Token Keys
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',

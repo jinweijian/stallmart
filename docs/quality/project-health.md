@@ -4,6 +4,14 @@
 
 ## 已处理事项
 
+### 前后端成功码不一致
+
+处理结果：
+
+- 后端 `backend/src/main/java/com/stallmart/common/result/Result.java` 成功响应返回 `code = 200`。
+- 小程序 `mini-program/src/utils/request.ts` 已兼容 `data?.code === 200` 和历史 `0`。
+- API 文档和小程序状态/API 文档已同步当前契约。
+
 ### Taro alias 本机绝对路径
 
 处理结果：
@@ -20,21 +28,6 @@
 - 根 `README.md` 和 `AGENTS.md` 已挂载主要 README 入口。
 
 ## 高优先级
-
-### 前后端成功码不一致
-
-证据：
-
-- 后端 `backend/src/main/java/com/stallmart/common/result/Result.java` 成功响应返回 `code = 200`。
-- 小程序 `mini-program/src/utils/request.ts` 只有 `data?.code === 0` 才 resolve。
-
-影响：
-
-- 后端成功响应会被小程序当作业务失败。
-
-建议：
-
-- 统一为 `200` 或 `0`，并同步 API 文档、前端请求封装和测试。
 
 ### 小程序引用未定义 API endpoint
 

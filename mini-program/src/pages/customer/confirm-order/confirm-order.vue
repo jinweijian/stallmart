@@ -134,15 +134,19 @@ async function submitOrder() {
     const res = await post<any>('/orders', {
       storeId: Number(storeId.value),
       items: cartItems.value.map((item) => ({
-        productId: item.product.id,
+        productId: Number(item.product.id),
         quantity: item.quantity,
-        specs: item.product.specs || [],
+        specName: getSpecsText(item.product) || undefined,
       })),
       remark: remark.value.trim() || undefined,
     })
 
     // Success
-    orderResult.value = res.data
+    orderResult.value = {
+      orderId: String(res.data?.orderId ?? res.data?.id ?? ''),
+      orderNo: res.data?.orderNo || '',
+      confirmCode: res.data?.confirmCode || '',
+    }
 
     // Clear cart storage
     Taro.removeStorageSync('cart_items')

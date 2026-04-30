@@ -26,6 +26,7 @@
 - 页面中禁止硬编码完整 API 地址。
 - API base URL 只允许从 `API_BASE_URL` 获取。
 - 切换环境必须通过配置，不在页面里判断环境。
+- 微信小程序 request 合法域名未配置前，`ENABLE_API_MOCK` 保持开启，业务请求由 `src/mock/customer-api.ts` 返回后端契约形状的 mock 数据，不触发真实网络请求。
 
 ## endpoint 命名规则
 
@@ -81,15 +82,35 @@ patch()
 
 当前冲突：
 
-- 小程序 `request.ts` 判断 `data?.code === 0`。
+- 小程序 `request.ts` 已兼容 `data?.code === 200` 与历史 `0`。
 - 后端 `Result.success` 返回 `code === 200`。
 - 外层历史 PRD/API 设计倾向 `code: 0`，当前代码事实是 `code: 200`。
 
 强制要求：
 
-- 修复前后端任一侧时必须同步修改另一侧。
+- 后续新增接口按后端当前事实优先返回 `code: 200`。
 - 修复时同步更新 [../backend/api-reference.md](../backend/api-reference.md) 和 [../quality/project-health.md](../quality/project-health.md)。
 - 修复后增加请求封装测试或最小联调验证。
+
+## 当前顾客端 mock 契约
+
+在 `ENABLE_API_MOCK = true` 时，以下接口由 `src/mock/customer-api.ts` 直接返回，不经过 `Taro.request`：
+
+| 方法 | 路径 | 页面 |
+| --- | --- | --- |
+| `GET` | `/stores/{id}` | 首页店铺信息和风格包。 |
+| `GET` | `/stores/{storeId}/products` | 首页商品列表和加购。 |
+| `GET` | `/orders` | 我的订单。 |
+| `POST` | `/orders` | 确认订单提交。 |
+| `PUT` | `/orders/{id}/reject` | 我的订单取消。 |
+| `GET` | `/orders/counts` | 我的页订单统计。 |
+| `GET` | `/user/profile` | 我的页用户资料。 |
+
+页面内使用 ViewModel；后端字段进入页面前必须做适配，例如：
+
+- 商品 `price/imageUrl/status(active/off_sale/sold_out)` 转为 `basePrice/image/status(ACTIVE/INACTIVE/SOLD_OUT)`。
+- 订单 `pending/accepted/preparing/ready/completed/rejected` 转为页面状态 `NEW/ACCEPTED/PREPARING/READY/COMPLETED/REJECTED`。
+- 店铺 `avatarUrl/styleId/status` 转为首页展示所需的 `logo/styleCode/isOpen`。
 
 ## Storage 规范
 
