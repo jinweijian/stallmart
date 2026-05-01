@@ -38,7 +38,7 @@
 - Controller 是否只做 HTTP 层工作。
 - Service 是否承担业务规则。
 - Mapper 是否只做数据访问。
-- DTO/VO/Entity 是否边界清晰。
+- Params/DTO/Entity 是否边界清晰。
 - 是否使用统一响应 `Result<T>`。
 - 成功码和错误码是否与前端一致。
 - 需要认证的接口是否真的受保护。

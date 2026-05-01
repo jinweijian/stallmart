@@ -24,7 +24,7 @@
 
 ## 文档命名
 
-- 子目录使用 kebab-case 或清晰的单词，例如 `mini-program`、`operations`。
+- 子目录使用 kebab-case 或清晰的单词，例如 `app`、`operations`。
 - 文档文件使用 kebab-case，例如 `module-design.md`。
 - README 固定大写 `README.md`。
 
@@ -40,12 +40,12 @@
 
 | 改动 | 必须同步 |
 | --- | --- |
-| 新增页面 | `docs/mini-program/page-map.md` |
-| 新增小程序模块 | `docs/mini-program/module-design.md` |
-| 新增 API | `docs/backend/api-reference.md`, `docs/mini-program/state-and-api.md` |
-| 修改配置 | `docs/operations/configuration.md` |
-| 修改 Docker | `docs/operations/deployment.md`, `docker/README.md` |
-| 修改测试命令 | `docs/quality/testing.md` |
+| 新增页面 | `docs/specification/app-pages.md` |
+| 新增小程序模块 | `docs/specification/app-module.md` |
+| 新增 API | `docs/api-server/index.md`, `docs/api-app/index.md` |
+| 修改配置 | `docs/guide/configuration.md` |
+| 修改 Docker | `docs/deploy/index.md`, `docker/README.md` |
+| 修改测试命令 | `docs/guide/testing.md` |
 | 修改规范 | `docs/standards/README.md` |
 
 ## Agent 查阅优化

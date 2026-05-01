@@ -128,7 +128,7 @@
 
 当前代码默认主题与历史风格包不完全一致。实现风格包时应先建立统一 token 映射，不要在页面里散落色值。
 
-当前风格包 token 统一维护在 `mini-program/src/app-config/index.ts` 的 `STORE_THEME_PACKAGES`。后台店铺详情可通过 `styleCode` 返回风格编码，顾客首页根据该编码生成 CSS 变量；新增风格包时先扩展 token，再在页面中消费变量。
+当前风格包 token 统一维护在 `app/src/app-config/index.ts` 的 `STORE_THEME_PACKAGES`。后台店铺详情可通过 `styleCode` 返回风格编码，顾客首页根据该编码生成 CSS 变量；新增风格包时先扩展 token，再在页面中消费变量。
 
 ### 森系水果茶首页结构
 

@@ -1,53 +1,37 @@
-# 贡献与协作说明
+# 协作说明
 
-本项目当前按私有小程序项目维护。提交代码或让 Agent 修改代码前，必须先阅读对应规范。
-
-## 必读顺序
+提交代码前先阅读：
 
 1. [AGENTS.md](AGENTS.md)
 2. [docs/README.md](docs/README.md)
-3. [docs/standards/README.md](docs/standards/README.md)
-4. 按改动范围阅读模块 README：
-   - 小程序: [mini-program/README.md](mini-program/README.md)
-   - 后端: [backend/README.md](backend/README.md)
-   - Docker: [docker/README.md](docker/README.md)
+3. 按变更范围阅读 `server/README.md` 或 `app/README.md`
+4. [docs/guide/testing.md](docs/guide/testing.md)
 
 ## 提交前检查
 
-按改动范围运行：
+服务端：
 
 ```bash
-git diff --check
-```
-
-```bash
-cd mini-program
-npm run lint
-npm run build:weapp
-```
-
-```bash
-cd backend
+cd server
 mvn test
 ```
+
+小程序：
+
+```bash
+cd app
+npm run lint
+```
+
+Docker：
 
 ```bash
 cd docker
 docker compose config
 ```
 
-## 不应提交
+## 提交要求
 
-- `node_modules/`
-- `dist/`
-- `target/`
-- `.env`
-- `application-local.yml`
-- `project.private.config.json`
-- 真实密钥、密码、token、微信密钥
-
-## 文档同步要求
-
-修改 API、环境变量、启动命令、Docker 服务、数据库脚本、页面模块、状态结构时，必须同步更新 `docs/` 中对应文档。
-
-文档目录职责见 [docs/README.md](docs/README.md)。
+- 一次提交只解决一个清晰问题。
+- API、配置、目录结构变更必须同步文档。
+- 不提交生成物、依赖目录、本地私有配置和真实密钥。

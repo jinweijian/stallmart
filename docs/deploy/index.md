@@ -14,9 +14,9 @@
 
 待确认内容：
 
-- `admin-web/` 目录当前不存在，但 Docker Compose 和 Dockerfile 已引用。
-- 后端 Dockerfile 使用 `eclipse-temurin:26-*` 镜像，需确认 Java 26 是否为团队目标版本。
-- Docker healthcheck 使用 `/actuator/health`，但 `backend/pom.xml` 当前未看到 `spring-boot-starter-actuator` 依赖。
+- 管理端源码位于 `web/`，Docker Compose 的 `admin-web` build context 指向 `../web`。
+- 后端 Dockerfile 使用 `eclipse-temurin:21-*` 镜像，与 `server/pom.xml` 保持一致。
+- Docker healthcheck 使用 `/api/v1/actuator/health`，服务端已接入 Actuator。
 
 ## 本地 Docker
 
@@ -28,7 +28,7 @@ docker compose up -d mysql redis
 
 如果只启动依赖服务，这通常足够支撑本地后端运行。
 
-不要直接启动全部服务，除非已经补齐 `admin-web/`：
+管理端依赖 API，启动全部服务前确认 `.env` 已配置：
 
 ```bash
 docker compose up -d
@@ -36,19 +36,19 @@ docker compose up -d
 
 ## 后端容器
 
-`docker/Dockerfile.api` 以 `backend/` 作为 build context：
+`docker/Dockerfile.api` 以 `server/` 作为 build context：
 
 ```yaml
 api:
   build:
-    context: ../backend
+    context: ../server
     dockerfile: ../docker/Dockerfile.api
 ```
 
 启动前需要：
 
-- 有可用 JDK/JRE 26 镜像。
-- `backend/pom.xml` 能完成 Maven 构建。
+- 有可用 JDK/JRE 21 镜像。
+- `server/pom.xml` 能完成 Maven 构建。
 - MySQL 和 Redis healthcheck 通过。
 - `.env` 中设置 `JWT_SECRET`、数据库和 Redis 密码。
 
@@ -57,7 +57,7 @@ api:
 小程序构建：
 
 ```bash
-cd mini-program
+cd app
 npm ci
 npm run build:weapp
 ```
@@ -65,7 +65,7 @@ npm run build:weapp
 构建产物位于：
 
 ```text
-mini-program/dist/
+app/dist/
 ```
 
 用微信开发者工具上传前确认：
@@ -76,9 +76,8 @@ mini-program/dist/
 
 ## 生产前检查清单
 
-- 统一 Java 版本。
-- 修复前后端成功码不一致问题。
-- 修复缺失 endpoint 常量。
+- 保持 Java 版本一致。
+- 联调前复核成功码和 endpoint 常量。
 - 复核 Taro alias 不含本机绝对路径。
 - 合并数据库初始化脚本。
 - 增加生产环境 Spring profile。

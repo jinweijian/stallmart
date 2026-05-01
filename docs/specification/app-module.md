@@ -252,5 +252,5 @@
 1. 在 `app.config.ts` 注册页面或分包。
 2. 在本文件中新增模块说明。
 3. 在 [page-map.md](page-map.md) 中新增页面职责和跳转关系。
-4. 如涉及 API，在 [state-and-api.md](state-and-api.md) 和 [../backend/api-reference.md](../backend/api-reference.md) 更新 endpoint。
+4. 如涉及 API，在 [state-and-api.md](state-and-api.md) 和 [../api-server/index.md](../api-server/index.md) 更新 endpoint。
 5. 如涉及视觉规则，在 [style-and-interaction.md](style-and-interaction.md) 更新组件或状态。

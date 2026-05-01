@@ -5,7 +5,7 @@
 主配置文件：
 
 ```text
-backend/src/main/resources/application.yml
+server/src/main/resources/application.yml
 ```
 
 当前默认值：
@@ -13,23 +13,16 @@ backend/src/main/resources/application.yml
 | 配置 | 默认值 |
 | --- | --- |
 | Server port | `8080` |
-| Spring application name | `stallmart-backend` |
-| MySQL URL | `jdbc:mysql://localhost:3306/stallmart` |
-| MySQL user | `root` |
-| MySQL password | `${DB_PASSWORD:password}` |
-| Redis host | `localhost` |
-| Redis port | `6379` |
-| Redis password | `${REDIS_PASSWORD:}` |
-| JWT secret | `${JWT_SECRET:your-256-bit-secret-key-here-change-in-production}` |
-| Access token validity | `7200` seconds |
-| Refresh token validity | `604800` seconds |
-| Swagger UI | `/swagger-ui.html` |
-| OpenAPI docs | `/api-docs` |
+| Spring application name | `stallmart-api` |
+| Context path | `/api/v1` |
+| Swagger UI | `/api/v1/swagger-ui/index.html` |
+| OpenAPI docs | `/api/v1/v3/api-docs` |
+| Healthcheck | `/api/v1/actuator/health` |
 
 本地私有覆盖建议使用：
 
 ```text
-backend/src/main/resources/application-local.yml
+server/src/main/resources/application-local.yml
 ```
 
 该文件已被 `.gitignore` 排除。
@@ -79,12 +72,12 @@ docker/.env
 
 | 文件 | 说明 |
 | --- | --- |
-| `mini-program/project.config.json` | 微信开发者工具项目配置。 |
-| `mini-program/project.private.config.json` | 本地私有配置，已忽略。 |
-| `mini-program/config/index.js` | Taro CLI 实际读取的项目构建配置。 |
-| `mini-program/taro.config.ts` | Taro 构建配置。 |
-| `mini-program/src/app-config/index.ts` | API 地址、endpoint、设计 token、存储 key。 |
-| `mini-program/src/app.config.ts` | 小程序页面、分包、tabBar、权限配置。 |
+| `app/project.config.json` | 微信开发者工具项目配置。 |
+| `app/project.private.config.json` | 本地私有配置，已忽略。 |
+| `app/config/index.js` | Taro CLI 实际读取的项目构建配置。 |
+| `app/taro.config.ts` | Taro 构建配置。 |
+| `app/src/app-config/index.ts` | API 地址、endpoint、设计 token、存储 key。 |
+| `app/src/app.config.ts` | 小程序页面、分包、tabBar、权限配置。 |
 
 当前 API base URL：
 
@@ -95,7 +88,7 @@ docker/.env
 
 ## 配置风险
 
-- `mini-program/config/index.js` 和 `mini-program/taro.config.ts` 都包含 Taro 构建配置；当前 CLI 构建以 `config/index.js` 为准，alias 变更必须保持两处一致。
+- `app/config/index.js` 和 `app/taro.config.ts` 都包含 Taro 构建配置；当前 CLI 构建以 `config/index.js` 为准，alias 变更必须保持两处一致。
 - `docker/docker-compose.yml` 引用 `admin-web/`，但该目录当前不存在。
-- `backend/pom.xml` 声明 Java 26，文档和本地环境必须与该值保持一致，或统一调整。
-- `backend/mysql/init.sql` 与 `docker/mysql/init/01-init.sql` 不一致，需要合并或明确权威来源。
+- `server/pom.xml` 声明 Java 21，Dockerfile 也必须保持 Java 21。
+- 数据库脚本当前以 `docker/mysql/init/01-init.sql` 为准，服务端接入持久化后再补迁移策略。

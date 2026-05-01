@@ -49,7 +49,7 @@ ORDER_DETAIL: (id: string) => `/orders/${id}`
 - endpoint key 使用 UPPER_SNAKE_CASE。
 - 不允许同名 key 既是字符串又是函数。
 - 函数式 endpoint 的参数名称必须与后端路径变量一致。
-- endpoint 新增或修改必须同步 [../backend/api-reference.md](../backend/api-reference.md)。
+- endpoint 新增或修改必须同步 [../api-server/index.md](../api-server/index.md)。
 
 当前已知问题：
 
@@ -89,7 +89,7 @@ patch()
 强制要求：
 
 - 后续新增接口按后端当前事实优先返回 `code: 200`。
-- 修复时同步更新 [../backend/api-reference.md](../backend/api-reference.md) 和 [../quality/project-health.md](../quality/project-health.md)。
+- 修复时同步更新 [../api-server/index.md](../api-server/index.md) 和 [../specification/project-health.md](../specification/project-health.md)。
 - 修复后增加请求封装测试或最小联调验证。
 
 ## 当前顾客端 mock 契约
@@ -105,6 +105,9 @@ patch()
 | `PUT` | `/orders/{id}/reject` | 我的订单取消。 |
 | `GET` | `/orders/counts` | 我的页订单统计。 |
 | `GET` | `/user/profile` | 我的页用户资料。 |
+| `GET` | `/cart` | 购物车列表，后端已提供接口；当前小程序仍使用本地 mock/Storage。 |
+| `POST` | `/cart/items` | 加入购物车，后端已提供接口；当前小程序仍使用本地 mock/Storage。 |
+| `DELETE` | `/cart/stores/{storeId}` | 清空店铺购物车，后端已提供接口；当前小程序仍使用本地 mock/Storage。 |
 
 页面内使用 ViewModel；后端字段进入页面前必须做适配，例如：
 

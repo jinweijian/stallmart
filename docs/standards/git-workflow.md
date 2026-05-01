@@ -50,7 +50,7 @@ git diff --check
 小程序：
 
 ```bash
-cd mini-program
+cd app
 npm run lint
 npm run build:weapp
 ```
@@ -58,7 +58,7 @@ npm run build:weapp
 后端：
 
 ```bash
-cd backend
+cd server
 mvn test
 ```
 

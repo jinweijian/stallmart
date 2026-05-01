@@ -1,6 +1,6 @@
 # StallMart Docker 本地环境
 
-本目录用于本地开发环境编排，包含 MySQL、Redis、API 和计划中的管理端服务定义。
+本目录用于本地开发环境编排，包含 MySQL、Redis、API 和 Nuxt 管理端服务定义。
 
 ## 文件结构
 
@@ -17,9 +17,9 @@ docker/
 
 | 工作类型 | 必读文档 |
 | --- | --- |
-| 修改环境变量或端口 | [../docs/operations/configuration.md](../docs/operations/configuration.md) |
-| 修改部署方式 | [../docs/operations/deployment.md](../docs/operations/deployment.md) |
-| 修改数据库初始化脚本 | [../docs/overview/system-architecture.md](../docs/overview/system-architecture.md), [../docs/quality/project-health.md](../docs/quality/project-health.md) |
+| 修改环境变量或端口 | [../docs/guide/configuration.md](../docs/guide/configuration.md) |
+| 修改部署方式 | [../docs/deploy/index.md](../docs/deploy/index.md) |
+| 修改数据库初始化脚本 | [../docs/specification/architecture.md](../docs/specification/architecture.md), [../docs/specification/project-health.md](../docs/specification/project-health.md) |
 | 提交前安全检查 | [../docs/standards/security.md](../docs/standards/security.md) |
 
 ## 快速启动
@@ -68,7 +68,7 @@ docker compose down -v
 | `mysql` | 主数据库 | `127.0.0.1:3306` |
 | `redis` | 缓存和 token 相关存储 | `127.0.0.1:6379` |
 | `api` | Spring Boot API | `127.0.0.1:8080` |
-| `admin-web` | 管理端前端，当前仓库尚未提供对应目录 | `127.0.0.1:3000` |
+| `admin-web` | Nuxt 管理端前端，源码位于 `../web` | `127.0.0.1:3000` |
 
 ## 环境变量
 
@@ -90,6 +90,6 @@ docker compose down -v
 
 ## 当前注意事项
 
-- `admin-web` 服务引用 `../admin-web`，但当前仓库尚未提供该目录。补齐前不要直接启动全部服务。
-- `api` 的 healthcheck 使用 `/actuator/health`，但后端当前未看到 Actuator 依赖，需要补齐或调整 healthcheck。
+- `admin-web` 服务引用 `../web`，默认通过 `NUXT_PUBLIC_API_BASE` 访问本地 API。
+- `api` 的 healthcheck 使用 `/api/v1/actuator/health`，后端已接入 Actuator。
 - 所有端口默认绑定到 `127.0.0.1`，本地开发环境不要暴露到公网。
