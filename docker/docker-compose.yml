@@ -59,7 +59,7 @@ services:
   # --------------------------------------------
   api:
     build:
-      context: ../backend
+      context: ../server
       dockerfile: ../docker/Dockerfile.api
     container_name: stallmart-api
     restart: unless-stopped
@@ -76,7 +76,7 @@ services:
       SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_REDIS_PORT: 6379
     volumes:
-      - ../backend:/app
+      - ../server:/app
       - maven_cache:/root/.m2
     ports:
       # 仅本地访问
@@ -94,14 +94,14 @@ services:
   # --------------------------------------------
   admin-web:
     build:
-      context: ../admin-web
+      context: ../web
       dockerfile: ../docker/Dockerfile.admin-web
     container_name: stallmart-admin-web
     restart: unless-stopped
     environment:
       NUXT_PUBLIC_API_BASE: http://localhost:8080/api/v1
     volumes:
-      - ../admin-web:/app
+      - ../web:/app
       - node_modules_admin:/app/node_modules
     ports:
       # 仅本地访问

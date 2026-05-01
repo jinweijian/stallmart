@@ -8,6 +8,7 @@ build/
 target/
 out/
 .output/
+.nuxt/
 .next/
 coverage/
 

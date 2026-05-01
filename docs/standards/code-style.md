@@ -89,9 +89,9 @@
 | Controller | `XxxController` | `OrderController` |
 | Service | `XxxService` | `OrderService` |
 | Service Impl | `XxxServiceImpl` | `OrderServiceImpl` |
-| Mapper | `XxxMapper` | `OrderMapper` |
-| DTO | `XxxDTO` | `CreateOrderDTO` |
-| VO | `XxxVO` | `OrderVO` |
+| Repository | `XxxRepository` | `OrderRepository` |
+| Params | `XxxParams` | `CreateOrderParams` |
+| DTO | `XxxDTO` | `OrderDTO` |
 | Entity | 业务名词 | `OrderItem` |
 
 ### 方法与控制流
@@ -100,7 +100,7 @@
 
 ```java
 if (user == null) {
-    throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+    throw new AppException(ErrorCode.USER_NOT_FOUND);
 }
 ```
 
@@ -116,11 +116,11 @@ if (user != null) {
 
 ### Controller
 
-- 只处理 HTTP 入参、认证上下文、调用 service、返回 VO。
+- 只处理 HTTP 入参、认证上下文、调用 service、返回 DTO。
 - 不直接访问 Mapper。
 - 不写复杂业务判断。
-- 所有请求体使用 DTO。
-- 所有响应使用 VO 或简单结果，不直接返回 Entity。
+- 所有请求体使用 Params。
+- 所有响应使用 DTO 或简单结果，不直接返回 Entity。
 
 ### Service
 

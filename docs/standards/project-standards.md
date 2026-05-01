@@ -45,7 +45,7 @@
 - `package-lock.json`
 - `.env.example`
 - `docker/mysql/init/*.sql`
-- `backend/src/main/resources/application.yml`
+- `server/src/main/resources/application.yml`
 
 ## 安全规范
 
@@ -60,14 +60,14 @@
 - 后端成功响应当前为 `code: 200`。
 - 前端请求封装必须和后端成功码保持一致。
 - 需要登录的接口统一使用 `Authorization: Bearer <token>`。
-- 新增 endpoint 必须同步更新小程序 `API_ENDPOINTS` 和 [../backend/api-reference.md](../backend/api-reference.md)。
-- API 字段命名以小程序实际消费模型和后端 DTO/VO 为准，禁止同一概念多套字段名并存。
+- 新增 endpoint 必须同步更新小程序 `API_ENDPOINTS` 和 [../api-server/index.md](../api-server/index.md)。
+- API 字段命名以小程序实际消费模型和服务端 Params/DTO 为准，禁止同一概念多套字段名并存。
 
 ## 模块边界规范
 
-- 小程序模块划分以 [../mini-program/module-design.md](../mini-program/module-design.md) 为准。
-- 后端分层规范以 [../backend/backend-standards.md](../backend/backend-standards.md) 为准。
-- 任何跨模块变更必须同步检查 [../overview/system-architecture.md](../overview/system-architecture.md)。
+- 小程序模块划分以 [../specification/app-module.md](../specification/app-module.md) 为准。
+- 后端分层规范以 [../specification/server.md](../specification/server.md) 为准。
+- 任何跨模块变更必须同步检查 [../specification/architecture.md](../specification/architecture.md)。
 
 ## 文档维护规范
 
