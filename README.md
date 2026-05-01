@@ -26,8 +26,8 @@ AGENTS.md           Agent 工作入口
 
 ```bash
 cd server
-mvn test
-mvn spring-boot:run
+./gradlew test
+./gradlew bootRun
 ```
 
 ```bash

@@ -4,8 +4,7 @@
 
 - Node.js 18+
 - npm
-- Maven
-- JDK: 当前 `server/pom.xml` 声明 Java 21
+- JDK: 当前 `server/build.gradle` 声明 Java 21 toolchain
 - Docker 20.10+
 - Docker Compose v2+
 - 微信开发者工具
@@ -20,13 +19,13 @@ copy .env.example .env
 docker compose up -d mysql redis
 ```
 
-`docker/docker-compose.yml` 也定义了 `api` 和 `admin-web`，但 `admin-web/` 目录当前不存在，直接启动全部服务会失败。
+`docker/docker-compose.yml` 也定义了 `api` 和 `admin-web`，管理端源码位于 `web/`。
 
 ## 2. 启动后端
 
 ```bash
 cd server
-mvn spring-boot:run
+./gradlew bootRun
 ```
 
 默认配置读取 `server/src/main/resources/application.yml`：
@@ -48,7 +47,23 @@ npm run dev:weapp
 
 然后用微信开发者工具打开 `app/`，构建产物位于 `app/dist/`。
 
-## 4. 验证基本连通性
+## 4. 启动管理端
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+默认地址：
+
+- 管理端: `http://localhost:3000`
+- 管理端 API 代理: `http://localhost:3000/api/v1`
+- 后端直连 API: `http://localhost:8080/api/v1`
+
+管理端浏览器请求必须走同源 `/api/v1` 代理，代理目标通过 `NUXT_API_PROXY_TARGET` 配置，默认是 `http://localhost:8080`。
+
+## 5. 验证基本连通性
 
 ```bash
 curl http://localhost:8080/api/v1/actuator/health
@@ -60,8 +75,7 @@ curl http://localhost:8080/api/v1/actuator/health
 export const API_BASE_URL_DEV = 'http://localhost:8080/api/v1'
 ```
 
-## 5. 当前提示
+## 6. 当前提示
 
 - 小程序当前仍启用 mock 数据。
-- `admin-web/` 尚未落地，不要直接启动完整 Docker Compose。
 - 服务端当前先完成接口契约和测试闭环，持久化链路后续单独接入。

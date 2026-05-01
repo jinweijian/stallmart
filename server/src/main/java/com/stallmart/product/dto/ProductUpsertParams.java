@@ -1,17 +1,20 @@
 package com.stallmart.product.dto;
 
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.List;
 
 public record ProductUpsertParams(
         @NotBlank String name,
         String description,
-        @NotNull @DecimalMin("0.00") BigDecimal price,
+        BigDecimal price,
+        Long categoryId,
         String imageUrl,
+        String mainImageUrl,
         String category,
         String status,
-        int sortOrder
+        int sortOrder,
+        List<Long> specIds,
+        List<ProductSkuParams> skus
 ) {
 }

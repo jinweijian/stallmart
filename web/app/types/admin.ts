@@ -5,6 +5,19 @@ export interface ApiResult<T> {
   timestamp: number
 }
 
+export interface AdminSession {
+  accessToken: string
+  refreshToken: string
+  user: UserProfile
+  storeId: number | null
+  entryPath: string
+}
+
+export interface AdminLoginInput {
+  account: string
+  password: string
+}
+
 export interface AdminSummary {
   storeCount: number
   userCount: number
@@ -31,23 +44,69 @@ export interface Store {
 export interface Product {
   id: number
   storeId: number
+  categoryId: number
+  categoryName: string
   name: string
   description: string
   price: number
   imageUrl: string | null
+  mainImageUrl: string | null
   category: string
   status: string
   sortOrder: number
+  specIds: number[]
+  skus: ProductSku[]
 }
 
 export interface ProductInput {
   name: string
   description: string
-  price: number
+  price?: number
+  categoryId: number | null
   imageUrl: string | null
+  mainImageUrl: string | null
   category: string
   status: string
   sortOrder: number
+  specIds: number[]
+  skus: ProductSkuInput[]
+}
+
+export interface ProductSku {
+  id: number
+  specValues: string[]
+  price: number
+  stock: number
+  status: string
+}
+
+export interface ProductSkuInput {
+  specValues: string[]
+  price: number
+  stock: number
+  status: string
+}
+
+export interface Category {
+  id: number
+  storeId: number
+  module: string
+  name: string
+  sortOrder: number
+  status: string
+}
+
+export interface CategoryInput {
+  module: string
+  name: string
+  sortOrder: number
+  status: string
+}
+
+export interface Asset {
+  url: string
+  filename: string
+  size: number
 }
 
 export interface Style {
@@ -55,6 +114,27 @@ export interface Style {
   name: string
   code: string
   previewUrl: string | null
+  theme: StorefrontTheme
+}
+
+export interface StorefrontCategory {
+  id: string
+  name: string
+  iconName: string
+  iconUrl: string | null
+  fallbackText: string
+}
+
+export interface StorefrontTheme {
+  code: string
+  name: string
+  layoutVersion: string
+  colors: Record<string, string>
+  iconNames: Record<string, string>
+  iconUrls: Record<string, string>
+  imageUrls: Record<string, string>
+  copywriting: Record<string, string>
+  categories: StorefrontCategory[]
 }
 
 export interface StoreDecoration {
@@ -62,9 +142,35 @@ export interface StoreDecoration {
   storeName: string
   logoUrl: string
   coverUrl: string | null
+  banners: string[]
   styleId: number
   styleCode: string
   style: Style
+  layoutVersion: string
+  theme: StorefrontTheme
+  colors: Record<string, string>
+  iconNames: Record<string, string>
+  iconUrls: Record<string, string>
+  imageUrls: Record<string, string>
+  copywriting: Record<string, string>
+  categories: StorefrontCategory[]
+}
+
+export interface Spec {
+  id: number
+  styleId: number
+  name: string
+  specType: string
+  required: boolean
+  options: string[]
+}
+
+export interface SpecInput {
+  styleId: number
+  name: string
+  specType: string
+  required: boolean
+  options: string[]
 }
 
 export interface OrderItem {

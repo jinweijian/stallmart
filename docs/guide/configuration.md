@@ -54,6 +54,8 @@ docker/.env
 | `REDIS_VERSION` | Redis 镜像版本。 |
 | `REDIS_PASSWORD` | Redis 密码。 |
 | `JWT_SECRET` | JWT 签名密钥。 |
+| `JWT_ACCESS_TOKEN_VALIDITY` | Access Token 有效期，单位秒。 |
+| `JWT_REFRESH_TOKEN_VALIDITY` | Refresh Token 有效期，单位秒。 |
 | `WECHAT_APP_ID` | 微信小程序 App ID。 |
 | `WECHAT_APP_SECRET` | 微信小程序密钥。 |
 
@@ -89,6 +91,6 @@ docker/.env
 ## 配置风险
 
 - `app/config/index.js` 和 `app/taro.config.ts` 都包含 Taro 构建配置；当前 CLI 构建以 `config/index.js` 为准，alias 变更必须保持两处一致。
-- `docker/docker-compose.yml` 引用 `admin-web/`，但该目录当前不存在。
-- `server/pom.xml` 声明 Java 21，Dockerfile 也必须保持 Java 21。
+- `docker/docker-compose.yml` 的 `admin-web` build context 指向 `web/`。
+- `server/build.gradle` 声明 Java 21 toolchain，Dockerfile 也必须保持 Java 21。
 - 数据库脚本当前以 `docker/mysql/init/01-init.sql` 为准，服务端接入持久化后再补迁移策略。

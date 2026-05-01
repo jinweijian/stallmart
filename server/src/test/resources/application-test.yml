@@ -1,3 +1,14 @@
 server:
   servlet:
     context-path: /api/v1
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+jwt:
+  secret: stallmart-test-secret-key-which-is-long-enough-32
+  access-token-validity: 7200
+  refresh-token-validity: 604800

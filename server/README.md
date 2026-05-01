@@ -36,8 +36,8 @@ server/
 ## 本地命令
 
 ```bash
-mvn test
-mvn spring-boot:run
+./gradlew test
+./gradlew bootRun
 ```
 
 接口基础路径为 `/api/v1`。

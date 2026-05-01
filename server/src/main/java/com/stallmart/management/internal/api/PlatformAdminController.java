@@ -4,6 +4,7 @@ import com.stallmart.cart.CartService;
 import com.stallmart.cart.dto.CartDTO;
 import com.stallmart.management.dto.AdminSummaryDTO;
 import com.stallmart.management.dto.VendorWorkspaceDTO;
+import com.stallmart.management.internal.security.AdminAccessGuard;
 import com.stallmart.order.OrderService;
 import com.stallmart.order.dto.OrderDTO;
 import com.stallmart.product.dto.ProductDTO;
@@ -12,6 +13,7 @@ import com.stallmart.store.dto.StoreDTO;
 import com.stallmart.support.web.Result;
 import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
@@ -29,21 +31,25 @@ public class PlatformAdminController {
     private final OrderService orderService;
     private final CartService cartService;
     private final UserService userService;
+    private final AdminAccessGuard accessGuard;
 
     public PlatformAdminController(
             StoreService storeService,
             OrderService orderService,
             CartService cartService,
-            UserService userService
+            UserService userService,
+            AdminAccessGuard accessGuard
     ) {
         this.storeService = storeService;
         this.orderService = orderService;
         this.cartService = cartService;
         this.userService = userService;
+        this.accessGuard = accessGuard;
     }
 
     @GetMapping("/summary")
-    public Result<AdminSummaryDTO> summary() {
+    public Result<AdminSummaryDTO> summary(HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
         List<OrderDTO> orders = orderService.listAll();
         return Result.success(new AdminSummaryDTO(
                 storeService.listStores().size(),
@@ -55,32 +61,38 @@ public class PlatformAdminController {
     }
 
     @GetMapping("/vendors")
-    public Result<List<StoreDTO>> vendors() {
+    public Result<List<StoreDTO>> vendors(HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
         return Result.success(storeService.listStores());
     }
 
     @GetMapping("/vendors/{storeId}/summary")
-    public Result<VendorWorkspaceDTO> vendorSummary(@PathVariable long storeId) {
+    public Result<VendorWorkspaceDTO> vendorSummary(@PathVariable long storeId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
         return Result.success(buildWorkspace(storeId));
     }
 
     @GetMapping("/vendors/{storeId}/products")
-    public Result<List<ProductDTO>> products(@PathVariable long storeId) {
+    public Result<List<ProductDTO>> products(@PathVariable long storeId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
         return Result.success(storeService.listProducts(storeId));
     }
 
     @GetMapping("/vendors/{storeId}/orders")
-    public Result<List<OrderDTO>> orders(@PathVariable long storeId) {
+    public Result<List<OrderDTO>> orders(@PathVariable long storeId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
         return Result.success(orderService.listByStore(storeId));
     }
 
     @GetMapping("/vendors/{storeId}/carts")
-    public Result<List<CartDTO>> carts(@PathVariable long storeId) {
+    public Result<List<CartDTO>> carts(@PathVariable long storeId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
         return Result.success(cartService.listByStore(storeId));
     }
 
     @GetMapping("/vendors/{storeId}/users")
-    public Result<List<UserProfileDTO>> users(@PathVariable long storeId) {
+    public Result<List<UserProfileDTO>> users(@PathVariable long storeId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
         return Result.success(usersForStore(storeId));
     }
 

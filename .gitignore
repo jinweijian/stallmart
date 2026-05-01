@@ -3,6 +3,7 @@ node_modules/
 **/node_modules/
 
 # Build output
+.gradle/
 dist/
 build/
 target/
@@ -13,16 +14,17 @@ out/
 coverage/
 
 # Taro / mini program generated files
+app/.swc/
 mini-program/dist/
 mini-program/.swc/
 mini-program/project.private.config.json
 mini-program/.project
 mini-program/.settings/
 
-# Java / Maven
-backend/target/
+# Java / Gradle
 *.class
 *.jar
+!**/gradle/wrapper/gradle-wrapper.jar
 *.war
 
 # Environment and secrets
@@ -32,10 +34,11 @@ backend/target/
 !**/.env.example
 application-local.yml
 application-*.local.yml
-backend/src/main/resources/application-local.yml
-backend/src/main/resources/application-*.local.yml
+server/src/main/resources/application-local.yml
+server/src/main/resources/application-*.local.yml
 
 # Logs and runtime data
+server/uploads/
 logs/
 *.log
 npm-debug.log*

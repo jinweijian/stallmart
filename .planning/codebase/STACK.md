@@ -6,7 +6,7 @@
 
 **Primary:**
 - TypeScript 5.3.3 - Mini Program frontend
-- Java 21 - Backend API (specified as `java.version>26` in pom.xml, which appears to be a typo for Java 21 or 26 early access)
+- Java 21 - Backend API (declared via Gradle Java toolchain)
 
 **Secondary:**
 - Vue 3.4.21 - Mini Program UI framework
@@ -20,7 +20,7 @@
 
 **Package Manager:**
 - npm - Mini Program dependencies
-- Maven - Backend dependencies (pom.xml)
+- Gradle - Backend dependencies (`server/build.gradle`)
 
 ## Frameworks
 
@@ -76,7 +76,7 @@
 - `application.yml` / `application-local.yml` - Spring Boot config
 
 **Build:**
-- `pom.xml` - Maven build configuration
+- `build.gradle` - Gradle build configuration
 - `project.config.json` - Taro/Mini Program config
 - `taro.config.ts` (implied) - Taro build config
 
@@ -86,7 +86,7 @@
 - Docker 20.10+
 - Docker Compose v2+
 - Node.js 18+
-- Java 21 (or 26 early access as specified in pom.xml)
+- Java 21
 
 **Production (Referenced):**
 - WeChat Mini Program platform

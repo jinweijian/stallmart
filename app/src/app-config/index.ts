@@ -95,9 +95,18 @@ export const STORE_STYLE_CODES = {
 
 export type StoreStyleCode = (typeof STORE_STYLE_CODES)[keyof typeof STORE_STYLE_CODES]
 
+export interface StorefrontCategoryConfig {
+  id: string
+  name: string
+  iconName: string
+  iconUrl?: string | null
+  fallbackText: string
+}
+
 export interface StoreThemePackage {
   code: StoreStyleCode
   name: string
+  layoutVersion?: string
   primary: string
   secondary: string
   accent: string
@@ -106,7 +115,13 @@ export interface StoreThemePackage {
   text: string
   mutedText: string
   border: string
+  price?: string
   heroGradient: string
+  iconNames?: Record<string, string>
+  iconUrls?: Record<string, string>
+  imageUrls?: Record<string, string>
+  copywriting?: Record<string, string>
+  categories?: ReadonlyArray<StorefrontCategoryConfig>
 }
 
 export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
@@ -178,6 +193,7 @@ export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
   forestFruitTeaCrayon: {
     code: STORE_STYLE_CODES.FOREST_FRUIT_TEA_CRAYON,
     name: '森系水果茶',
+    layoutVersion: 'customer-storefront-v1',
     primary: '#6F9646',
     secondary: '#B8C77A',
     accent: '#F2B94B',
@@ -186,11 +202,49 @@ export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
     text: '#4C6040',
     mutedText: '#7A866D',
     border: '#DCE6C7',
+    price: '#6F9646',
     heroGradient: 'linear-gradient(180deg, #F9FAEA 0%, #EAF4D8 48%, #F9F2D8 100%)',
+    iconNames: {
+      location: 'forest-location',
+      cart: 'forest-cart',
+      checkout: 'forest-checkout',
+      delivery: 'forest-delivery',
+      sectionLeaf: 'forest-leaf',
+    },
+    iconUrls: {
+      location: '/static/storefront/forest/icons/location.png',
+      cart: '/static/storefront/forest/icons/cart.png',
+      checkout: '/static/storefront/forest/icons/checkout.png',
+      delivery: '/static/storefront/forest/icons/delivery.png',
+      sectionLeaf: '/static/storefront/forest/icons/leaf.png',
+    },
+    imageUrls: {
+      heroIllustration: '/static/storefront/forest/hero-forest-tea.png',
+      mascot: '/static/storefront/forest/mascot.png',
+      productPlaceholder: '/static/storefront/forest/product-placeholder.png',
+      promoIllustration: '/static/storefront/forest/promo-drink.png',
+    },
+    copywriting: {
+      branchName: '上海环球港店',
+      heroEyebrow: '小新の',
+      heroTitle: '水果茶屋',
+      heroSubtitle: '自然水果 · 新鲜现制',
+      promoTitle: '鲜果时令上新',
+      promoSubtitle: '当季水果 · 清爽一夏',
+      promoActionText: '立即尝鲜',
+    },
+    categories: [
+      { id: 'recommend', name: '人气推荐', iconName: 'forest-recommend', iconUrl: '/static/storefront/forest/icons/recommend.png', fallbackText: '荐' },
+      { id: 'citrus', name: '清爽柠檬', iconName: 'forest-citrus', iconUrl: '/static/storefront/forest/icons/citrus.png', fallbackText: '柠' },
+      { id: 'grape', name: '多肉葡萄', iconName: 'forest-grape', iconUrl: '/static/storefront/forest/icons/grape.png', fallbackText: '葡' },
+      { id: 'mango', name: '香甜芒果', iconName: 'forest-mango', iconUrl: '/static/storefront/forest/icons/mango.png', fallbackText: '芒' },
+      { id: 'tea', name: '鲜果茶桶', iconName: 'forest-tea', iconUrl: '/static/storefront/forest/icons/tea.png', fallbackText: '茶' },
+      { id: 'extra', name: '加料小料', iconName: 'forest-extra', iconUrl: '/static/storefront/forest/icons/extra.png', fallbackText: '料' },
+    ],
   },
 } as const
 
-export const DEFAULT_STORE_THEME = STORE_THEME_PACKAGES.hawaiian
+export const DEFAULT_STORE_THEME = STORE_THEME_PACKAGES.forestFruitTeaCrayon
 
 // WeChat Mini Program Config
 export const WECHAT_CONFIG = {

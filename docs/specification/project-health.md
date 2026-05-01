@@ -13,7 +13,7 @@
 
 ### Java 版本
 
-- `server/pom.xml` 使用 Java 21。
+- `server/build.gradle` 使用 Java 21 toolchain。
 - `docker/Dockerfile.api` 使用 `eclipse-temurin:21-*`。
 
 ### 后端测试入口
@@ -25,6 +25,12 @@
 - 已新增 `web/`，使用 Nuxt + Vue 3。
 - 已补充平台管理、商家 H5 管理、商品、订单、店铺、装修、用户、购物车页面。
 - 已补充 `/admin/platform/*` 和 `/admin/vendor/me/*` 后端接口，管理端写入商品后小程序商品接口可读取同一份数据。
+
+### 旧 backend 目录归并
+
+- 旧 `backend/` 中的 JWT 生成与解析能力已迁入 `server/src/main/java/com/stallmart/support/security/JwtService.java`。
+- 旧 `backend/` 中的 OpenAPI 配置已迁入 `server/src/main/java/com/stallmart/support/config/OpenApiConfig.java`。
+- 旧 `backend/` 目录已移除，后端唯一入口为 `server/`。
 
 ## 高优先级
 

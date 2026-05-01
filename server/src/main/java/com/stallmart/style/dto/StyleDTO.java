@@ -4,6 +4,7 @@ public record StyleDTO(
         Long id,
         String name,
         String code,
-        String previewUrl
+        String previewUrl,
+        StorefrontThemeDTO theme
 ) {
 }

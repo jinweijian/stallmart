@@ -92,4 +92,5 @@ docker compose down -v
 
 - `admin-web` 服务引用 `../web`，默认通过 `NUXT_PUBLIC_API_BASE` 访问本地 API。
 - `api` 的 healthcheck 使用 `/api/v1/actuator/health`，后端已接入 Actuator。
+- `api` 使用 `server/gradlew` 构建。
 - 所有端口默认绑定到 `127.0.0.1`，本地开发环境不要暴露到公网。

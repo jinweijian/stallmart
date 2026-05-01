@@ -15,7 +15,7 @@
 待确认内容：
 
 - 管理端源码位于 `web/`，Docker Compose 的 `admin-web` build context 指向 `../web`。
-- 后端 Dockerfile 使用 `eclipse-temurin:21-*` 镜像，与 `server/pom.xml` 保持一致。
+- 后端 Dockerfile 使用 `eclipse-temurin:21-*` 镜像，与 `server/build.gradle` 的 Java 21 toolchain 保持一致。
 - Docker healthcheck 使用 `/api/v1/actuator/health`，服务端已接入 Actuator。
 
 ## 本地 Docker
@@ -48,7 +48,7 @@ api:
 启动前需要：
 
 - 有可用 JDK/JRE 21 镜像。
-- `server/pom.xml` 能完成 Maven 构建。
+- `server/gradlew` 能完成 Gradle 构建。
 - MySQL 和 Redis healthcheck 通过。
 - `.env` 中设置 `JWT_SECRET`、数据库和 Redis 密码。
 

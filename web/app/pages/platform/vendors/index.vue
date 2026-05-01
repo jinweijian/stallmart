@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useStallmartApi } from '~/api/stallmart-api'
 
+definePageMeta({
+  role: 'ADMIN',
+})
+
 const api = useStallmartApi()
 const { data: vendors } = await useAsyncData('platform-vendors', () => api.platformVendors())
 </script>
@@ -16,7 +20,7 @@ const { data: vendors } = await useAsyncData('platform-vendors', () => api.platf
 
     <div class="grid cols-3">
       <article v-for="store in vendors" :key="store.id" class="card">
-        <div class="actions" style="justify-content: space-between;">
+        <div class="actions justify-between">
           <span class="badge">{{ store.status }}</span>
           <span class="muted">#{{ store.id }}</span>
         </div>

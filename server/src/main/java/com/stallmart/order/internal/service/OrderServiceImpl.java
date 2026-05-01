@@ -70,6 +70,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public OrderDTO getAdmin(long orderId) {
+        return find(orderId);
+    }
+
+    @Override
     public List<OrderDTO> list(long userId) {
         return orders.values().stream()
                 .filter(order -> order.userId().equals(userId))
@@ -89,6 +94,16 @@ public class OrderServiceImpl implements OrderService {
         catalogService.getStore(storeId);
         return orders.values().stream()
                 .filter(order -> order.storeId().equals(storeId))
+                .sorted((left, right) -> right.createdAt().compareTo(left.createdAt()))
+                .toList();
+    }
+
+    @Override
+    public List<OrderDTO> listByStoreAndUser(long storeId, long userId) {
+        catalogService.getStore(storeId);
+        return orders.values().stream()
+                .filter(order -> order.storeId().equals(storeId))
+                .filter(order -> order.userId().equals(userId))
                 .sorted((left, right) -> right.createdAt().compareTo(left.createdAt()))
                 .toList();
     }

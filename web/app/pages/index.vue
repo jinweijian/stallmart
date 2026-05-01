@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useStallmartApi } from '~/api/stallmart-api'
 
+definePageMeta({
+  role: 'ADMIN',
+})
+
 const api = useStallmartApi()
 const { data: summary } = await useAsyncData('platform-summary', () => api.platformSummary())
 const { data: vendors } = await useAsyncData('platform-vendors-home', () => api.platformVendors())
@@ -38,7 +42,7 @@ const { data: vendors } = await useAsyncData('platform-vendors-home', () => api.
     <section class="section">
       <h2>商家运营入口</h2>
       <div class="table-wrap">
-        <table>
+        <table class="data-table">
           <thead>
             <tr>
               <th>店铺</th>

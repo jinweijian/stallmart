@@ -88,6 +88,13 @@
   font-weight: 700;
 }
 
+.location-icon {
+  flex-shrink: 0;
+  width: 30rpx;
+  height: 30rpx;
+  margin-right: 10rpx;
+}
+
 .location-copy {
   display: flex;
   flex-direction: column;
@@ -196,7 +203,6 @@
     radial-gradient(ellipse at 60% 28%, rgba(149, 177, 84, 0.28) 0 28rpx, transparent 30rpx),
     radial-gradient(ellipse at 28% 58%, rgba(120, 162, 83, 0.34) 0 34rpx, transparent 36rpx),
     radial-gradient(ellipse at 72% 66%, rgba(177, 195, 111, 0.3) 0 26rpx, transparent 28rpx);
-  filter: blur(0.2rpx);
 }
 
 .hero-leaves-left {
@@ -279,6 +285,11 @@
   line-height: 1;
 }
 
+.promo-image {
+  width: 156rpx;
+  height: 156rpx;
+}
+
 .promo-label {
   position: absolute;
   right: 24rpx;
@@ -352,6 +363,13 @@
   font-size: 30rpx;
 }
 
+.rail-icon-image {
+  flex-shrink: 0;
+  width: 46rpx;
+  height: 46rpx;
+  margin-right: 10rpx;
+}
+
 .rail-text {
   font-size: 24rpx;
   font-weight: 700;
@@ -381,6 +399,12 @@
   color: var(--style-primary, #6F9646);
   font-size: 28rpx;
   transform: rotate(-18deg);
+}
+
+.section-leaf-image {
+  width: 30rpx;
+  height: 30rpx;
+  margin-left: 12rpx;
 }
 
 .loading-state,
@@ -569,6 +593,12 @@
   border-radius: 50% 46% 48% 44%;
 }
 
+.mascot-image {
+  width: 120rpx;
+  height: 112rpx;
+  margin-bottom: 6rpx;
+}
+
 .boy-head {
   position: relative;
   width: 116rpx;
@@ -735,6 +765,12 @@
 .checkout-icon,
 .delivery-icon {
   font-size: 30rpx;
+}
+
+.checkout-icon-image,
+.delivery-icon-image {
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .delivery-button {

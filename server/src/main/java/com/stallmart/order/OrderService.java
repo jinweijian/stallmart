@@ -11,11 +11,15 @@ public interface OrderService {
 
     OrderDTO get(long userId, long orderId);
 
+    OrderDTO getAdmin(long orderId);
+
     List<OrderDTO> list(long userId);
 
     List<OrderDTO> listAll();
 
     List<OrderDTO> listByStore(long storeId);
+
+    List<OrderDTO> listByStoreAndUser(long storeId, long userId);
 
     OrderCountsDTO counts(long userId);
 

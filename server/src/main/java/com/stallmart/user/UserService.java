@@ -1,6 +1,7 @@
 package com.stallmart.user;
 
 import com.stallmart.user.dto.UpdateProfileParams;
+import com.stallmart.auth.dto.AdminSessionDTO;
 import com.stallmart.auth.dto.AuthTokenDTO;
 import com.stallmart.user.dto.UserProfileDTO;
 import java.util.List;
@@ -8,6 +9,10 @@ import java.util.List;
 public interface UserService {
 
     AuthTokenDTO login(String code, String nickname, String avatarUrl);
+
+    AdminSessionDTO adminLogin(String account, String password);
+
+    AdminSessionDTO adminSession(long userId);
 
     AuthTokenDTO refresh(String refreshToken);
 

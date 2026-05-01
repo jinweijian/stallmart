@@ -6,6 +6,21 @@ server:
 spring:
   application:
     name: stallmart-api
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
+
+jwt:
+  secret: ${JWT_SECRET:stallmart-local-development-secret-change-me-32chars}
+  access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:7200}
+  refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:604800}
 
 management:
   endpoints:

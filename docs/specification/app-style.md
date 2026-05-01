@@ -128,7 +128,9 @@
 
 当前代码默认主题与历史风格包不完全一致。实现风格包时应先建立统一 token 映射，不要在页面里散落色值。
 
-当前风格包 token 统一维护在 `app/src/app-config/index.ts` 的 `STORE_THEME_PACKAGES`。后台店铺详情可通过 `styleCode` 返回风格编码，顾客首页根据该编码生成 CSS 变量；新增风格包时先扩展 token，再在页面中消费变量。
+当前风格包 token 统一维护在 `app/src/app-config/index.ts` 的 `STORE_THEME_PACKAGES`，服务端通过 `StyleDTO.theme` 和 `StoreDecorationDTO` 返回同名装修配置。后台店铺详情可通过 `styleCode` 返回风格编码，顾客首页根据装修配置生成 CSS 变量；新增风格包时先扩展 token，再在页面中消费变量。
+
+完整配置标准见 [storefront-decoration.md](storefront-decoration.md)。所有小程序端会展示的颜色、文案、icon、banner、插画和分类入口，都必须通过装修配置切换，不能在页面里按店铺或风格名硬编码。
 
 ### 森系水果茶首页结构
 
@@ -165,6 +167,7 @@
 - 页面同目录 `.scss` 只保留 Tailwind 不适合表达的样式，例如复杂背景、伪元素、主题插画、复杂安全区计算和少量组件级特殊效果。
 - 微信小程序 WXSS 不支持 Tailwind arbitrary value 生成的反斜杠转义选择器；不要使用 `text-[...]`、`px-[...]`、`bg-[...]`、`bottom-[...]` 这类带方括号的 class。需要精确 rpx 或 CSS 变量时放入页面 `.scss` 的语义化 class。
 - 全局样式不要启用 `@tailwind base`；它会生成 `*,::before,::after` 等微信 WXSS 编译器不接受的选择器。全局 reset 继续用 `app.scss` 中的 `page`、`view,text` 规则。
+- 不使用 `filter`、`backdrop-filter`、复杂通配选择器和依赖 Web hover 的交互；这些在微信小程序中兼容性不稳定或会直接编译报错。
 - 跨页面设计 token 放在 `app-config` 或全局样式。
 - 不混用大量 inline style。
 - rpx 适配规则必须统一，不要在 Tailwind arbitrary value 和 SCSS 中各写一套。

@@ -6,6 +6,7 @@
   "scripts": {
     "dev:weapp": "taro build --type weapp --watch",
     "build:weapp": "taro build --type weapp",
+    "postbuild:weapp": "node scripts/sync-weapp-static.mjs",
     "dev:h5": "taro build --type h5 --watch",
     "build:h5": "taro build --type h5",
     "lint": "eslint src --ext .vue,.js,.jsx,.ts,.tsx",

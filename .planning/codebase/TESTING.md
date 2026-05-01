@@ -14,7 +14,7 @@ Run:
 
 ```bash
 cd server
-mvn test
+./gradlew test
 ```
 
 ## App

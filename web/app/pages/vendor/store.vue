@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useStallmartApi } from '~/api/stallmart-api'
 
+definePageMeta({
+  role: 'VENDOR',
+})
+
 const api = useStallmartApi()
 const { data: store, refresh } = await useAsyncData('vendor-store', () => api.vendorStore())
 const form = reactive({

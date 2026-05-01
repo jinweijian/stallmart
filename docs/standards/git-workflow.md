@@ -59,7 +59,7 @@ npm run build:weapp
 
 ```bash
 cd server
-mvn test
+./gradlew test
 ```
 
 Docker：

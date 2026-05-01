@@ -6,6 +6,7 @@
 
 ```text
 server/src/test/java/com/stallmart/support/web/ResultTest.java
+server/src/test/java/com/stallmart/support/security/JwtServiceTest.java
 server/src/test/java/com/stallmart/order/OrderServiceTest.java
 server/src/test/java/com/stallmart/web/ApiControllerTest.java
 ```
@@ -14,7 +15,7 @@ server/src/test/java/com/stallmart/web/ApiControllerTest.java
 
 ```bash
 cd server
-mvn test
+./gradlew test
 ```
 
 服务端测试约定：
@@ -55,7 +56,7 @@ git diff --check
 
 ```bash
 cd server
-mvn test
+./gradlew test
 ```
 
 ```bash

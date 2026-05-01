@@ -46,6 +46,7 @@
 约束：
 
 - 店铺信息和商品列表不能硬编码到页面中。
+- 店铺装修必须消费服务端 `decoration` 和本地 `STORE_THEME_PACKAGES` 合并后的配置，颜色、文案、icon、banner、分类入口都不得散落硬编码。完整规则见 [storefront-decoration.md](storefront-decoration.md)。
 - 搜索、分类筛选只处理当前页面视图状态，持久化规则另行设计。
 
 ### 购物车模块

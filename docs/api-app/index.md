@@ -113,7 +113,7 @@ patch()
 
 - 商品 `price/imageUrl/status(active/off_sale/sold_out)` 转为 `basePrice/image/status(ACTIVE/INACTIVE/SOLD_OUT)`。
 - 订单 `pending/accepted/preparing/ready/completed/rejected` 转为页面状态 `NEW/ACCEPTED/PREPARING/READY/COMPLETED/REJECTED`。
-- 店铺 `avatarUrl/styleId/status` 转为首页展示所需的 `logo/styleCode/isOpen`。
+- 店铺 `avatarUrl/styleId/status/decoration` 转为首页展示所需的 `logo/styleCode/isOpen` 和装修配置。装修配置遵循 [../specification/storefront-decoration.md](../specification/storefront-decoration.md)。
 
 ## Storage 规范
 

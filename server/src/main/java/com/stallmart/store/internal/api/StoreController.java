@@ -4,6 +4,7 @@ import com.stallmart.support.web.Result;
 import com.stallmart.store.dto.UpdateStoreParams;
 import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.store.dto.StoreDTO;
+import com.stallmart.store.dto.StorefrontDTO;
 import com.stallmart.store.StoreService;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,8 +25,8 @@ public class StoreController {
     }
 
     @GetMapping("/{id}")
-    public Result<StoreDTO> getStore(@PathVariable long id) {
-        return Result.success(catalogService.getStore(id));
+    public Result<StorefrontDTO> getStore(@PathVariable long id) {
+        return Result.success(catalogService.getStorefront(id));
     }
 
     @PutMapping("/{id}")
@@ -34,8 +35,8 @@ public class StoreController {
     }
 
     @GetMapping("/qr/{qrCode}")
-    public Result<StoreDTO> getStoreByQrCode(@PathVariable String qrCode) {
-        return Result.success(catalogService.getStoreByQrCode(qrCode));
+    public Result<StorefrontDTO> getStoreByQrCode(@PathVariable String qrCode) {
+        return Result.success(catalogService.getStorefrontByQrCode(qrCode));
     }
 
     @GetMapping("/{storeId}/products")

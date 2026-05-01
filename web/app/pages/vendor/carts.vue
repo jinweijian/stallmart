@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useStallmartApi } from '~/api/stallmart-api'
 
+definePageMeta({
+  role: 'VENDOR',
+})
+
 const api = useStallmartApi()
 const { data: carts } = await useAsyncData('vendor-carts', () => api.vendorCarts())
 </script>
@@ -16,7 +20,7 @@ const { data: carts } = await useAsyncData('vendor-carts', () => api.vendorCarts
 
     <div class="grid">
       <article v-for="cart in carts" :key="cart.id" class="card">
-        <div class="actions" style="justify-content: space-between;">
+        <div class="actions justify-between">
           <strong>用户 #{{ cart.userId }}</strong>
           <span class="badge">{{ cart.status }}</span>
         </div>

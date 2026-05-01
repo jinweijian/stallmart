@@ -1,6 +1,17 @@
 import type { ApiResponse, RequestOptions } from '@/utils/request'
+import { DEFAULT_STORE_THEME } from '@/config'
 
 type MockMethod = NonNullable<RequestOptions['method']>
+
+interface MockStoreDecorationVO {
+  layoutVersion?: string
+  colors: Record<string, string>
+  iconNames: Record<string, string>
+  iconUrls: Record<string, string>
+  imageUrls: Record<string, string>
+  copywriting: Record<string, string>
+  categories: typeof DEFAULT_STORE_THEME.categories
+}
 
 interface MockStoreVO {
   id: number
@@ -16,6 +27,7 @@ interface MockStoreVO {
   heroEyebrow: string
   heroTitle: string
   heroSubtitle: string
+  decoration: MockStoreDecorationVO
 }
 
 interface MockProductVO {
@@ -75,6 +87,25 @@ const mockStore: MockStoreVO = {
   heroEyebrow: '小新の',
   heroTitle: '水果茶屋',
   heroSubtitle: '自然水果 · 新鲜现制',
+  decoration: {
+    layoutVersion: DEFAULT_STORE_THEME.layoutVersion,
+    colors: {
+      primary: DEFAULT_STORE_THEME.primary,
+      secondary: DEFAULT_STORE_THEME.secondary,
+      accent: DEFAULT_STORE_THEME.accent,
+      background: DEFAULT_STORE_THEME.background,
+      surface: DEFAULT_STORE_THEME.surface,
+      text: DEFAULT_STORE_THEME.text,
+      mutedText: DEFAULT_STORE_THEME.mutedText,
+      border: DEFAULT_STORE_THEME.border,
+      price: DEFAULT_STORE_THEME.price || DEFAULT_STORE_THEME.primary,
+    },
+    iconNames: DEFAULT_STORE_THEME.iconNames || {},
+    iconUrls: DEFAULT_STORE_THEME.iconUrls || {},
+    imageUrls: DEFAULT_STORE_THEME.imageUrls || {},
+    copywriting: DEFAULT_STORE_THEME.copywriting || {},
+    categories: DEFAULT_STORE_THEME.categories,
+  },
 }
 
 const mockProducts: MockProductVO[] = [

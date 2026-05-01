@@ -2,8 +2,38 @@
 import { computed, ref } from 'vue'
 import { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
-import { API_ENDPOINTS, DEFAULT_STORE_THEME, STORE_THEME_PACKAGES, type StoreStyleCode } from '@/config'
+import {
+  API_ENDPOINTS,
+  DEFAULT_STORE_THEME,
+  STORE_THEME_PACKAGES,
+  type StorefrontCategoryConfig,
+  type StoreStyleCode,
+  type StoreThemePackage,
+} from '@/config'
 import { get } from '@/utils/request'
+
+interface StorefrontThemePayload {
+  code: StoreStyleCode
+  name: string
+  layoutVersion?: string
+  colors?: Record<string, string>
+  iconNames?: Record<string, string>
+  iconUrls?: Record<string, string>
+  imageUrls?: Record<string, string>
+  copywriting?: Record<string, string>
+  categories?: StorefrontCategoryConfig[]
+}
+
+interface StorefrontDecorationPayload {
+  layoutVersion?: string
+  theme?: StorefrontThemePayload
+  colors?: Record<string, string>
+  iconNames?: Record<string, string>
+  iconUrls?: Record<string, string>
+  imageUrls?: Record<string, string>
+  copywriting?: Record<string, string>
+  categories?: StorefrontCategoryConfig[]
+}
 
 interface StoreInfo {
   id: string
@@ -21,6 +51,7 @@ interface StoreInfo {
   heroEyebrow?: string
   heroTitle?: string
   heroSubtitle?: string
+  decoration?: StorefrontDecorationPayload
 }
 
 interface Product {
@@ -45,25 +76,12 @@ interface Product {
   illustration?: string
 }
 
-interface Category {
-  id: string
-  name: string
-  icon: string
-}
-
 interface CartItem {
   product: Product
   quantity: number
 }
 
-const categories = ref<Category[]>([
-  { id: 'recommend', name: '人气推荐', icon: '★' },
-  { id: 'citrus', name: '清爽柠檬', icon: '🍋' },
-  { id: 'grape', name: '多肉葡萄', icon: '🍇' },
-  { id: 'mango', name: '香甜芒果', icon: '🥭' },
-  { id: 'tea', name: '鲜果茶桶', icon: '🥤' },
-  { id: 'extra', name: '加料小料', icon: '🍯' },
-])
+const categories = ref<StorefrontCategoryConfig[]>([...(DEFAULT_STORE_THEME.categories || [])])
 
 const storeInfo = ref<StoreInfo | null>(null)
 const products = ref<Product[]>([])
@@ -75,7 +93,8 @@ const cartCount = ref(0)
 
 const currentTheme = computed(() => {
   const styleCode = storeInfo.value?.styleCode
-  return styleCode ? STORE_THEME_PACKAGES[styleCode] || DEFAULT_STORE_THEME : DEFAULT_STORE_THEME
+  const base = styleCode ? STORE_THEME_PACKAGES[styleCode] || DEFAULT_STORE_THEME : DEFAULT_STORE_THEME
+  return mergeStorefrontTheme(base, storeInfo.value?.decoration)
 })
 
 const themeVars = computed(() => ({
@@ -87,8 +106,13 @@ const themeVars = computed(() => ({
   '--style-text': currentTheme.value.text,
   '--style-muted-text': currentTheme.value.mutedText,
   '--style-border': currentTheme.value.border,
+  '--style-price': currentTheme.value.price || currentTheme.value.primary,
   '--style-hero': currentTheme.value.heroGradient,
 }))
+
+const copywriting = computed(() => currentTheme.value.copywriting || {})
+const iconUrls = computed(() => currentTheme.value.iconUrls || {})
+const imageUrls = computed(() => currentTheme.value.imageUrls || {})
 
 const filteredProducts = computed(() => {
   if (activeCategory.value === 'recommend') {
@@ -98,9 +122,12 @@ const filteredProducts = computed(() => {
   return products.value.filter((product) => product.category === activeCategory.value)
 })
 
-const storeTitle = computed(() => storeInfo.value?.heroTitle || storeInfo.value?.name || '小新の水果茶屋')
-const storeSubtitle = computed(() => storeInfo.value?.heroSubtitle || '自然水果 · 新鲜现制')
-const branchLabel = computed(() => storeInfo.value?.branchName || storeInfo.value?.name || '上海环球港店')
+const storeTitle = computed(() => storeInfo.value?.heroTitle || copywriting.value.heroTitle || storeInfo.value?.name || '小新の水果茶屋')
+const storeSubtitle = computed(() => storeInfo.value?.heroSubtitle || copywriting.value.heroSubtitle || '自然水果 · 新鲜现制')
+const branchLabel = computed(() => storeInfo.value?.branchName || copywriting.value.branchName || storeInfo.value?.name || '上海环球港店')
+const promoTitle = computed(() => copywriting.value.promoTitle || '鲜果时令上新')
+const promoSubtitle = computed(() => copywriting.value.promoSubtitle || '当季水果 · 清爽一夏')
+const promoActionText = computed(() => copywriting.value.promoActionText || '立即尝鲜')
 
 useDidShow(() => {
   loadData()
@@ -123,14 +150,45 @@ async function loadData() {
     ])
 
     storeInfo.value = normalizeStore(storeRes.data)
+    categories.value = resolveCategories(storeInfo.value)
     products.value = (productsRes.data || []).map(normalizeProduct)
     Taro.setStorageSync('current_store_id', storeInfo.value.id)
   } catch (error) {
     storeInfo.value = getMockStore()
+    categories.value = resolveCategories(storeInfo.value)
     products.value = getMockProducts()
   } finally {
     isLoading.value = false
   }
+}
+
+function mergeStorefrontTheme(base: StoreThemePackage, decoration?: StorefrontDecorationPayload): StoreThemePackage {
+  if (!decoration) return base
+  const theme = decoration.theme
+  const colors = decoration.colors || theme?.colors || {}
+
+  return {
+    ...base,
+    layoutVersion: decoration.layoutVersion || theme?.layoutVersion || base.layoutVersion,
+    primary: colors.primary || base.primary,
+    secondary: colors.secondary || base.secondary,
+    accent: colors.accent || base.accent,
+    background: colors.background || base.background,
+    surface: colors.surface || base.surface,
+    text: colors.text || base.text,
+    mutedText: colors.mutedText || base.mutedText,
+    border: colors.border || base.border,
+    price: colors.price || base.price || colors.primary || base.primary,
+    iconNames: { ...(base.iconNames || {}), ...(theme?.iconNames || {}), ...(decoration.iconNames || {}) },
+    iconUrls: { ...(base.iconUrls || {}), ...(theme?.iconUrls || {}), ...(decoration.iconUrls || {}) },
+    imageUrls: { ...(base.imageUrls || {}), ...(theme?.imageUrls || {}), ...(decoration.imageUrls || {}) },
+    copywriting: { ...(base.copywriting || {}), ...(theme?.copywriting || {}), ...(decoration.copywriting || {}) },
+    categories: decoration.categories || theme?.categories || base.categories,
+  }
+}
+
+function resolveCategories(store: StoreInfo): StorefrontCategoryConfig[] {
+  return [...(mergeStorefrontTheme(STORE_THEME_PACKAGES[store.styleCode] || DEFAULT_STORE_THEME, store.decoration).categories || [])]
 }
 
 function normalizeStore(store: StoreInfo): StoreInfo {
@@ -144,9 +202,9 @@ function normalizeStore(store: StoreInfo): StoreInfo {
     isOpen: store.isOpen ?? store.status !== 'closed',
     distance: store.distance || '1.3km',
     branchName: store.branchName || store.name,
-    heroEyebrow: store.heroEyebrow || '小新の',
-    heroTitle: store.heroTitle || store.name || '水果茶屋',
-    heroSubtitle: store.heroSubtitle || store.description || '自然水果 · 新鲜现制',
+    heroEyebrow: store.heroEyebrow || store.decoration?.copywriting?.heroEyebrow || '小新の',
+    heroTitle: store.heroTitle || store.decoration?.copywriting?.heroTitle || store.name || '水果茶屋',
+    heroSubtitle: store.heroSubtitle || store.decoration?.copywriting?.heroSubtitle || store.description || '自然水果 · 新鲜现制',
   }
 }
 
@@ -199,6 +257,25 @@ function getMockStore(): StoreInfo {
     heroEyebrow: '小新の',
     heroTitle: '水果茶屋',
     heroSubtitle: '自然水果 · 新鲜现制',
+    decoration: {
+      layoutVersion: DEFAULT_STORE_THEME.layoutVersion,
+      colors: {
+        primary: DEFAULT_STORE_THEME.primary,
+        secondary: DEFAULT_STORE_THEME.secondary,
+        accent: DEFAULT_STORE_THEME.accent,
+        background: DEFAULT_STORE_THEME.background,
+        surface: DEFAULT_STORE_THEME.surface,
+        text: DEFAULT_STORE_THEME.text,
+        mutedText: DEFAULT_STORE_THEME.mutedText,
+        border: DEFAULT_STORE_THEME.border,
+        price: DEFAULT_STORE_THEME.price || DEFAULT_STORE_THEME.primary,
+      },
+      iconNames: DEFAULT_STORE_THEME.iconNames,
+      iconUrls: DEFAULT_STORE_THEME.iconUrls,
+      imageUrls: DEFAULT_STORE_THEME.imageUrls,
+      copywriting: DEFAULT_STORE_THEME.copywriting,
+      categories: DEFAULT_STORE_THEME.categories,
+    },
   }
 }
 
@@ -380,7 +457,8 @@ function isProductDisabled(product: Product): boolean {
       </view>
 
       <view class="location-card">
-        <text class="location-pin">⌖</text>
+        <image v-if="iconUrls.location" class="location-icon" :src="iconUrls.location" mode="aspectFit" />
+        <text v-else class="location-pin">⌖</text>
         <view class="location-copy">
           <text class="location-store">{{ branchLabel }}</text>
           <text class="location-distance">距离您 {{ storeInfo?.distance || '1.3km' }}</text>
@@ -388,7 +466,7 @@ function isProductDisabled(product: Product): boolean {
       </view>
 
       <view class="hero-title-block">
-        <text class="hero-eyebrow">{{ storeInfo?.heroEyebrow || '小新の' }}</text>
+        <text class="hero-eyebrow">{{ storeInfo?.heroEyebrow || copywriting.heroEyebrow || '小新の' }}</text>
         <text class="hero-title">{{ storeTitle }}</text>
         <text class="hero-subtitle">{{ storeSubtitle }}</text>
       </view>
@@ -398,7 +476,8 @@ function isProductDisabled(product: Product): boolean {
           <text class="basket-fruits">🍍🍎🍊🍇</text>
         </view>
         <view class="mascot-pair">
-          <view class="white-pet">◔ᴥ◔</view>
+          <image v-if="imageUrls.mascot" class="mascot-image" :src="imageUrls.mascot" mode="aspectFit" />
+          <view v-else class="white-pet">◔ᴥ◔</view>
           <view class="crayon-boy">
             <view class="boy-head">
               <view class="boy-brow boy-brow-left" />
@@ -415,15 +494,16 @@ function isProductDisabled(product: Product): boolean {
 
     <view class="promo-card">
       <view class="promo-copy">
-        <text class="promo-title">鲜果时令上新</text>
-        <text class="promo-subtitle">当季水果 · 清爽一夏</text>
+        <text class="promo-title">{{ promoTitle }}</text>
+        <text class="promo-subtitle">{{ promoSubtitle }}</text>
         <view class="promo-button" @tap="selectCategory('recommend')">
-          <text>立即尝鲜</text>
+          <text>{{ promoActionText }}</text>
           <text class="promo-arrow">›</text>
         </view>
       </view>
       <view class="promo-drink">
-        <text class="promo-cup">🍹</text>
+        <image v-if="imageUrls.promoIllustration" class="promo-image" :src="imageUrls.promoIllustration" mode="aspectFit" />
+        <text v-else class="promo-cup">饮</text>
         <text class="promo-label">小新の水果茶屋</text>
       </view>
     </view>
@@ -442,7 +522,8 @@ function isProductDisabled(product: Product): boolean {
           :class="{ active: activeCategory === category.id }"
           @tap="selectCategory(category.id)"
         >
-          <text class="rail-icon">{{ category.icon }}</text>
+          <image v-if="category.iconUrl" class="rail-icon-image" :src="category.iconUrl" mode="aspectFit" />
+          <text v-else class="rail-icon">{{ category.fallbackText || category.name.slice(0, 1) }}</text>
           <text class="rail-text">{{ category.name }}</text>
         </view>
       </scroll-view>
@@ -450,7 +531,8 @@ function isProductDisabled(product: Product): boolean {
       <view class="menu-panel">
         <view class="section-heading">
           <text class="section-title">人气推荐</text>
-          <text class="section-leaf">⌁</text>
+          <image v-if="iconUrls.sectionLeaf" class="section-leaf-image" :src="iconUrls.sectionLeaf" mode="aspectFit" />
+          <text v-else class="section-leaf">⌁</text>
         </view>
 
         <view v-if="isLoading" class="loading-state">
@@ -514,11 +596,13 @@ function isProductDisabled(product: Product): boolean {
         <text class="cart-link">去结算 ›</text>
       </view>
       <view class="checkout-button" :class="{ disabled: cartCount <= 0 }" @tap="goToCheckout">
-        <text class="checkout-icon">▣</text>
+        <image v-if="iconUrls.checkout" class="checkout-icon-image" :src="iconUrls.checkout" mode="aspectFit" />
+        <text v-else class="checkout-icon">▣</text>
         <text>去结算</text>
       </view>
       <view class="delivery-button">
-        <text class="delivery-icon">🛵</text>
+        <image v-if="iconUrls.delivery" class="delivery-icon-image" :src="iconUrls.delivery" mode="aspectFit" />
+        <text v-else class="delivery-icon">外</text>
         <text>外卖</text>
       </view>
     </view>

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useStallmartApi } from '~/api/stallmart-api'
 
+definePageMeta({
+  role: 'ADMIN',
+})
+
 const route = useRoute()
 const storeId = Number(route.params.id)
 const api = useStallmartApi()
@@ -57,7 +61,7 @@ const { data: workspace } = await useAsyncData(`platform-vendor-${storeId}`, () 
     <section v-if="workspace" class="section">
       <h2>最近订单</h2>
       <div class="table-wrap">
-        <table>
+        <table class="data-table">
           <thead>
             <tr>
               <th>订单号</th>
