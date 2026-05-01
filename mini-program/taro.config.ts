@@ -24,6 +24,16 @@ export default defineConfig({
 
   plugins: ['@tarojs/plugin-framework-vue3'],
 
+  copy: {
+    patterns: [
+      {
+        from: resolveSrc('static/default-avatar.png'),
+        to: path.resolve(__dirname, 'dist/static/default-avatar.png'),
+      },
+    ],
+    options: {},
+  },
+
   alias: {
     '@': resolveSrc(),
     '@/config': resolveSrc('app-config'),
