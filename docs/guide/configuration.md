@@ -88,6 +88,14 @@ docker/.env
 | development | `http://localhost:8080/api/v1` |
 | production | `https://api.stallmart.com/api/v1` |
 
+## 管理端配置
+
+管理端浏览器端 API base 固定为同源 `/api/v1`，不得使用 `NUXT_PUBLIC_API_BASE` 或其他公开变量暴露后端真实地址。
+
+| 配置 | 默认值 | 说明 |
+| --- | --- | --- |
+| `NUXT_API_PROXY_TARGET` | `http://localhost:8081` | Nuxt 服务端代理目标；Docker Compose 内部设置为 `http://api:8080`。 |
+
 ## 配置风险
 
 - `app/config/index.js` 和 `app/taro.config.ts` 都包含 Taro 构建配置；当前 CLI 构建以 `config/index.js` 为准，alias 变更必须保持两处一致。

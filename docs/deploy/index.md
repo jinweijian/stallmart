@@ -52,6 +52,10 @@ api:
 - MySQL 和 Redis healthcheck 通过。
 - `.env` 中设置 `JWT_SECRET`、数据库和 Redis 密码。
 
+## 管理端容器
+
+管理端浏览器端固定请求同源 `/api/v1`，不得在公开运行时配置中暴露后端真实地址。容器内通过 `NUXT_API_PROXY_TARGET=http://api:8080` 代理到后端服务；如后端服务名或端口变化，只调整该服务端变量。
+
 ## 小程序发布
 
 小程序构建：

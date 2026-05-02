@@ -58,10 +58,10 @@ npm run dev
 默认地址：
 
 - 管理端: `http://localhost:3000`
-- 管理端 API 代理: `http://localhost:3000/api/v1`
-- 后端直连 API: `http://localhost:8080/api/v1`
+- 管理端 API 代理: `http://localhost:8091/api/v1`
+- 后端本机映射: `http://localhost:8081/api/v1`
 
-管理端浏览器请求必须走同源 `/api/v1` 代理，代理目标通过 `NUXT_API_PROXY_TARGET` 配置，默认是 `http://localhost:8080`。
+管理端浏览器请求必须走同源 `/api/v1` 代理，不允许通过公开运行时配置暴露后端地址。代理目标通过服务端变量 `NUXT_API_PROXY_TARGET` 配置；本机开发默认是 `http://localhost:8081`，Docker Compose 内部是 `http://api:8080`。
 
 ## 5. 验证基本连通性
 

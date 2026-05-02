@@ -25,7 +25,7 @@ npm run dev
 npm run build
 ```
 
-默认 API 地址为同源代理 `/api/v1`，Nuxt 会把请求转发到 `http://localhost:8080/api/v1`，避免浏览器 CORS 预检问题。后端代理目标可通过 `NUXT_API_PROXY_TARGET` 覆盖，例如 `http://localhost:8080`；只有明确需要直连外部 API 时才设置 `NUXT_PUBLIC_API_BASE`。
+默认 API 地址固定为同源代理 `/api/v1`，浏览器不得直连后端地址。Nuxt 服务端会把请求转发到 `NUXT_API_PROXY_TARGET`，本机 Docker 后端默认映射为 `http://localhost:8081`；Docker Compose 内部使用 `http://api:8080`。
 
 管理端会额外代理本地素材路径：`/uploads/**` 访问后端上传文件，`/static/**` 读取小程序侧 `app/src/static/**` 内置素材，用于商品占位图和店铺装修预览。
 

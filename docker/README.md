@@ -65,10 +65,10 @@ docker compose down -v
 
 | 服务 | 说明 | 默认端口 |
 | --- | --- | --- |
-| `mysql` | 主数据库 | `127.0.0.1:3306` |
+| `mysql` | 主数据库 | `127.0.0.1:3307` |
 | `redis` | 缓存和 token 相关存储 | `127.0.0.1:6379` |
-| `api` | Spring Boot API | `127.0.0.1:8080` |
-| `admin-web` | Nuxt 管理端前端，源码位于 `../web` | `127.0.0.1:3000` |
+| `api` | Spring Boot API | `127.0.0.1:8081` |
+| `admin-web` | Nuxt 管理端前端，源码位于 `../web` | `127.0.0.1:8091` |
 
 ## 环境变量
 
@@ -90,7 +90,7 @@ docker compose down -v
 
 ## 当前注意事项
 
-- `admin-web` 服务引用 `../web`，默认通过 `NUXT_PUBLIC_API_BASE` 访问本地 API。
+- `admin-web` 服务引用 `../web`，浏览器固定请求同源 `/api/v1`，容器内通过 `NUXT_API_PROXY_TARGET=http://api:8080` 代理到后端。
 - `api` 的 healthcheck 使用 `/api/v1/actuator/health`，后端已接入 Actuator。
 - `api` 使用 `server/gradlew` 构建。
 - 所有端口默认绑定到 `127.0.0.1`，本地开发环境不要暴露到公网。

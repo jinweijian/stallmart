@@ -24,7 +24,7 @@ services:
       - ./mysql/init:/docker-entrypoint-initdb.d:ro
     ports:
       # 仅本地访问，不映射到 0.0.0.0
-      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:3307:3306"
     networks:
       - stallmart-network
     healthcheck:
@@ -78,11 +78,10 @@ services:
       SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_REDIS_PORT: 6379
     volumes:
-      - ../server:/app
       - gradle_cache:/root/.gradle
     ports:
       # 仅本地访问
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8080"
     depends_on:
       mysql:
         condition: service_healthy
@@ -101,13 +100,12 @@ services:
     container_name: stallmart-admin-web
     restart: unless-stopped
     environment:
-      NUXT_PUBLIC_API_BASE: http://localhost:8080/api/v1
+      NUXT_API_PROXY_TARGET: http://api:8080
     volumes:
-      - ../web:/app
       - node_modules_admin:/app/node_modules
     ports:
-      # 仅本地访问
-      - "127.0.0.1:3000:3000"
+      # 仅本地访问，映射到 8091
+      - "127.0.0.1:8091:3000"
     depends_on:
       - api
     networks:
