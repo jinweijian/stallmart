@@ -11,6 +11,7 @@ public record UpdateDecorationParams(
         String description,
         Map<String, String> colors,
         Map<String, String> iconUrls,
+        Map<String, String> categoryIconUrls,
         Map<String, String> imageUrls,
         Map<String, String> copywriting
 ) {

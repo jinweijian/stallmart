@@ -42,12 +42,13 @@ export const API_ENDPOINTS = {
 
   // Store
   STORE_GET: '/stores',
-  STORE_GET_BY_QR: '/stores/qr',
+  STORE_GET_BY_QR: (qrCode: string) => `/stores/qr/${qrCode}`,
   STORE_DETAIL: (id: string) => `/stores/${id}`,
 
   // Products
   PRODUCTS: (storeId: string) => `/stores/${storeId}/products`,
   PRODUCT_DETAIL: (id: string) => `/products/${id}`,
+  STYLE_SPECS: (styleId: string | number) => `/styles/${styleId}/specs`,
 
   // Orders
   ORDERS: '/orders',
@@ -98,9 +99,92 @@ export type StoreStyleCode = (typeof STORE_STYLE_CODES)[keyof typeof STORE_STYLE
 export interface StorefrontCategoryConfig {
   id: string
   name: string
-  iconName: string
+  iconKey?: string
   iconUrl?: string | null
   fallbackText: string
+  sortOrder?: number
+  status?: string
+}
+
+export interface StorefrontCategoryIconConfig {
+  key: string
+  name: string
+  iconUrl?: string | null
+  fallbackText: string
+}
+
+export interface StorefrontBannerConfig {
+  id: string
+  imageUrl: string
+  title?: string
+  subtitle?: string
+  actionText?: string
+  targetCategory?: string
+}
+
+export interface StorefrontAssetSizes {
+  heroBanner: {
+    width: string
+    height: string
+  }
+  promoBanner: {
+    width: string
+    height: string
+  }
+  categoryIcon: string
+  locationIcon: string
+  sectionIcon: string
+  bottomActionIcon: string
+  productImage: string
+  mascot: string
+  cartMascot: string
+  cartProductImage: string
+  orderProductImage: string
+  profileAvatar: string
+  menuIcon: string
+  qtyStepper: string
+  progressIcon: string
+  cartHeaderBanner: {
+    width: string
+    height: string
+  }
+  myInviteBanner: {
+    width: string
+    height: string
+  }
+  bottomBarHeight: string
+  tabBarReserve: string
+}
+
+export interface StoreThemePageBanner {
+  imageUrl: string
+  title?: string
+  subtitle?: string
+  actionText?: string
+}
+
+export interface StoreThemePagePackages {
+  home?: {
+    sectionTitle?: string
+  }
+  cart?: {
+    headerBanner?: StoreThemePageBanner
+    storeName?: string
+    distanceText?: string
+    emptyTitle?: string
+    emptySubtitle?: string
+  }
+  orders?: {
+    headerBanner?: StoreThemePageBanner
+    emptyTitle?: string
+    emptySubtitle?: string
+    statusColors?: Record<string, string>
+  }
+  my?: {
+    greeting?: string
+    inviteBanner?: StoreThemePageBanner
+    menuIcons?: Record<string, string>
+  }
 }
 
 export interface StoreThemePackage {
@@ -121,7 +205,10 @@ export interface StoreThemePackage {
   iconUrls?: Record<string, string>
   imageUrls?: Record<string, string>
   copywriting?: Record<string, string>
-  categories?: ReadonlyArray<StorefrontCategoryConfig>
+  banners?: ReadonlyArray<StorefrontBannerConfig>
+  categoryIconLibrary?: ReadonlyArray<StorefrontCategoryIconConfig>
+  assetSizes?: StorefrontAssetSizes
+  pageThemes?: StoreThemePagePackages
 }
 
 export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
@@ -192,7 +279,7 @@ export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
   },
   forestFruitTeaCrayon: {
     code: STORE_STYLE_CODES.FOREST_FRUIT_TEA_CRAYON,
-    name: '森系水果茶',
+    name: '森系水果茶-小白款',
     layoutVersion: 'customer-storefront-v1',
     primary: '#6F9646',
     secondary: '#B8C77A',
@@ -219,10 +306,107 @@ export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
       sectionLeaf: '/static/storefront/forest/icons/leaf.png',
     },
     imageUrls: {
-      heroIllustration: '/static/storefront/forest/hero-forest-tea.png',
+      heroIllustration: '/static/storefront/forest/hero-forest-tea.jpg',
       mascot: '/static/storefront/forest/mascot.png',
       productPlaceholder: '/static/storefront/forest/product-placeholder.png',
       promoIllustration: '/static/storefront/forest/promo-drink.png',
+    },
+    banners: [
+      {
+        id: 'seasonal-fruit',
+        imageUrl: '/static/storefront/forest/banner-seasonal.jpg',
+        title: '鲜果时令上新',
+        subtitle: '当季水果 · 清爽一夏',
+        actionText: '立即尝鲜',
+        targetCategory: 'recommend',
+      },
+      {
+        id: 'tea-special',
+        imageUrl: '/static/storefront/forest/banner-tea.jpg',
+        title: '茶香果味特调',
+        subtitle: '新鲜现制 · 每日限量',
+        actionText: '去点单',
+        targetCategory: 'tea',
+      },
+    ],
+    categoryIconLibrary: [
+      { key: 'recommend', name: '人气推荐', iconUrl: '/static/storefront/forest/icons/recommend.png', fallbackText: '荐' },
+      { key: 'citrus', name: '清爽柠檬', iconUrl: '/static/storefront/forest/icons/citrus.png', fallbackText: '柠' },
+      { key: 'grape', name: '多肉葡萄', iconUrl: '/static/storefront/forest/icons/grape.png', fallbackText: '葡' },
+      { key: 'mango', name: '香甜芒果', iconUrl: '/static/storefront/forest/icons/mango.png', fallbackText: '芒' },
+      { key: 'tea', name: '鲜果茶桶', iconUrl: '/static/storefront/forest/icons/tea.png', fallbackText: '茶' },
+      { key: 'extra', name: '加料小料', iconUrl: '/static/storefront/forest/icons/extra.png', fallbackText: '料' },
+      { key: 'category1', name: '类目图标 1', iconUrl: '/static/storefront/forest/icons/category-1.png', fallbackText: '类' },
+      { key: 'category2', name: '类目图标 2', iconUrl: '/static/storefront/forest/icons/category-2.png', fallbackText: '类' },
+    ],
+    assetSizes: {
+      heroBanner: { width: '750rpx', height: '536rpx' },
+      promoBanner: { width: '692rpx', height: '220rpx' },
+      categoryIcon: '54rpx',
+      locationIcon: '30rpx',
+      sectionIcon: '30rpx',
+      bottomActionIcon: '32rpx',
+      productImage: '144rpx',
+      mascot: '120rpx',
+      cartMascot: '132rpx',
+      cartProductImage: '148rpx',
+      orderProductImage: '112rpx',
+      profileAvatar: '132rpx',
+      menuIcon: '44rpx',
+      qtyStepper: '44rpx',
+      progressIcon: '44rpx',
+      cartHeaderBanner: { width: '692rpx', height: '120rpx' },
+      myInviteBanner: { width: '692rpx', height: '124rpx' },
+      bottomBarHeight: '128rpx',
+      tabBarReserve: '132rpx',
+    },
+    pageThemes: {
+      home: {
+        sectionTitle: '人气推荐',
+      },
+      cart: {
+        headerBanner: {
+          imageUrl: '/static/storefront/forest/banner-tea.jpg',
+          title: '自然水果 · 新鲜现制',
+          subtitle: '清爽果茶，马上带走',
+        },
+        storeName: '上海环球港店',
+        distanceText: '距离您 1.3km',
+        emptyTitle: '购物车是空的',
+        emptySubtitle: '去首页挑一杯新鲜果茶吧',
+      },
+      orders: {
+        headerBanner: {
+          imageUrl: '/static/storefront/forest/banner-seasonal.jpg',
+          title: '订单状态',
+          subtitle: '新鲜现制，请留意取餐进度',
+        },
+        emptyTitle: '暂无订单',
+        emptySubtitle: '快去点一杯清爽果茶吧',
+        statusColors: {
+          NEW: '#F2B94B',
+          ACCEPTED: '#6F9646',
+          PREPARING: '#D98B45',
+          READY: '#3F8D5A',
+          COMPLETED: '#6F9646',
+          REJECTED: '#9EA58F',
+        },
+      },
+      my: {
+        greeting: 'Hi~ 欢迎回来！',
+        inviteBanner: {
+          imageUrl: '/static/storefront/forest/banner-seasonal.jpg',
+          title: '邀请好友喝杯果茶',
+          subtitle: '一起发现身边的新鲜小店',
+          actionText: '立即邀请',
+        },
+        menuIcons: {
+          orders: '/static/storefront/forest/icons/cart.png',
+          faq: '/static/storefront/forest/icons/leaf.png',
+          service: '/static/storefront/forest/icons/location.png',
+          about: '/static/storefront/forest/icons/tea.png',
+        },
+      },
     },
     copywriting: {
       branchName: '上海环球港店',
@@ -233,14 +417,6 @@ export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
       promoSubtitle: '当季水果 · 清爽一夏',
       promoActionText: '立即尝鲜',
     },
-    categories: [
-      { id: 'recommend', name: '人气推荐', iconName: 'forest-recommend', iconUrl: '/static/storefront/forest/icons/recommend.png', fallbackText: '荐' },
-      { id: 'citrus', name: '清爽柠檬', iconName: 'forest-citrus', iconUrl: '/static/storefront/forest/icons/citrus.png', fallbackText: '柠' },
-      { id: 'grape', name: '多肉葡萄', iconName: 'forest-grape', iconUrl: '/static/storefront/forest/icons/grape.png', fallbackText: '葡' },
-      { id: 'mango', name: '香甜芒果', iconName: 'forest-mango', iconUrl: '/static/storefront/forest/icons/mango.png', fallbackText: '芒' },
-      { id: 'tea', name: '鲜果茶桶', iconName: 'forest-tea', iconUrl: '/static/storefront/forest/icons/tea.png', fallbackText: '茶' },
-      { id: 'extra', name: '加料小料', iconName: 'forest-extra', iconUrl: '/static/storefront/forest/icons/extra.png', fallbackText: '料' },
-    ],
   },
 } as const
 

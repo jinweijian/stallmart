@@ -82,6 +82,10 @@ export const useStallmartApi = () => {
       method: 'POST',
       body: payload,
     }),
+    updateCategory: (categoryId: number, payload: CategoryInput) => request<Category>(`/admin/vendor/me/categories/${categoryId}`, {
+      method: 'PUT',
+      body: payload,
+    }),
     uploadProductImage: (file: File) => {
       if (file.size > PRODUCT_IMAGE_MAX_SIZE) {
         throw new Error('商品主图不能超过 10MB')
@@ -138,6 +142,7 @@ export const useStallmartApi = () => {
       description?: string
       colors?: Record<string, string>
       iconUrls?: Record<string, string>
+      categoryIconUrls?: Record<string, string>
       imageUrls?: Record<string, string>
       copywriting?: Record<string, string>
     }) =>

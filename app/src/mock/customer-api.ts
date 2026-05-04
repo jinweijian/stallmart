@@ -1,94 +1,170 @@
 import type { ApiResponse, RequestOptions } from '@/utils/request'
-import { DEFAULT_STORE_THEME } from '@/config'
+import {
+  DEFAULT_STORE_THEME,
+  type StorefrontAssetSizes,
+  type StorefrontCategoryConfig,
+  type StorefrontCategoryIconConfig,
+} from '@/config'
 
 type MockMethod = NonNullable<RequestOptions['method']>
+type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT'
+type OrderStatus = 'NEW' | 'ACCEPTED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'REJECTED'
 
 interface MockStoreDecorationVO {
+  storeId: number
+  storeName: string
+  logoUrl: string
+  coverUrl: string
+  banners: string[]
+  styleId: number
+  styleCode: 'forestFruitTeaCrayon'
+  style?: unknown
   layoutVersion?: string
+  theme?: unknown
   colors: Record<string, string>
   iconNames: Record<string, string>
   iconUrls: Record<string, string>
   imageUrls: Record<string, string>
   copywriting: Record<string, string>
-  categories: typeof DEFAULT_STORE_THEME.categories
+  categoryIconLibrary?: ReadonlyArray<StorefrontCategoryIconConfig>
+  categories: ReadonlyArray<StorefrontCategoryConfig>
+  assetSizes?: StorefrontAssetSizes
+  pageThemes?: unknown
 }
 
 interface MockStoreVO {
   id: number
-  name: string
-  description: string
-  avatarUrl: string
-  qrCode: string
+  ownerId: number
   styleId: number
   styleCode: 'forestFruitTeaCrayon'
-  status: 'active' | 'closed'
-  branchName: string
-  distance: string
-  heroEyebrow: string
-  heroTitle: string
-  heroSubtitle: string
+  name: string
+  category: string
+  description: string
+  avatarUrl: string
+  coverUrl: string
+  qrCode: string
+  address: string
+  status: 'OPEN' | 'CLOSED'
   decoration: MockStoreDecorationVO
+  branchName?: string
+  distance?: string
+  heroEyebrow?: string
+  heroTitle?: string
+  heroSubtitle?: string
+}
+
+interface MockProductSkuVO {
+  id: number
+  specValues: string[]
+  price: number
+  stock: number
+  status: ProductStatus
 }
 
 interface MockProductVO {
   id: number
   storeId: number
+  categoryId: number
+  categoryName: string
   name: string
   description: string
   price: number
   imageUrl: string
-  specIds: string
-  status: 'active' | 'off_sale' | 'sold_out'
-  sortOrder: number
+  mainImageUrl: string
   category: string
-  tags: string[]
+  status: ProductStatus
+  sortOrder: number
+  specIds: number[]
+  skus: MockProductSkuVO[]
+  tags?: string[]
   rank?: number
   isNew?: boolean
-  illustration: string
-  stock: number
-  sales: number
+  illustration?: string
+  stock?: number
+  sales?: number
+}
+
+interface MockSpecVO {
+  id: number
+  styleId: number
+  name: string
+  specType: 'SIZE' | 'SWEET' | 'ICE' | 'OTHER'
+  required: boolean
+  options: string[]
 }
 
 interface MockOrderItemVO {
-  id: number
   productId: number
   productName: string
-  price: number
   quantity: number
-  subtotal: number
-  specName?: string
+  unitPrice: number
+  specsText?: string
 }
 
 interface MockOrderVO {
   id: number
   orderNo: string
-  customerId: number
+  userId: number
   storeId: number
-  storeName: string
-  totalAmount: number
-  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'completed' | 'rejected'
+  status: OrderStatus
   confirmCode: string
+  totalAmount: number
   remark?: string
   createdAt: string
   items: MockOrderItemVO[]
 }
 
+interface MockCartVO {
+  id: number
+  userId: number
+  storeId: number
+  status: 'ACTIVE'
+  updatedAt: string
+  items: MockOrderItemVO[]
+}
+
+const mockCategoryIconLibrary = DEFAULT_STORE_THEME.categoryIconLibrary || []
+
+const mockCategories: StorefrontCategoryConfig[] = [
+  { id: 'recommend', name: '人气推荐', iconKey: 'recommend', iconUrl: '/static/storefront/forest/icons/recommend.png', fallbackText: '荐', sortOrder: 0, status: 'ACTIVE' },
+  { id: '1', name: '清爽柠檬', iconKey: 'category1', iconUrl: '/static/storefront/forest/icons/category-1.png', fallbackText: '柠', sortOrder: 1, status: 'ACTIVE' },
+  { id: '2', name: '多肉葡萄', iconKey: 'category2', iconUrl: '/static/storefront/forest/icons/category-2.png', fallbackText: '葡', sortOrder: 2, status: 'ACTIVE' },
+  { id: '3', name: '香甜芒果', iconKey: 'mango', iconUrl: '/static/storefront/forest/icons/mango.png', fallbackText: '芒', sortOrder: 3, status: 'ACTIVE' },
+]
+
+const mockSpecs: MockSpecVO[] = [
+  { id: 1, styleId: 6, name: '杯型', specType: 'SIZE', required: true, options: ['中杯', '大杯'] },
+  { id: 2, styleId: 6, name: '甜度', specType: 'SWEET', required: true, options: ['少糖', '标准糖'] },
+]
+
 const mockStore: MockStoreVO = {
   id: 1,
-  name: '小新の水果茶屋',
-  description: '自然水果 · 新鲜现制',
-  avatarUrl: '/static/default-avatar.png',
-  qrCode: 'qr-fruit-tea',
+  ownerId: 2,
   styleId: 6,
   styleCode: 'forestFruitTeaCrayon',
-  status: 'active',
+  name: '小新の水果茶屋',
+  category: '饮品',
+  description: '自然水果 · 新鲜现制',
+  avatarUrl: '/static/default-avatar.png',
+  coverUrl: '/static/storefront/forest/cover.png',
+  qrCode: 'stall-001',
+  address: '上海环球港店',
+  status: 'OPEN',
   branchName: '上海环球港店',
   distance: '1.3km',
   heroEyebrow: '小新の',
   heroTitle: '水果茶屋',
   heroSubtitle: '自然水果 · 新鲜现制',
   decoration: {
+    storeId: 1,
+    storeName: '小新の水果茶屋',
+    logoUrl: '/static/default-avatar.png',
+    coverUrl: '/static/storefront/forest/cover.png',
+    banners: ['/static/storefront/forest/banner-seasonal.jpg', '/static/storefront/forest/banner-tea.jpg'],
+    styleId: 6,
+    styleCode: 'forestFruitTeaCrayon',
     layoutVersion: DEFAULT_STORE_THEME.layoutVersion,
+    theme: DEFAULT_STORE_THEME,
     colors: {
       primary: DEFAULT_STORE_THEME.primary,
       secondary: DEFAULT_STORE_THEME.secondary,
@@ -104,95 +180,86 @@ const mockStore: MockStoreVO = {
     iconUrls: DEFAULT_STORE_THEME.iconUrls || {},
     imageUrls: DEFAULT_STORE_THEME.imageUrls || {},
     copywriting: DEFAULT_STORE_THEME.copywriting || {},
-    categories: DEFAULT_STORE_THEME.categories,
+    categoryIconLibrary: mockCategoryIconLibrary,
+    categories: mockCategories,
+    assetSizes: DEFAULT_STORE_THEME.assetSizes,
+    pageThemes: DEFAULT_STORE_THEME.pageThemes,
   },
 }
 
 const mockProducts: MockProductVO[] = [
   {
-    id: 101,
+    id: 1,
     storeId: 1,
-    name: '霸气西柚柠檬茶',
+    categoryId: 1,
+    categoryName: '清爽柠檬',
+    name: '柚子柠檬茶',
     description: '西柚果肉 + 香水柠檬 + 茉莉绿茶',
     price: 18,
-    imageUrl: '',
-    specIds: '1,2',
-    status: 'active',
+    imageUrl: '/static/storefront/forest/product-placeholder.png',
+    mainImageUrl: '/static/storefront/forest/product-placeholder.png',
+    category: '清爽柠檬',
+    status: 'ACTIVE',
     sortOrder: 1,
-    category: 'citrus',
+    specIds: [1, 2],
+    skus: [
+      { id: 1, specValues: ['中杯', '少糖'], price: 16, stock: 99, status: 'ACTIVE' },
+      { id: 2, specValues: ['大杯', '标准糖'], price: 18, stock: 99, status: 'ACTIVE' },
+    ],
     tags: ['清爽解腻', '维C满满'],
     rank: 1,
     isNew: true,
     illustration: '🍹',
-    stock: 30,
+    stock: 99,
     sales: 1280,
   },
   {
-    id: 102,
+    id: 2,
     storeId: 1,
+    categoryId: 2,
+    categoryName: '多肉葡萄',
     name: '阳光青提多多',
     description: '阳光玫瑰青提 + 乳酸菌 + 绿茶',
     price: 16,
-    imageUrl: '',
-    specIds: '1,3',
-    status: 'active',
+    imageUrl: '/static/storefront/forest/product-placeholder.png',
+    mainImageUrl: '/static/storefront/forest/product-placeholder.png',
+    category: '多肉葡萄',
+    status: 'ACTIVE',
     sortOrder: 2,
-    category: 'grape',
+    specIds: [1, 2],
+    skus: [
+      { id: 3, specValues: ['中杯', '标准糖'], price: 16, stock: 99, status: 'ACTIVE' },
+      { id: 4, specValues: ['大杯', '标准糖'], price: 19, stock: 99, status: 'ACTIVE' },
+    ],
     tags: ['清甜多汁', '人气TOP'],
     rank: 2,
     illustration: '🥤',
-    stock: 42,
+    stock: 99,
     sales: 956,
   },
   {
-    id: 103,
+    id: 3,
     storeId: 1,
-    name: '芒芒百香绿茶',
+    categoryId: 3,
+    categoryName: '香甜芒果',
+    name: '芒果百香绿茶',
     description: '大颗芒果肉 + 百香果 + 茉莉绿茶',
     price: 17,
-    imageUrl: '',
-    specIds: '2,3',
-    status: 'active',
+    imageUrl: '/static/storefront/forest/product-placeholder.png',
+    mainImageUrl: '/static/storefront/forest/product-placeholder.png',
+    category: '香甜芒果',
+    status: 'ACTIVE',
     sortOrder: 3,
-    category: 'mango',
+    specIds: [1, 2],
+    skus: [
+      { id: 5, specValues: ['中杯', '少糖'], price: 17, stock: 99, status: 'ACTIVE' },
+      { id: 6, specValues: ['大杯', '标准糖'], price: 20, stock: 99, status: 'ACTIVE' },
+    ],
     tags: ['香甜浓郁', '果肉满满'],
     rank: 3,
     illustration: '🧋',
-    stock: 26,
+    stock: 99,
     sales: 820,
-  },
-  {
-    id: 104,
-    storeId: 1,
-    name: '整颗柠檬冰茶桶',
-    description: '香水柠檬 + 冰萃绿茶 + 清甜果露',
-    price: 24,
-    imageUrl: '',
-    specIds: '4',
-    status: 'active',
-    sortOrder: 4,
-    category: 'tea',
-    tags: ['大杯分享', '冰爽'],
-    isNew: true,
-    illustration: '🍋',
-    stock: 18,
-    sales: 620,
-  },
-  {
-    id: 105,
-    storeId: 1,
-    name: '葡萄冻冻加料',
-    description: '手作葡萄冻',
-    price: 4,
-    imageUrl: '',
-    specIds: '5',
-    status: 'active',
-    sortOrder: 5,
-    category: 'extra',
-    tags: ['Q弹', '推荐搭配'],
-    illustration: '🍇',
-    stock: 88,
-    sales: 360,
   },
 ]
 
@@ -200,48 +267,54 @@ const mockOrders: MockOrderVO[] = [
   {
     id: 501,
     orderNo: 'ORD202604300001',
-    customerId: 9,
+    userId: 9,
     storeId: 1,
-    storeName: mockStore.name,
-    totalAmount: 34,
-    status: 'ready',
+    status: 'READY',
     confirmCode: 'A108',
+    totalAmount: 34,
     remark: '少冰',
-    createdAt: '2026-04-30T12:30:00',
+    createdAt: '2026-04-30T12:30:00Z',
     items: [
-      { id: 9001, productId: 101, productName: '霸气西柚柠檬茶', price: 18, quantity: 1, subtotal: 18, specName: '标准杯' },
-      { id: 9002, productId: 102, productName: '阳光青提多多', price: 16, quantity: 1, subtotal: 16, specName: '少糖' },
+      { productId: 1, productName: '柚子柠檬茶', quantity: 1, unitPrice: 18, specsText: '大杯 / 标准糖' },
+      { productId: 2, productName: '阳光青提多多', quantity: 1, unitPrice: 16, specsText: '中杯 / 标准糖' },
     ],
   },
   {
     id: 502,
     orderNo: 'ORD202604300002',
-    customerId: 9,
+    userId: 9,
     storeId: 1,
-    storeName: mockStore.name,
-    totalAmount: 18,
-    status: 'preparing',
+    status: 'PREPARING',
     confirmCode: 'B205',
-    createdAt: '2026-04-30T12:10:00',
+    totalAmount: 18,
+    createdAt: '2026-04-30T12:10:00Z',
     items: [
-      { id: 9003, productId: 101, productName: '霸气西柚柠檬茶', price: 18, quantity: 1, subtotal: 18 },
+      { productId: 1, productName: '柚子柠檬茶', quantity: 1, unitPrice: 18, specsText: '大杯 / 标准糖' },
     ],
   },
   {
     id: 503,
     orderNo: 'ORD202604290003',
-    customerId: 9,
+    userId: 9,
     storeId: 1,
-    storeName: mockStore.name,
-    totalAmount: 17,
-    status: 'completed',
+    status: 'COMPLETED',
     confirmCode: 'C033',
-    createdAt: '2026-04-29T18:05:00',
+    totalAmount: 17,
+    createdAt: '2026-04-29T18:05:00Z',
     items: [
-      { id: 9004, productId: 103, productName: '芒芒百香绿茶', price: 17, quantity: 1, subtotal: 17 },
+      { productId: 3, productName: '芒果百香绿茶', quantity: 1, unitPrice: 17, specsText: '中杯 / 少糖' },
     ],
   },
 ]
+
+let mockCart: MockCartVO = {
+  id: 1,
+  userId: 9,
+  storeId: 1,
+  status: 'ACTIVE',
+  updatedAt: new Date().toISOString(),
+  items: [],
+}
 
 function ok<T>(data: T): ApiResponse<T> {
   return {
@@ -252,20 +325,52 @@ function ok<T>(data: T): ApiResponse<T> {
 }
 
 function createOrderResponse(data: unknown): MockOrderVO {
-  const payload = (data || {}) as { remark?: string }
+  const payload = (data || {}) as { storeId?: number; remark?: string; items?: Array<{ productId: number; quantity: number; specsText?: string }> }
+  const items = (payload.items || []).map((item) => {
+    const product = mockProducts.find((entry) => entry.id === Number(item.productId)) || mockProducts[0]
+    return {
+      productId: product.id,
+      productName: product.name,
+      quantity: item.quantity || 1,
+      unitPrice: product.price,
+      specsText: item.specsText,
+    }
+  })
+  const totalAmount = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+
   return {
     id: 600,
     orderNo: 'ORD202604300099',
-    customerId: 9,
-    storeId: 1,
-    storeName: mockStore.name,
-    totalAmount: 34,
-    status: 'pending',
+    userId: 9,
+    storeId: payload.storeId || 1,
+    status: 'NEW',
     confirmCode: 'X099',
+    totalAmount,
     remark: payload.remark,
     createdAt: new Date().toISOString(),
-    items: mockOrders[0].items,
+    items,
   }
+}
+
+function addCartItem(data: unknown): MockCartVO {
+  const payload = (data || {}) as { storeId?: number; productId?: number; quantity?: number; specsText?: string }
+  const product = mockProducts.find((entry) => entry.id === Number(payload.productId)) || mockProducts[0]
+  const quantity = Math.max(1, Number(payload.quantity || 1))
+  const existing = mockCart.items.find((item) => item.productId === product.id && item.specsText === payload.specsText)
+
+  if (existing) {
+    existing.quantity += quantity
+  } else {
+    mockCart.items.push({
+      productId: product.id,
+      productName: product.name,
+      quantity,
+      unitPrice: product.price,
+      specsText: payload.specsText,
+    })
+  }
+  mockCart = { ...mockCart, storeId: payload.storeId || 1, updatedAt: new Date().toISOString() }
+  return mockCart
 }
 
 export function getMockApiResponse(options: RequestOptions): ApiResponse | null {
@@ -276,8 +381,23 @@ export function getMockApiResponse(options: RequestOptions): ApiResponse | null 
     return ok(mockStore)
   }
 
+  if (method === 'GET' && /^\/stores\/qr\/[^/]+$/.test(url)) {
+    return ok(mockStore)
+  }
+
   if (method === 'GET' && /^\/stores\/\d+\/products$/.test(url)) {
     return ok(mockProducts)
+  }
+
+  if (method === 'GET' && /^\/products\/\d+$/.test(url)) {
+    const productId = Number(url.split('/').pop())
+    const product = mockProducts.find((item) => item.id === productId)
+    return product ? ok(product) : ok(null)
+  }
+
+  if (method === 'GET' && /^\/styles\/\d+\/specs$/.test(url)) {
+    const styleId = Number(url.split('/')[2])
+    return ok(mockSpecs.filter((spec) => spec.styleId === styleId))
   }
 
   if (method === 'GET' && url === '/orders') {
@@ -294,11 +414,24 @@ export function getMockApiResponse(options: RequestOptions): ApiResponse | null 
 
   if (method === 'GET' && url === '/orders/counts') {
     return ok({
-      pending: mockOrders.filter((order) => order.status === 'pending').length,
-      inProgress: mockOrders.filter((order) => ['accepted', 'preparing', 'ready'].includes(order.status)).length,
-      completed: mockOrders.filter((order) => order.status === 'completed').length,
       total: mockOrders.length,
+      pending: mockOrders.filter((order) => order.status === 'NEW' || order.status === 'ACCEPTED').length,
+      preparing: mockOrders.filter((order) => order.status === 'PREPARING' || order.status === 'READY').length,
+      completed: mockOrders.filter((order) => order.status === 'COMPLETED').length,
     })
+  }
+
+  if (method === 'GET' && url === '/cart') {
+    return ok(mockCart)
+  }
+
+  if (method === 'POST' && url === '/cart/items') {
+    return ok(addCartItem(options.data))
+  }
+
+  if (method === 'DELETE' && /^\/cart\/stores\/\d+$/.test(url)) {
+    mockCart = { ...mockCart, items: [], updatedAt: new Date().toISOString() }
+    return ok(null)
   }
 
   if (method === 'GET' && url === '/user/profile') {

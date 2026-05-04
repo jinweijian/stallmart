@@ -12,6 +12,6 @@ public record StorefrontThemeDTO(
         Map<String, String> iconUrls,
         Map<String, String> imageUrls,
         Map<String, String> copywriting,
-        List<StorefrontCategoryDTO> categories
+        List<StorefrontCategoryIconDTO> categoryIconLibrary
 ) {
 }

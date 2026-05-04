@@ -34,7 +34,14 @@ class ApiControllerTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.name").value("小新の水果茶屋"))
-                .andExpect(jsonPath("$.data.status").value("OPEN"));
+                .andExpect(jsonPath("$.data.status").value("OPEN"))
+                .andExpect(jsonPath("$.data.decoration.categoryIconLibrary", hasSize(greaterThanOrEqualTo(6))))
+                .andExpect(jsonPath("$.data.decoration.categories[0].iconKey").value("recommend"))
+                .andExpect(jsonPath("$.data.decoration.categories[0].iconUrl", notNullValue()))
+                .andExpect(jsonPath("$.data.decoration.categories[1].iconKey").value("category1"))
+                .andExpect(jsonPath("$.data.decoration.categories[1].iconUrl").value("/static/storefront/forest/icons/category-1.png"))
+                .andExpect(jsonPath("$.data.decoration.categories[2].iconKey").value("category2"))
+                .andExpect(jsonPath("$.data.decoration.categories[2].iconUrl").value("/static/storefront/forest/icons/category-2.png"));
 
         mockMvc.perform(get("/stores/1/products"))
                 .andExpect(status().isOk())
@@ -158,19 +165,38 @@ class ApiControllerTest {
                                 {
                                   "module": "PRODUCT",
                                   "name": "热卖新品",
+                                  "iconKey": "category1",
                                   "sortOrder": 20,
                                   "status": "ACTIVE"
                                 }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.name").value("热卖新品"));
+                .andExpect(jsonPath("$.data.name").value("热卖新品"))
+                .andExpect(jsonPath("$.data.iconKey").value("category1"));
 
         mockMvc.perform(get("/admin/vendor/me/categories?module=PRODUCT")
                         .header("Authorization", "Bearer " + vendorToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(4))));
+                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(4))))
+                .andExpect(jsonPath("$.data[3].iconKey").value("category1"));
+
+        mockMvc.perform(put("/admin/vendor/me/categories/4")
+                        .header("Authorization", "Bearer " + vendorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "module": "PRODUCT",
+                                  "name": "热卖新品",
+                                  "iconKey": "category2",
+                                  "sortOrder": 20,
+                                  "status": "ACTIVE"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.iconKey").value("category2"));
     }
 
     @Test

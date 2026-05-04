@@ -1,6 +1,7 @@
 package com.stallmart.store.dto;
 
 import com.stallmart.style.dto.StyleDTO;
+import com.stallmart.style.dto.StorefrontCategoryIconDTO;
 import com.stallmart.style.dto.StorefrontCategoryDTO;
 import com.stallmart.style.dto.StorefrontThemeDTO;
 import java.util.List;
@@ -22,6 +23,7 @@ public record StoreDecorationDTO(
         Map<String, String> iconUrls,
         Map<String, String> imageUrls,
         Map<String, String> copywriting,
+        List<StorefrontCategoryIconDTO> categoryIconLibrary,
         List<StorefrontCategoryDTO> categories
 ) {
 }

@@ -34,6 +34,8 @@ public interface StoreService {
 
     CategoryDTO createCategory(long storeId, CategoryUpsertParams request);
 
+    CategoryDTO updateCategory(long storeId, long categoryId, CategoryUpsertParams request);
+
     List<ProductDTO> listProducts(long storeId);
 
     ProductDTO getProduct(long id);

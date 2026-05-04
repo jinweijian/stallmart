@@ -19,20 +19,20 @@ export default defineAppConfig({
   ],
 
   window: {
-    navigationBarBackgroundColor: '#FF6B35',
+    navigationBarBackgroundColor: '#6F9646',
     navigationBarTitleText: '摊位商城',
     navigationBarTextStyle: 'white',
-    backgroundColor: '#FFF8F0',
+    backgroundColor: '#FBFAEF',
     backgroundTextStyle: 'dark',
     enablePullDownRefresh: true,
-    backgroundColorBottom: '#FFF8F0',
-    backgroundColorTop: '#FFF8F0',
+    backgroundColorBottom: '#FBFAEF',
+    backgroundColorTop: '#FBFAEF',
   },
 
   tabBar: {
-    color: '#999999',
-    selectedColor: '#FF6B35',
-    backgroundColor: '#FFFFFF',
+    color: '#7A866D',
+    selectedColor: '#6F9646',
+    backgroundColor: '#FFFDF4',
     borderStyle: 'black',
     list: [
       {
@@ -43,7 +43,7 @@ export default defineAppConfig({
       },
       {
         pagePath: 'pages/customer/cart/cart',
-        text: '购物车',
+        text: '点单',
         iconPath: 'static/tabbar/cart.png',
         selectedIconPath: 'static/tabbar/cart-active.png',
       },

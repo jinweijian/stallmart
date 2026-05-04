@@ -4,6 +4,7 @@ import { useDidShow, usePullDownRefresh, useReachBottom } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { get, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { createCustomerThemeVars, getCurrentCustomerTheme } from '@/utils/customer-theme'
 
 // ============================================================
 // Types
@@ -45,6 +46,7 @@ interface BackendOrderItem {
   unitPrice?: number
   quantity: number
   specName?: string
+  specsText?: string
   specs?: OrderItemSpec[]
 }
 
@@ -101,6 +103,7 @@ const isEmpty = ref(false)
 const expandedOrderId = ref<string | null>(null)
 const currentPage = ref(1)
 const hasMore = ref(true)
+const currentTheme = ref(getCurrentCustomerTheme())
 
 // ============================================================
 // Computed
@@ -128,6 +131,8 @@ const filteredOrders = computed(() => {
 
   return orders.value
 })
+const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
+const pageTheme = computed(() => currentTheme.value.pageThemes?.orders || {})
 
 // ============================================================
 // Lifecycle
@@ -138,6 +143,7 @@ onMounted(() => {
 
 useDidShow(() => {
   // Refresh on page show (e.g., after order is placed)
+  currentTheme.value = getCurrentCustomerTheme()
   loadOrders(true)
 })
 
@@ -218,7 +224,7 @@ async function cancelOrder(order: Order) {
   Taro.showModal({
     title: '确认取消',
     content: '确定要取消该订单吗？',
-    confirmColor: '#FF6B35',
+    confirmColor: currentTheme.value.primary,
     success: async (res) => {
       if (res.confirm) {
         await doCancelOrder(order.id)
@@ -308,7 +314,11 @@ function formatTime(dateStr: string): string {
 }
 
 function getStatusInfo(order: Order) {
-  return statusMap[order.status] || { label: order.status, color: '#999999' }
+  const info = statusMap[order.status] || { label: order.status, color: '#999999' }
+  return {
+    ...info,
+    color: pageTheme.value.statusColors?.[order.status] || info.color,
+  }
 }
 
 function normalizeOrder(raw: BackendOrder): Order {
@@ -327,9 +337,20 @@ function normalizeOrder(raw: BackendOrder): Order {
       productName: item.productName,
       quantity: item.quantity,
       unitPrice: Number(item.unitPrice ?? item.price ?? 0),
-      specs: item.specs || (item.specName ? [{ name: '规格', option: item.specName, extraPrice: 0 }] : undefined),
+      specs: item.specs || normalizeOrderItemSpecs(item),
     })),
   }
+}
+
+function normalizeOrderItemSpecs(item: BackendOrderItem): OrderItemSpec[] | undefined {
+  const specsText = item.specsText || item.specName
+  if (!specsText) return undefined
+
+  return specsText
+    .split('/')
+    .map((option) => option.trim())
+    .filter(Boolean)
+    .map((option) => ({ name: '规格', option, extraPrice: 0 }))
 }
 
 function normalizeOrderStatus(status: string): OrderStatus {
@@ -463,7 +484,15 @@ function getMockOrders(): Order[] {
 </script>
 
 <template>
-  <view class="my-orders-page">
+  <view class="my-orders-page" :style="themeVars">
+    <view v-if="pageTheme.headerBanner?.imageUrl" class="orders-theme-banner">
+      <image class="orders-theme-banner-image" :src="pageTheme.headerBanner.imageUrl" mode="aspectFill" />
+      <view class="orders-theme-banner-copy">
+        <text class="orders-theme-banner-title">{{ pageTheme.headerBanner.title }}</text>
+        <text class="orders-theme-banner-subtitle">{{ pageTheme.headerBanner.subtitle }}</text>
+      </view>
+    </view>
+
     <!-- ==================== Status Tabs ==================== -->
     <view class="tabs-wrapper">
       <view class="tabs">
@@ -509,8 +538,8 @@ function getMockOrders(): Order[] {
       <view class="empty-icon-wrap">
         <text class="empty-icon">📋</text>
       </view>
-      <text class="empty-title">暂无订单</text>
-      <text class="empty-desc">快去下单，发现身边的美食吧</text>
+      <text class="empty-title">{{ pageTheme.emptyTitle || '暂无订单' }}</text>
+      <text class="empty-desc">{{ pageTheme.emptySubtitle || '快去点一杯清爽果茶吧' }}</text>
       <view class="empty-btn" @tap="goShopping">
         <text class="empty-btn-text">去逛逛</text>
       </view>
@@ -531,7 +560,7 @@ function getMockOrders(): Order[] {
         :class="{ expanded: expandedOrderId === order.id }"
       >
         <!-- ==================== Card Header ==================== -->
-        <view class="order-header" @tap="toggleOrderDetail(order.id)">
+        <view class="order-header">
           <view class="order-header-left">
             <text class="store-name">{{ order.storeName }}</text>
             <view class="status-badge" :style="{ backgroundColor: getStatusInfo(order).color }">
@@ -539,18 +568,24 @@ function getMockOrders(): Order[] {
             </view>
           </view>
           <view class="expand-icon" :class="{ rotated: expandedOrderId === order.id }">
-            <text>›</text>
+            <text @tap.stop="toggleOrderDetail(order.id)">›</text>
           </view>
         </view>
 
         <!-- ==================== Order Info (collapsed) ==================== -->
-        <view class="order-info" @tap="toggleOrderDetail(order.id)">
+        <view class="order-info">
           <text class="order-no">订单号: {{ order.orderNo }}</text>
           <text class="order-time">{{ formatTime(order.createdAt) }}</text>
         </view>
 
+        <!-- ==================== Pickup Code (always visible) ==================== -->
+        <view class="pickup-code-card">
+          <text class="pickup-code-label">取餐码</text>
+          <text class="pickup-code-value">{{ order.confirmCode }}</text>
+        </view>
+
         <!-- ==================== Items Preview ==================== -->
-        <view class="order-items-preview" @tap="toggleOrderDetail(order.id)">
+        <view class="order-items-preview">
           <view
             v-for="(item, idx) in order.items.slice(0, 2)"
             :key="idx"
@@ -565,7 +600,7 @@ function getMockOrders(): Order[] {
         </view>
 
         <!-- ==================== Order Footer (collapsed) ==================== -->
-        <view class="order-footer" @tap="toggleOrderDetail(order.id)">
+        <view class="order-footer">
           <view class="footer-left">
             <text class="item-count-text">共 {{ order.items.reduce((s, i) => s + i.quantity, 0) }} 件</text>
           </view>
@@ -594,12 +629,6 @@ function getMockOrders(): Order[] {
         <!-- ==================== Expanded Detail ==================== -->
         <view v-if="expandedOrderId === order.id" class="order-detail">
           <view class="detail-divider" />
-
-          <!-- Confirm Code -->
-          <view class="confirm-code-row">
-            <text class="confirm-code-label">取餐码</text>
-            <text class="confirm-code-value">{{ order.confirmCode }}</text>
-          </view>
 
           <!-- Full Items -->
           <view class="detail-items">

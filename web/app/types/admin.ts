@@ -92,6 +92,7 @@ export interface Category {
   storeId: number
   module: string
   name: string
+  iconKey: string
   sortOrder: number
   status: string
 }
@@ -99,6 +100,7 @@ export interface Category {
 export interface CategoryInput {
   module: string
   name: string
+  iconKey: string
   sortOrder: number
   status: string
 }
@@ -120,7 +122,16 @@ export interface Style {
 export interface StorefrontCategory {
   id: string
   name: string
-  iconName: string
+  iconKey: string
+  iconUrl: string | null
+  fallbackText: string
+  sortOrder: number
+  status: string
+}
+
+export interface StorefrontCategoryIcon {
+  key: string
+  name: string
   iconUrl: string | null
   fallbackText: string
 }
@@ -134,7 +145,7 @@ export interface StorefrontTheme {
   iconUrls: Record<string, string>
   imageUrls: Record<string, string>
   copywriting: Record<string, string>
-  categories: StorefrontCategory[]
+  categoryIconLibrary: StorefrontCategoryIcon[]
 }
 
 export interface StoreDecoration {
@@ -153,6 +164,7 @@ export interface StoreDecoration {
   iconUrls: Record<string, string>
   imageUrls: Record<string, string>
   copywriting: Record<string, string>
+  categoryIconLibrary: StorefrontCategoryIcon[]
   categories: StorefrontCategory[]
 }
 

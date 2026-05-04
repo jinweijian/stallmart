@@ -12,6 +12,7 @@
     "lint": "eslint src --ext .vue,.js,.jsx,.ts,.tsx",
     "lint:fix": "eslint src --ext .vue,.js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{vue,js,jsx,ts,tsx,json,css,scss}\"",
+    "optimize:tabbar": "node scripts/optimize-tabbar-icons.mjs",
     "test:weapp-assets": "node scripts/verify-weapp-assets-and-styles.mjs",
     "test:taro-versions": "node scripts/verify-taro-versions.mjs"
   },

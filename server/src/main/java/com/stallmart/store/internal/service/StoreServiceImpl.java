@@ -14,6 +14,7 @@ import com.stallmart.store.dto.UpdateDecorationParams;
 import com.stallmart.store.dto.UpdateStoreParams;
 import com.stallmart.style.dto.SpecDTO;
 import com.stallmart.style.dto.SpecUpsertParams;
+import com.stallmart.style.dto.StorefrontCategoryIconDTO;
 import com.stallmart.style.dto.StorefrontCategoryDTO;
 import com.stallmart.style.dto.StorefrontThemeDTO;
 import com.stallmart.style.dto.StyleDTO;
@@ -40,6 +41,7 @@ public class StoreServiceImpl implements StoreService {
     private final Map<Long, List<String>> bannersByStore = new ConcurrentHashMap<>();
     private final Map<Long, Map<String, String>> colorsByStore = new ConcurrentHashMap<>();
     private final Map<Long, Map<String, String>> iconUrlsByStore = new ConcurrentHashMap<>();
+    private final Map<Long, Map<String, String>> categoryIconUrlsByStore = new ConcurrentHashMap<>();
     private final Map<Long, Map<String, String>> imageUrlsByStore = new ConcurrentHashMap<>();
     private final Map<Long, Map<String, String>> copywritingByStore = new ConcurrentHashMap<>();
     private final AtomicLong productIdSequence = new AtomicLong(4);
@@ -51,7 +53,7 @@ public class StoreServiceImpl implements StoreService {
         styles.put(1L, new StyleDTO(1L, "夏威夷风", "hawaiian", null, hawaiianTheme()));
         styles.put(2L, new StyleDTO(2L, "烧烤风", "BBQ", null, simpleTheme("BBQ", "烧烤风", "#E74C3C", "#F39C12", "#FDEDEC")));
         styles.put(3L, new StyleDTO(3L, "市集风", "market", null, simpleTheme("market", "市集风", "#F39C12", "#8BC34A", "#FFF8E7")));
-        styles.put(6L, new StyleDTO(6L, "森系水果茶", "forestFruitTeaCrayon", "/static/storefront/forest/preview.png", forestFruitTeaTheme()));
+        styles.put(6L, new StyleDTO(6L, "森系水果茶-小白款", "forestFruitTeaCrayon", "/static/storefront/forest/preview.png", forestFruitTeaTheme()));
 
         specsByStyle.put(1L, List.of(
                 new SpecDTO(1L, 1L, "杯型", "SIZE", true, List.of("中杯", "大杯")),
@@ -78,9 +80,9 @@ public class StoreServiceImpl implements StoreService {
                 "市集东入口 12 号",
                 "OPEN"
         ));
-        bannersByStore.put(1L, List.of("/static/storefront/forest/banner-seasonal.png", "/static/storefront/forest/banner-tea.png"));
+        bannersByStore.put(1L, List.of("/static/storefront/forest/banner-seasonal.jpg", "/static/storefront/forest/banner-tea.jpg"));
         imageUrlsByStore.put(1L, Map.of(
-                "heroIllustration", "/static/storefront/forest/hero-forest-tea.png",
+                "heroIllustration", "/static/storefront/forest/hero-forest-tea.jpg",
                 "mascot", "/static/storefront/forest/mascot.png",
                 "productPlaceholder", "/static/storefront/forest/product-placeholder.png"
         ));
@@ -94,9 +96,9 @@ public class StoreServiceImpl implements StoreService {
                 "promoActionText", "立即尝鲜"
         ));
 
-        categories.put(1L, new CategoryDTO(1L, 1L, "PRODUCT", "清爽柠檬", 1, "ACTIVE"));
-        categories.put(2L, new CategoryDTO(2L, 1L, "PRODUCT", "多肉葡萄", 2, "ACTIVE"));
-        categories.put(3L, new CategoryDTO(3L, 1L, "PRODUCT", "香甜芒果", 3, "ACTIVE"));
+        categories.put(1L, new CategoryDTO(1L, 1L, "PRODUCT", "清爽柠檬", "category1", 1, "ACTIVE"));
+        categories.put(2L, new CategoryDTO(2L, 1L, "PRODUCT", "多肉葡萄", "category2", 2, "ACTIVE"));
+        categories.put(3L, new CategoryDTO(3L, 1L, "PRODUCT", "香甜芒果", "mango", 3, "ACTIVE"));
 
         products.put(1L, product(1L, 1L, 1L, "百香果柠檬茶", "酸甜清爽", null, "ACTIVE", 1, List.of(1L, 2L), List.of(
                 new ProductSkuDTO(1L, List.of("中杯", "少糖"), new BigDecimal("12.00"), 99, "ACTIVE"),
@@ -195,11 +197,32 @@ public class StoreServiceImpl implements StoreService {
                 storeId,
                 request.module() == null ? "PRODUCT" : request.module().toUpperCase(),
                 request.name(),
+                normalizeCategoryIconKey(request.iconKey()),
                 request.sortOrder(),
                 request.status() == null ? "ACTIVE" : request.status()
         );
         categories.put(category.id(), category);
         return category;
+    }
+
+    @Override
+    public CategoryDTO updateCategory(long storeId, long categoryId, CategoryUpsertParams request) {
+        getStore(storeId);
+        CategoryDTO current = categories.get(categoryId);
+        if (current == null || !current.storeId().equals(storeId)) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
+        CategoryDTO updated = new CategoryDTO(
+                current.id(),
+                current.storeId(),
+                request.module() == null ? current.module() : request.module().toUpperCase(),
+                request.name(),
+                normalizeCategoryIconKey(request.iconKey()),
+                request.sortOrder(),
+                request.status() == null ? current.status() : request.status()
+        );
+        categories.put(updated.id(), updated);
+        return updated;
     }
 
     @Override
@@ -310,7 +333,8 @@ public class StoreServiceImpl implements StoreService {
                 mergeMap(style.theme().iconUrls(), iconUrlsByStore.get(store.id())),
                 mergeMap(style.theme().imageUrls(), imageUrlsByStore.get(store.id())),
                 mergeMap(style.theme().copywriting(), copywritingByStore.get(store.id())),
-                style.theme().categories()
+                resolveCategoryIconLibrary(style, store.id()),
+                resolveStorefrontCategories(store.id(), resolveCategoryIconLibrary(style, store.id()))
         );
     }
 
@@ -340,6 +364,9 @@ public class StoreServiceImpl implements StoreService {
         }
         if (request.iconUrls() != null) {
             iconUrlsByStore.put(storeId, copyMap(request.iconUrls()));
+        }
+        if (request.categoryIconUrls() != null) {
+            categoryIconUrlsByStore.put(storeId, copyMap(request.categoryIconUrls()));
         }
         if (request.imageUrls() != null) {
             imageUrlsByStore.put(storeId, copyMap(request.imageUrls()));
@@ -518,7 +545,7 @@ public class StoreServiceImpl implements StoreService {
     private StorefrontThemeDTO forestFruitTeaTheme() {
         return new StorefrontThemeDTO(
                 "forestFruitTeaCrayon",
-                "森系水果茶",
+                "森系水果茶-小白款",
                 "customer-storefront-v1",
                 mapOfOrdered(
                         "primary", "#6F9646",
@@ -546,7 +573,7 @@ public class StoreServiceImpl implements StoreService {
                         "sectionLeaf", "/static/storefront/forest/icons/leaf.png"
                 ),
                 mapOfOrdered(
-                        "heroIllustration", "/static/storefront/forest/hero-forest-tea.png",
+                        "heroIllustration", "/static/storefront/forest/hero-forest-tea.jpg",
                         "mascot", "/static/storefront/forest/mascot.png",
                         "productPlaceholder", "/static/storefront/forest/product-placeholder.png",
                         "promoIllustration", "/static/storefront/forest/promo-drink.png"
@@ -561,12 +588,14 @@ public class StoreServiceImpl implements StoreService {
                         "promoActionText", "立即尝鲜"
                 ),
                 List.of(
-                        new StorefrontCategoryDTO("recommend", "人气推荐", "forest-recommend", "/static/storefront/forest/icons/recommend.png", "荐"),
-                        new StorefrontCategoryDTO("citrus", "清爽柠檬", "forest-citrus", "/static/storefront/forest/icons/citrus.png", "柠"),
-                        new StorefrontCategoryDTO("grape", "多肉葡萄", "forest-grape", "/static/storefront/forest/icons/grape.png", "葡"),
-                        new StorefrontCategoryDTO("mango", "香甜芒果", "forest-mango", "/static/storefront/forest/icons/mango.png", "芒"),
-                        new StorefrontCategoryDTO("tea", "鲜果茶桶", "forest-tea", "/static/storefront/forest/icons/tea.png", "茶"),
-                        new StorefrontCategoryDTO("extra", "加料小料", "forest-extra", "/static/storefront/forest/icons/extra.png", "料")
+                        new StorefrontCategoryIconDTO("recommend", "人气推荐", "/static/storefront/forest/icons/recommend.png", "荐"),
+                        new StorefrontCategoryIconDTO("citrus", "清爽柠檬", "/static/storefront/forest/icons/citrus.png", "柠"),
+                        new StorefrontCategoryIconDTO("grape", "多肉葡萄", "/static/storefront/forest/icons/grape.png", "葡"),
+                        new StorefrontCategoryIconDTO("mango", "香甜芒果", "/static/storefront/forest/icons/mango.png", "芒"),
+                        new StorefrontCategoryIconDTO("tea", "鲜果茶桶", "/static/storefront/forest/icons/tea.png", "茶"),
+                        new StorefrontCategoryIconDTO("extra", "加料小料", "/static/storefront/forest/icons/extra.png", "料"),
+                        new StorefrontCategoryIconDTO("category1", "类目图标 1", "/static/storefront/forest/icons/category-1.png", "类"),
+                        new StorefrontCategoryIconDTO("category2", "类目图标 2", "/static/storefront/forest/icons/category-2.png", "类")
                 )
         );
     }
@@ -609,11 +638,64 @@ public class StoreServiceImpl implements StoreService {
                         "promoActionText", "去看看"
                 ),
                 List.of(
-                        new StorefrontCategoryDTO("recommend", "人气推荐", code + "-recommend", null, "荐"),
-                        new StorefrontCategoryDTO("tea", "饮品", code + "-drink", null, "饮"),
-                        new StorefrontCategoryDTO("extra", "加料", code + "-extra", null, "料")
+                        new StorefrontCategoryIconDTO("recommend", "人气推荐", null, "荐"),
+                        new StorefrontCategoryIconDTO("tea", "饮品", null, "饮"),
+                        new StorefrontCategoryIconDTO("extra", "加料", null, "料")
                 )
         );
+    }
+
+    private List<StorefrontCategoryIconDTO> resolveCategoryIconLibrary(StyleDTO style, long storeId) {
+        Map<String, String> overrides = categoryIconUrlsByStore.getOrDefault(storeId, Map.of());
+        return style.theme().categoryIconLibrary().stream()
+                .map(icon -> new StorefrontCategoryIconDTO(
+                        icon.key(),
+                        icon.name(),
+                        overrides.getOrDefault(icon.key(), icon.iconUrl()),
+                        icon.fallbackText()
+                ))
+                .toList();
+    }
+
+    private List<StorefrontCategoryDTO> resolveStorefrontCategories(long storeId, List<StorefrontCategoryIconDTO> iconLibrary) {
+        Map<String, StorefrontCategoryIconDTO> iconsByKey = new LinkedHashMap<>();
+        for (StorefrontCategoryIconDTO icon : iconLibrary) {
+            iconsByKey.put(icon.key(), icon);
+        }
+
+        List<StorefrontCategoryDTO> storefrontCategories = new ArrayList<>();
+        StorefrontCategoryIconDTO recommendIcon = iconsByKey.get("recommend");
+        if (recommendIcon != null) {
+            storefrontCategories.add(new StorefrontCategoryDTO(
+                    "recommend",
+                    recommendIcon.name(),
+                    recommendIcon.key(),
+                    recommendIcon.iconUrl(),
+                    recommendIcon.fallbackText(),
+                    0,
+                    "ACTIVE"
+            ));
+        }
+
+        listCategories(storeId, "PRODUCT").stream()
+                .filter(category -> "ACTIVE".equalsIgnoreCase(category.status()))
+                .forEach(category -> {
+                    StorefrontCategoryIconDTO icon = iconsByKey.get(category.iconKey());
+                    storefrontCategories.add(new StorefrontCategoryDTO(
+                            String.valueOf(category.id()),
+                            category.name(),
+                            category.iconKey(),
+                            icon == null ? null : icon.iconUrl(),
+                            icon == null ? category.name().substring(0, 1) : icon.fallbackText(),
+                            category.sortOrder(),
+                            category.status()
+                    ));
+                });
+        return storefrontCategories;
+    }
+
+    private String normalizeCategoryIconKey(String iconKey) {
+        return iconKey == null || iconKey.isBlank() ? "recommend" : iconKey;
     }
 
     private Map<String, String> mapOfOrdered(String... pairs) {

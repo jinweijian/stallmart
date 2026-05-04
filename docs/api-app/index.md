@@ -41,7 +41,9 @@ ORDERS: '/orders'
 
 ```ts
 STORE_DETAIL: (id: string) => `/stores/${id}`
+STORE_GET_BY_QR: (qrCode: string) => `/stores/qr/${qrCode}`
 ORDER_DETAIL: (id: string) => `/orders/${id}`
+STYLE_SPECS: (styleId: string | number) => `/styles/${styleId}/specs`
 ```
 
 约束：
@@ -99,7 +101,10 @@ patch()
 | 方法 | 路径 | 页面 |
 | --- | --- | --- |
 | `GET` | `/stores/{id}` | 首页店铺信息和风格包。 |
+| `GET` | `/stores/qr/{qrCode}` | 扫码进店，返回同 `/stores/{id}` 的店铺与装修结构。 |
 | `GET` | `/stores/{storeId}/products` | 首页商品列表和加购。 |
+| `GET` | `/products/{id}` | 商品详情，返回商品基础字段、`specIds` 和 `skus`。 |
+| `GET` | `/styles/{styleId}/specs` | 当前风格包可用规格列表。 |
 | `GET` | `/orders` | 我的订单。 |
 | `POST` | `/orders` | 确认订单提交。 |
 | `PUT` | `/orders/{id}/reject` | 我的订单取消。 |
@@ -111,9 +116,12 @@ patch()
 
 页面内使用 ViewModel；后端字段进入页面前必须做适配，例如：
 
-- 商品 `price/imageUrl/status(active/off_sale/sold_out)` 转为 `basePrice/image/status(ACTIVE/INACTIVE/SOLD_OUT)`。
+- 商品 `price/mainImageUrl/imageUrl/status/specIds/skus` 转为 `basePrice/image/status/specIds/skus`，页面展示价优先使用后端 `price`，没有时从可售 SKU 最低价兜底。
+- SKU 使用后端 `id/specValues/price/stock/status`，规格定义使用 `/styles/{styleId}/specs` 返回的 `id/styleId/name/specType/required/options`。
 - 订单 `pending/accepted/preparing/ready/completed/rejected` 转为页面状态 `NEW/ACCEPTED/PREPARING/READY/COMPLETED/REJECTED`。
-- 店铺 `avatarUrl/styleId/status/decoration` 转为首页展示所需的 `logo/styleCode/isOpen` 和装修配置。装修配置遵循 [../specification/storefront-decoration.md](../specification/storefront-decoration.md)。
+- 订单 item 使用后端 `productId/productName/quantity/unitPrice/specsText`，页面展示前把 `specsText` 拆成规格文案。
+- 订单统计 `/orders/counts` 使用后端 `total/pending/preparing/completed`，页面的 `inProgress` 从 `preparing` 映射。
+- 店铺 `avatarUrl/styleId/status/decoration` 转为顾客端展示所需的 `logo/styleCode/isOpen` 和装修配置。装修配置遵循 [../specification/storefront-decoration.md](../specification/storefront-decoration.md)，其中 `banners` 驱动首页自动轮播，`categoryIconLibrary` 提供分类 icon 可选库，`categories` 是后台分类管理返回的实际分类入口，`pageThemes` 驱动点单、订单、我的页 banner/文案/icon/状态色，`assetSizes` 驱动 icon、banner、商品图、头像、步进器、进度 icon 和底部栏预留等展示尺寸。
 
 ## Storage 规范
 

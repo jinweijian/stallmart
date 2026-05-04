@@ -107,6 +107,15 @@ public class VendorAdminController {
         return Result.success(storeService.createCategory(resolveStore(request).id(), params));
     }
 
+    @PutMapping("/categories/{categoryId}")
+    public Result<CategoryDTO> updateCategory(
+            @PathVariable long categoryId,
+            @Valid @RequestBody CategoryUpsertParams params,
+            HttpServletRequest request
+    ) {
+        return Result.success(storeService.updateCategory(resolveStore(request).id(), categoryId, params));
+    }
+
     @PostMapping("/assets/product-image")
     public Result<AssetDTO> uploadProductImage(
             @RequestParam("file") MultipartFile file,

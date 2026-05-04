@@ -3,8 +3,10 @@ package com.stallmart.style.dto;
 public record StorefrontCategoryDTO(
         String id,
         String name,
-        String iconName,
+        String iconKey,
         String iconUrl,
-        String fallbackText
+        String fallbackText,
+        int sortOrder,
+        String status
 ) {
 }

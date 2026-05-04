@@ -6,11 +6,14 @@ import { useUserStore } from '@/store/user'
 import { logout, loginWithWechat, bindPhone } from '@/utils/auth'
 import { get } from '@/utils/request'
 import { WECHAT_CONFIG } from '@/config'
+import { createCustomerThemeVars, getCurrentCustomerTheme } from '@/utils/customer-theme'
 
 // ==================== Store ====================
 const userStore = useUserStore()
+const currentTheme = ref(getCurrentCustomerTheme())
 
 useDidShow(() => {
+  currentTheme.value = getCurrentCustomerTheme()
   userStore.loadUserInfo()
   loadStats()
 })
@@ -20,8 +23,19 @@ const userInfo = computed(() => userStore.userInfo)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isVendor = computed(() => userStore.isVendor)
 const hasPhone = computed(() => !!userInfo.value?.phone)
+const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
+const pageTheme = computed(() => currentTheme.value.pageThemes?.my || {})
+const imageUrls = computed(() => currentTheme.value.imageUrls || {})
 
 // ==================== Stats ====================
+interface OrderCountsResponse {
+  pending?: number
+  preparing?: number
+  inProgress?: number
+  completed?: number
+  total?: number
+}
+
 const stats = ref({
   pending: 0,    // 待接单
   inProgress: 0,  // 进行中
@@ -39,12 +53,21 @@ async function loadStats() {
       completed: 0,
       total: 0,
     }
-    const res = await get('/orders/counts')
+    const res = await get<OrderCountsResponse>('/orders/counts')
     if (res?.data) {
-      stats.value = res.data
+      stats.value = normalizeOrderCounts(res.data)
     }
   } catch {
     // keep defaults
+  }
+}
+
+function normalizeOrderCounts(data: OrderCountsResponse) {
+  return {
+    pending: Number(data.pending ?? 0),
+    inProgress: Number(data.inProgress ?? data.preparing ?? 0),
+    completed: Number(data.completed ?? 0),
+    total: Number(data.total ?? 0),
   }
 }
 
@@ -69,7 +92,7 @@ async function handleLogout() {
     title: '确认退出',
     content: '确定要退出登录吗？',
     confirmText: '退出',
-    confirmColor: '#FF6B35',
+    confirmColor: currentTheme.value.primary,
   })
   if (res.confirm) {
     await logout()
@@ -126,14 +149,14 @@ Q: 如何修改个人信息？
 A: 点击头像旁边的"编辑资料"按钮。`,
     showCancel: false,
     confirmText: '我知道了',
-    confirmColor: '#FF6B35',
+    confirmColor: currentTheme.value.primary,
   })
 }
 
 function showCustomerService() {
   Taro.showActionSheet({
     itemList: ['拨打客服电话 400-888-8888', '在线客服（暂未开放）'],
-    itemColor: '#FF6B35',
+    itemColor: currentTheme.value.primary,
     success: (res) => {
       if (res.tapIndex === 0) {
         Taro.makePhoneCall({
@@ -153,7 +176,7 @@ function showAboutUs() {
     content: `摊位商城 v${WECHAT_CONFIG.VERSION}\n\n摊位商城是一个连接摊主与顾客的本地生活服务平台，致力于为用户提供便捷的本地购物体验。\n\n© 2024 StallMart 版权所有`,
     showCancel: false,
     confirmText: '知道了',
-    confirmColor: '#FF6B35',
+    confirmColor: currentTheme.value.primary,
   })
 }
 
@@ -165,7 +188,7 @@ function maskPhone(phone: string): string {
 </script>
 
 <template>
-  <view class="my-page bg-background min-h-screen">
+  <view class="my-page bg-background min-h-screen" :style="themeVars">
     <!-- ==================== Profile Header ==================== -->
     <view class="profile-header">
       <!-- Background gradient blob -->
@@ -222,6 +245,14 @@ function maskPhone(phone: string): string {
       </view>
     </view>
 
+    <view class="welcome-card">
+      <view class="welcome-copy">
+        <text class="welcome-title">{{ pageTheme.greeting || 'Hi~ 欢迎回来！' }}</text>
+        <text class="welcome-subtitle">自然水果 · 新鲜现制</text>
+      </view>
+      <image v-if="imageUrls.mascot" class="welcome-mascot" :src="imageUrls.mascot" mode="aspectFit" />
+    </view>
+
     <!-- ==================== Quick Stats Row ==================== -->
     <view class="stats-row">
       <view class="stat-item" @tap="goToMyOrders">
@@ -262,7 +293,8 @@ function maskPhone(phone: string): string {
       <!-- 我的订单 -->
       <view class="menu-item" @tap="goToMyOrders">
         <view class="menu-icon-wrap menu-icon-order">
-          <text class="menu-icon-text">📋</text>
+          <image v-if="pageTheme.menuIcons?.orders" class="menu-icon-image" :src="pageTheme.menuIcons.orders" mode="aspectFit" />
+          <text v-else class="menu-icon-text">📋</text>
         </view>
         <text class="menu-label">我的订单</text>
         <text class="menu-arrow">›</text>
@@ -274,7 +306,8 @@ function maskPhone(phone: string): string {
       <!-- 常见问题 -->
       <view class="menu-item" @tap="showFAQ">
         <view class="menu-icon-wrap menu-icon-faq">
-          <text class="menu-icon-text">❓</text>
+          <image v-if="pageTheme.menuIcons?.faq" class="menu-icon-image" :src="pageTheme.menuIcons.faq" mode="aspectFit" />
+          <text v-else class="menu-icon-text">❓</text>
         </view>
         <text class="menu-label">常见问题</text>
         <text class="menu-arrow">›</text>
@@ -286,7 +319,8 @@ function maskPhone(phone: string): string {
       <!-- 联系客服 -->
       <view class="menu-item" @tap="showCustomerService">
         <view class="menu-icon-wrap menu-icon-service">
-          <text class="menu-icon-text">📞</text>
+          <image v-if="pageTheme.menuIcons?.service" class="menu-icon-image" :src="pageTheme.menuIcons.service" mode="aspectFit" />
+          <text v-else class="menu-icon-text">📞</text>
         </view>
         <text class="menu-label">联系客服</text>
         <text class="menu-arrow">›</text>
@@ -298,11 +332,21 @@ function maskPhone(phone: string): string {
       <!-- 关于我们 -->
       <view class="menu-item" @tap="showAboutUs">
         <view class="menu-icon-wrap menu-icon-about">
-          <text class="menu-icon-text">ℹ️</text>
+          <image v-if="pageTheme.menuIcons?.about" class="menu-icon-image" :src="pageTheme.menuIcons.about" mode="aspectFit" />
+          <text v-else class="menu-icon-text">ℹ️</text>
         </view>
         <text class="menu-label">关于我们</text>
         <text class="menu-arrow">›</text>
       </view>
+    </view>
+
+    <view v-if="pageTheme.inviteBanner?.imageUrl" class="invite-banner">
+      <image class="invite-banner-image" :src="pageTheme.inviteBanner.imageUrl" mode="aspectFill" />
+      <view class="invite-banner-copy">
+        <text class="invite-title">{{ pageTheme.inviteBanner.title }}</text>
+        <text class="invite-subtitle">{{ pageTheme.inviteBanner.subtitle }}</text>
+      </view>
+      <view class="invite-action">{{ pageTheme.inviteBanner.actionText }}</view>
     </view>
 
     <!-- ==================== Login / Logout Button ==================== -->

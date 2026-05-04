@@ -5,6 +5,7 @@ public record CategoryDTO(
         Long storeId,
         String module,
         String name,
+        String iconKey,
         int sortOrder,
         String status
 ) {

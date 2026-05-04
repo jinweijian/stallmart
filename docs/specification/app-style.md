@@ -8,11 +8,11 @@
 - 顾客端路径要短：扫码 -> 浏览 -> 加购 -> 下单 -> 查看订单。
 - 摊主端操作要直接：新订单 -> 接单/拒单 -> 备餐 -> 待取餐 -> 完成。
 - 关键状态必须有 loading、empty、error、disabled。
-- 触控区域不小于 `44px x 44px`。
+- 触控区域不小于 `88rpx x 88rpx`。
 
 ## 当前基础色
 
-当前代码 `src/app-config/index.ts` 与 `tailwind.config.js` 使用以下基础色：
+当前代码 `src/app-config/index.ts` 仍保留历史基础色，同时顾客端默认读取 `STORE_THEME_PACKAGES.forestFruitTeaCrayon`：
 
 | 名称 | 色值 | 用途 |
 | --- | --- | --- |
@@ -124,13 +124,31 @@
 | 市集风 | 早餐、生煎、包子 | `#F39C12` | `#FFF8E7` |
 | 海洋风 | 海鲜、烤鱼 | `#3498DB` | `#EBF5FB` |
 | 清新风 | 素食、沙拉、轻食 | `#27AE60` | `#F4FCF8` |
-| 森系水果茶 | 水果茶、鲜果饮、轻甜饮品 | `#6F9646` | `#FBFAEF` |
+| 森系水果茶-小白款 | 水果茶、鲜果饮、轻甜饮品 | `#6F9646` | `#FBFAEF` |
 
-当前代码默认主题与历史风格包不完全一致。实现风格包时应先建立统一 token 映射，不要在页面里散落色值。
+顾客端首页、点单、订单、我的四个 tab 默认使用“森系水果茶-小白款”风格包。实现风格包时应先建立统一 token 映射，不要在页面里散落色值。
 
-当前风格包 token 统一维护在 `app/src/app-config/index.ts` 的 `STORE_THEME_PACKAGES`，服务端通过 `StyleDTO.theme` 和 `StoreDecorationDTO` 返回同名装修配置。后台店铺详情可通过 `styleCode` 返回风格编码，顾客首页根据装修配置生成 CSS 变量；新增风格包时先扩展 token，再在页面中消费变量。
+当前风格包 token 统一维护在 `app/src/app-config/index.ts` 的 `STORE_THEME_PACKAGES`，服务端通过 `StyleDTO.theme` 和 `StoreDecorationDTO` 返回同名装修配置。后台店铺详情可通过 `styleCode` 返回风格编码，顾客首页合并装修配置后通过 `src/utils/customer-theme.ts` 持久化主题，点单、订单、我的页面从缓存读取同一份主题并生成 CSS 变量；新增风格包时先扩展 token，再在页面中消费变量。
 
-完整配置标准见 [storefront-decoration.md](storefront-decoration.md)。所有小程序端会展示的颜色、文案、icon、banner、插画和分类入口，都必须通过装修配置切换，不能在页面里按店铺或风格名硬编码。
+完整配置标准见 [storefront-decoration.md](storefront-decoration.md)。所有小程序端会展示的颜色、文案、icon、banner、插画和分类 icon 库，都必须通过装修配置切换，不能在页面里按店铺或风格名硬编码。商品分类本身来自后台分类管理，分类只保存 `iconKey`，小程序使用服务端返回的 `iconUrl` 展示。
+
+首页头图、轮播图、分类 icon、定位 icon、底部操作 icon、商品图、点单商品图、订单商品图、我的头像、菜单 icon、数量步进器、进度 icon 和底部栏预留统一由风格包 `assetSizes` 定义。上传图片可以大于展示尺寸；页面展示时必须通过 CSS 变量固定到风格包尺寸，避免不同素材破坏版面。
+
+### 森系水果茶跨页结构
+
+适用页面：
+
+- `pages/customer/index`
+- `pages/customer/cart`
+- `pages/customer/my-orders`
+- `pages/customer/my`
+
+约束：
+
+- 四个 tab 根节点必须绑定 `createCustomerThemeVars()` 输出的 CSS 变量。
+- 点单页顶部 banner、订单页顶部 banner、我的页邀请 banner 由 `pageThemes` 驱动。
+- 当前不展示配送/外卖、会员、优惠券、卡包、礼品、成长值入口。
+- 固定底部结算栏必须用 `tabBarReserve` 预留原生 tabBar。
 
 ### 森系水果茶首页结构
 

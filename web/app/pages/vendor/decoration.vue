@@ -11,6 +11,7 @@ type UploadTarget =
   | { kind: 'cover' }
   | { kind: 'banner', index: number }
   | { kind: 'icon', key: string }
+  | { kind: 'categoryIcon', key: string }
   | { kind: 'image', key: string }
 
 const api = useStallmartApi()
@@ -30,6 +31,7 @@ const form = reactive({
   colors: {} as Record<string, string>,
   copywriting: {} as Record<string, string>,
   iconUrls: {} as Record<string, string>,
+  categoryIconUrls: {} as Record<string, string>,
   imageUrls: {} as Record<string, string>,
 })
 
@@ -70,6 +72,11 @@ const iconLabels: Record<string, string> = {
 const colorKeys = computed(() => Object.keys(form.colors))
 const copyEntries = computed(() => Object.entries(form.copywriting))
 const iconEntries = computed(() => Object.entries(form.iconUrls))
+const categoryIconEntries = computed(() => workspace.value?.decoration.categoryIconLibrary.map(icon => [
+  icon.key,
+  form.categoryIconUrls[icon.key] || icon.iconUrl || '',
+  icon.name,
+] as const) || [])
 const imageEntries = computed(() => Object.entries(form.imageUrls))
 const selectedStyle = computed(() => workspace.value?.styles.find(style => style.id === form.styleId))
 const previewBanner = computed(() => form.banners.find(Boolean) || form.coverUrl || form.imageUrls.heroIllustration || '')
@@ -93,6 +100,10 @@ watchEffect(() => {
   resetRecord(form.colors, decoration.colors)
   resetRecord(form.copywriting, decoration.copywriting)
   resetRecord(form.iconUrls, decoration.iconUrls)
+  resetRecord(
+    form.categoryIconUrls,
+    Object.fromEntries(decoration.categoryIconLibrary.map(icon => [icon.key, icon.iconUrl || ''])),
+  )
   resetRecord(form.imageUrls, decoration.imageUrls)
 })
 
@@ -101,6 +112,10 @@ const selectStyle = (style: Style) => {
   resetRecord(form.colors, style.theme.colors)
   resetRecord(form.copywriting, style.theme.copywriting)
   resetRecord(form.iconUrls, style.theme.iconUrls)
+  resetRecord(
+    form.categoryIconUrls,
+    Object.fromEntries(style.theme.categoryIconLibrary.map(icon => [icon.key, icon.iconUrl || ''])),
+  )
   resetRecord(form.imageUrls, style.theme.imageUrls)
   notice.value = `已切换到「${style.name}」，保存后小程序生效`
 }
@@ -125,6 +140,10 @@ const applyUploadedUrl = (target: UploadTarget, url: string) => {
   }
   if (target.kind === 'icon') {
     form.iconUrls[target.key] = url
+    return
+  }
+  if (target.kind === 'categoryIcon') {
+    form.categoryIconUrls[target.key] = url
     return
   }
   form.imageUrls[target.key] = url
@@ -172,6 +191,7 @@ const save = async () => {
       colors: { ...form.colors },
       copywriting: { ...form.copywriting },
       iconUrls: { ...form.iconUrls },
+      categoryIconUrls: { ...form.categoryIconUrls },
       imageUrls: { ...form.imageUrls },
     })
     notice.value = '装修配置已保存'
@@ -340,6 +360,27 @@ const save = async () => {
         </section>
 
         <section class="form-panel">
+          <h2>分类 icon 库</h2>
+          <p class="muted">分类管理中会从这里选择 icon；这里维护当前风格包可用的分类图标素材。</p>
+          <div class="grid gap-3">
+            <div v-for="[key, url, label] in categoryIconEntries" :key="key" class="grid gap-3 rounded-lg border border-ink-200 p-3 md:grid-cols-[72px_minmax(0,1fr)_auto]">
+              <img
+                v-if="url"
+                :src="url"
+                :alt="label"
+                class="h-16 w-16 rounded-lg border border-ink-200 object-contain p-2"
+              >
+              <div v-else class="empty h-16 w-16 p-0">{{ label.slice(0, 1) }}</div>
+              <div class="field">
+                <label>{{ label }}</label>
+                <input v-model="form.categoryIconUrls[key]">
+              </div>
+              <button class="button" type="button" :disabled="uploadBusy" @click="beginUpload({ kind: 'categoryIcon', key })">替换</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-panel">
           <h2>主题图片</h2>
           <div class="grid gap-3">
             <div v-for="[key, url] in imageEntries" :key="key" class="grid gap-3 rounded-lg border border-ink-200 p-3 md:grid-cols-[160px_minmax(0,1fr)_auto]">
@@ -413,7 +454,7 @@ const save = async () => {
             </div>
             <div class="mt-4 grid grid-cols-3 gap-2">
               <div v-for="category in previewCategories" :key="category.id" class="rounded-lg p-2 text-center text-xs" :style="{ backgroundColor: form.colors.surface }">
-                <img v-if="category.iconUrl" :src="category.iconUrl" alt="" class="mx-auto mb-1 h-6 w-6 object-contain">
+                <img v-if="form.categoryIconUrls[category.iconKey] || category.iconUrl" :src="form.categoryIconUrls[category.iconKey] || category.iconUrl || ''" alt="" class="mx-auto mb-1 h-6 w-6 object-contain">
                 <span>{{ category.name }}</span>
               </div>
             </div>

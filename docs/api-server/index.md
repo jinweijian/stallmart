@@ -108,6 +108,7 @@
 | `PUT` | `/admin/vendor/me/store` | 更新商家店铺 |
 | `GET` | `/admin/vendor/me/categories?module=PRODUCT` | 商家模块分类列表 |
 | `POST` | `/admin/vendor/me/categories` | 新增商家模块分类 |
+| `PUT` | `/admin/vendor/me/categories/{categoryId}` | 更新商家模块分类 |
 | `POST` | `/admin/vendor/me/assets/product-image` | 上传商品主图 |
 | `POST` | `/admin/vendor/me/assets/decoration-image` | 上传装修图片、Banner 和图标 |
 | `GET` | `/admin/vendor/me/products` | 商家商品列表 |
@@ -136,19 +137,23 @@
 
 | 页面 | 方法 | 路径 | 关键响应字段 |
 | --- | --- | --- | --- |
-| 首页 | `GET` | `/stores/{id}` | `id`, `name`, `description`, `avatarUrl`, `styleId`, `styleCode`, `status`, `decoration` |
-| 首页 | `GET` | `/stores/{storeId}/products` | `id`, `storeId`, `name`, `description`, `price`, `imageUrl`, `status`, `sortOrder` |
-| 确认订单 | `POST` | `/orders` | `id`, `orderNo`, `status`, `confirmCode`, `totalAmount`, `items` |
-| 我的订单 | `GET` | `/orders` | `orderNo`, `storeId`, `status`, `confirmCode`, `totalAmount`, `createdAt`, `items` |
+| 首页 | `GET` | `/stores/{id}` | `id`, `name`, `description`, `avatarUrl`, `styleId`, `styleCode`, `status`, `decoration`；`decoration.categories` 必须含 `iconKey/iconUrl/fallbackText` |
+| 首页 | `GET` | `/stores/qr/{qrCode}` | 同 `/stores/{id}`，用于扫码进店。 |
+| 首页 | `GET` | `/stores/{storeId}/products` | `id`, `storeId`, `categoryId`, `categoryName`, `name`, `description`, `price`, `imageUrl`, `mainImageUrl`, `status`, `sortOrder`, `specIds`, `skus`；`skus` 必须含 `id/specValues/price/stock/status` |
+| 首页 | `GET` | `/products/{id}` | 同商品列表单项结构，用于商品详情和 SKU 选择。 |
+| 首页 | `GET` | `/styles/{styleId}/specs` | `id`, `styleId`, `name`, `specType`, `required`, `options` |
+| 确认订单 | `POST` | `/orders` | `id`, `orderNo`, `status`, `confirmCode`, `totalAmount`, `items`；`items` 使用 `productId/productName/quantity/unitPrice/specsText` |
+| 我的订单 | `GET` | `/orders` | `orderNo`, `storeId`, `status`, `confirmCode`, `totalAmount`, `createdAt`, `items`；`items` 使用 `unitPrice/specsText` |
+| 我的 | `GET` | `/orders/counts` | `total`, `pending`, `preparing`, `completed`；小程序将 `preparing` 映射为“进行中”。 |
 | 我的 | `GET` | `/user/profile` | `id`, `nickname`, `avatarUrl`, `phone`, `hasPhone`, `role` |
-| 购物车 | `GET` | `/cart` | `id`, `storeId`, `items`, `updatedAt` |
+| 购物车 | `GET` | `/cart` | `id`, `storeId`, `items`, `updatedAt`；`items` 使用 `productId/productName/quantity/unitPrice/specsText` |
 
 ## 管理端共享数据约束
 
 - 管理端新增或更新商品走 `StoreService`，小程序 `/stores/{storeId}/products` 同步读取同一份商品数据。
 - 商品必须绑定 `categoryId`、主图、至少一个 `specId` 和至少一个 SKU；商品列表 `price` 为 SKU 最低价，单独商品价格不作为售卖价格。
 - 商品主图通过 `/admin/vendor/me/assets/product-image` 上传，返回 `url` 后写入商品 `mainImageUrl`，单图大小上限为 10MB。
-- 分类按模块维护，商品分类使用 `PRODUCT` 模块；商品创建和编辑必须选择当前店铺的商品分类。
+- 分类按模块维护，商品分类使用 `PRODUCT` 模块；商品创建和编辑必须选择当前店铺的商品分类。分类创建和编辑必须保存 `iconKey`，该 key 来自装修配置的 `categoryIconLibrary`。
 - 管理端店铺和装修写入走 `StoreService`，小程序 `/stores/{id}` 同步读取同一份店铺数据和 `decoration` 装修配置。
 - 订单和购物车管理读取 `OrderService`、`CartService`，后续接入数据库时保持服务接口不变。
 
@@ -163,8 +168,11 @@
 | `iconNames/iconUrls` | 语义 icon 名称和文件地址。 |
 | `imageUrls` | 首页头图、吉祥物、商品占位图、活动插画等文件地址。 |
 | `copywriting` | 首页可切换文案。 |
-| `categories` | 左侧分类入口，含 icon 名称、地址和文字兜底。 |
-| `banners` | 店铺 banner 列表。 |
+| `categoryIconLibrary` | 分类 icon 库，含 `key/name/iconUrl/fallbackText`，装修设置可覆盖 icon 文件地址。 |
+| `categories` | 左侧实际分类入口，来自分类管理，含 `id/name/iconKey/iconUrl/fallbackText/sortOrder/status`。 |
+| `banners` | 店铺轮播 banner 列表，含 `id/imageUrl/title/subtitle/actionText/targetCategory`。 |
+| `assetSizes` | 小程序端展示尺寸 token，用于强制统一 icon、banner、商品图等展示大小。上传素材可以更大。 |
+| `pageThemes` | 顾客端四个 tab 的展示配置，包含 `home/cart/orders/my` 的 banner、文案、菜单 icon 和订单状态色。 |
 
 详细标准见 [../specification/storefront-decoration.md](../specification/storefront-decoration.md)。
 

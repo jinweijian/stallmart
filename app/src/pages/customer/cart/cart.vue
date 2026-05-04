@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useDidShow } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
+import { createCustomerThemeVars, getCurrentCustomerTheme } from '@/utils/customer-theme'
 
 // ============================================================
 // Types
@@ -31,11 +32,16 @@ interface CartItem {
 // ============================================================
 const cartItems = ref<CartItem[]>([])
 const isLoading = ref(false)
+const currentTheme = ref(getCurrentCustomerTheme())
 
 // ============================================================
 // Computed
 // ============================================================
 const isEmpty = computed(() => cartItems.value.length === 0)
+const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
+const pageTheme = computed(() => currentTheme.value.pageThemes?.cart || {})
+const imageUrls = computed(() => currentTheme.value.imageUrls || {})
+const productPlaceholder = computed(() => imageUrls.value.productPlaceholder || '/static/storefront/forest/product-placeholder.png')
 
 const totalCount = computed(() =>
   cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
@@ -54,6 +60,7 @@ const totalPrice = computed(() => {
 // Lifecycle
 // ============================================================
 useDidShow(() => {
+  currentTheme.value = getCurrentCustomerTheme()
   loadCart()
 })
 
@@ -89,7 +96,7 @@ function decreaseQuantity(index: number) {
     Taro.showModal({
       title: '确认删除',
       content: `确定要删除「${item.product.name}」吗？`,
-      confirmColor: '#FF6B35',
+      confirmColor: currentTheme.value.primary,
       success: (res) => {
         if (res.confirm) {
           removeItem(index)
@@ -123,7 +130,7 @@ function clearAll() {
   Taro.showModal({
     title: '清空购物车',
     content: '确定要清空购物车吗？',
-    confirmColor: '#FF6B35',
+    confirmColor: currentTheme.value.primary,
     success: (res) => {
       if (res.confirm) {
         cartItems.value = []
@@ -179,7 +186,7 @@ function getItemSubtotal(item: CartItem): number {
 </script>
 
 <template>
-  <view class="cart-page">
+  <view class="cart-page" :style="themeVars">
     <!-- ==================== Status Bar Spacer ==================== -->
     <view class="status-bar-spacer" />
 
@@ -187,8 +194,8 @@ function getItemSubtotal(item: CartItem): number {
     <view class="cart-header">
       <view class="header-title">购物车</view>
       <view
-        class="header-action"
         v-if="!isEmpty"
+        class="header-action"
         @tap="clearAll"
       >
         <text class="action-text">清空</text>
@@ -203,10 +210,11 @@ function getItemSubtotal(item: CartItem): number {
     <!-- ==================== Empty State ==================== -->
     <view v-else-if="isEmpty" class="empty-state">
       <view class="empty-illustration">
-        <text class="empty-emoji">🛒</text>
+        <image v-if="imageUrls.mascot" class="empty-mascot" :src="imageUrls.mascot" mode="aspectFit" />
+        <text v-else class="empty-emoji">🛒</text>
       </view>
-      <text class="empty-title">购物车是空的</text>
-      <text class="empty-desc">快去挑选心仪的商品吧</text>
+      <text class="empty-title">{{ pageTheme.emptyTitle || '购物车是空的' }}</text>
+      <text class="empty-desc">{{ pageTheme.emptySubtitle || '去首页挑一杯新鲜果茶吧' }}</text>
       <view class="empty-btn" @tap="goToStore">
         <text class="empty-btn-text">去逛逛</text>
       </view>
@@ -220,12 +228,23 @@ function getItemSubtotal(item: CartItem): number {
       :show-scrollbar="false"
     >
       <view class="cart-list">
+        <view v-if="pageTheme.headerBanner?.imageUrl" class="cart-theme-banner">
+          <image class="cart-theme-banner-image" :src="pageTheme.headerBanner.imageUrl" mode="aspectFill" />
+          <view class="cart-theme-banner-copy">
+            <text class="cart-theme-banner-title">{{ pageTheme.headerBanner.title }}</text>
+            <text class="cart-theme-banner-subtitle">{{ pageTheme.headerBanner.subtitle }}</text>
+          </view>
+        </view>
+
         <!-- ==================== Store Section ==================== -->
         <view class="store-section">
           <view class="store-header">
             <view class="store-info">
-              <text class="store-icon">🏪</text>
-              <text class="store-name">老王煎饼摊</text>
+              <text class="store-icon">⌖</text>
+              <view class="store-copy">
+                <text class="store-name">{{ pageTheme.storeName || '上海环球港店' }}</text>
+                <text class="store-distance">{{ pageTheme.distanceText || '距离您 1.3km' }}</text>
+              </view>
             </view>
           </view>
 
@@ -238,15 +257,15 @@ function getItemSubtotal(item: CartItem): number {
             <!-- Item Image -->
             <image
               class="item-image"
-              :src="item.product.image"
+              :src="item.product.image || productPlaceholder"
               mode="aspectFill"
-              @error="(e: any) => { e.target.src = '/static/product-placeholder.png' }"
+              @error="(e: any) => { e.target.src = productPlaceholder }"
             />
 
             <!-- Item Info -->
             <view class="item-info">
               <text class="item-name line-clamp-2">{{ item.product.name }}</text>
-              <text class="item-spec" v-if="getSpecsText(item.product)">
+              <text v-if="getSpecsText(item.product)" class="item-spec">
                 {{ getSpecsText(item.product) }}
               </text>
               <view class="item-bottom">
@@ -298,7 +317,7 @@ function getItemSubtotal(item: CartItem): number {
     </scroll-view>
 
     <!-- ==================== Bottom Settlement Bar ==================== -->
-    <view class="settlement-bar" v-if="!isEmpty">
+    <view v-if="!isEmpty" class="settlement-bar">
       <view class="settlement-left">
         <text class="settlement-count">共{{ totalCount }}件</text>
         <view class="settlement-total">

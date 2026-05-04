@@ -12,12 +12,17 @@ const activeModule = ref('PRODUCT')
 const { data: categories, refresh } = await useAsyncData('vendor-categories', () => api.vendorCategories(activeModule.value), {
   watch: [activeModule],
 })
+const { data: decorationWorkspace } = await useAsyncData('vendor-category-icon-library', () => api.vendorSummary())
 const form = reactive<CategoryInput>({
   module: 'PRODUCT',
   name: '',
+  iconKey: 'recommend',
   sortOrder: 10,
   status: 'ACTIVE',
 })
+const editing = reactive<Record<number, CategoryInput>>({})
+
+const categoryIconLibrary = computed(() => decorationWorkspace.value?.decoration.categoryIconLibrary || [])
 
 watch(activeModule, module => {
   form.module = module
@@ -26,8 +31,28 @@ watch(activeModule, module => {
 const save = async () => {
   await api.createCategory({ ...form })
   form.name = ''
+  form.iconKey = categoryIconLibrary.value[0]?.key || 'recommend'
   form.sortOrder += 10
   showCreate.value = false
+  await refresh()
+}
+
+const editModel = (category: CategoryInput & { id: number }) => {
+  if (!editing[category.id]) {
+    editing[category.id] = {
+      module: category.module,
+      name: category.name,
+      iconKey: category.iconKey || categoryIconLibrary.value[0]?.key || 'recommend',
+      sortOrder: category.sortOrder,
+      status: category.status,
+    }
+  }
+  return editing[category.id]
+}
+
+const saveEdit = async (categoryId: number) => {
+  await api.updateCategory(categoryId, { ...editing[categoryId] })
+  delete editing[categoryId]
   await refresh()
 }
 </script>
@@ -67,6 +92,14 @@ const save = async () => {
           <input v-model="form.name" required>
         </div>
         <div class="field">
+          <label>分类图标</label>
+          <select v-model="form.iconKey">
+            <option v-for="icon in categoryIconLibrary" :key="icon.key" :value="icon.key">
+              {{ icon.name }}
+            </option>
+          </select>
+        </div>
+        <div class="field">
           <label>排序</label>
           <input v-model.number="form.sortOrder" type="number">
         </div>
@@ -91,17 +124,36 @@ const save = async () => {
           <thead>
             <tr>
               <th>分类</th>
+              <th>图标</th>
               <th>模块</th>
               <th>状态</th>
               <th>排序</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="category in categories" :key="category.id">
-              <td><strong>{{ category.name }}</strong></td>
+              <td>
+                <input v-model="editModel(category).name">
+              </td>
+              <td>
+                <select v-model="editModel(category).iconKey">
+                  <option v-for="icon in categoryIconLibrary" :key="icon.key" :value="icon.key">
+                    {{ icon.name }}
+                  </option>
+                </select>
+              </td>
               <td>{{ category.module }}</td>
-              <td><span class="badge">{{ category.status }}</span></td>
-              <td>{{ category.sortOrder }}</td>
+              <td>
+                <select v-model="editModel(category).status">
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              </td>
+              <td><input v-model.number="editModel(category).sortOrder" type="number"></td>
+              <td>
+                <button class="button" type="button" @click="saveEdit(category.id)">保存</button>
+              </td>
             </tr>
           </tbody>
         </table>
