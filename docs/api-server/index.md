@@ -77,6 +77,7 @@
 | `GET` | `/user/profile` | 获取用户资料 |
 | `PUT` | `/user/profile` | 更新用户资料 |
 | `GET` | `/stores/{id}` | 获取店铺信息 |
+| `GET` | `/app/bootstrap` | 按小程序 AppID 获取启动配置和主题 |
 | `PUT` | `/stores/{id}` | 更新店铺信息 |
 | `GET` | `/stores/qr/{qrCode}` | 扫码进店 |
 | `GET` | `/stores/{storeId}/products` | 获取店铺商品列表 |
@@ -103,6 +104,9 @@
 | `GET` | `/admin/platform/vendors/{storeId}/orders` | 平台查看商家订单 |
 | `GET` | `/admin/platform/vendors/{storeId}/carts` | 平台查看商家购物车 |
 | `GET` | `/admin/platform/vendors/{storeId}/users` | 平台查看商家关联用户 |
+| `GET` | `/admin/platform/styles` | 平台风格包列表 |
+| `PUT` | `/admin/platform/styles/{styleId}/publish` | 平台上架风格包 |
+| `PUT` | `/admin/platform/styles/{styleId}/unpublish` | 平台下架风格包 |
 | `GET` | `/admin/vendor/me/summary` | 商家 H5 工作台 |
 | `GET` | `/admin/vendor/me/store` | 商家店铺信息 |
 | `PUT` | `/admin/vendor/me/store` | 更新商家店铺 |
@@ -138,6 +142,7 @@
 | 页面 | 方法 | 路径 | 关键响应字段 |
 | --- | --- | --- | --- |
 | 首页 | `GET` | `/stores/{id}` | `id`, `name`, `description`, `avatarUrl`, `styleId`, `styleCode`, `status`, `decoration`；`decoration.categories` 必须含 `iconKey/iconUrl/fallbackText` |
+| 启动 | `GET` | `/app/bootstrap?appId={appId}` | `storeId`, `styleId`, `styleCode`, `styleVersion`, `storefront`；小程序启动后使用 `storefront.decoration` 写入顾客端主题缓存。 |
 | 首页 | `GET` | `/stores/qr/{qrCode}` | 同 `/stores/{id}`，用于扫码进店。 |
 | 首页 | `GET` | `/stores/{storeId}/products` | `id`, `storeId`, `categoryId`, `categoryName`, `name`, `description`, `price`, `imageUrl`, `mainImageUrl`, `status`, `sortOrder`, `specIds`, `skus`；`skus` 必须含 `id/specValues/price/stock/status` |
 | 首页 | `GET` | `/products/{id}` | 同商品列表单项结构，用于商品详情和 SKU 选择。 |
@@ -177,3 +182,12 @@
 详细标准见 [../specification/storefront-decoration.md](../specification/storefront-decoration.md)。
 
 管理端装修页必须以可视化配置为主：颜色用色板/取色器，Logo、封面、Banner、图标和主题图片通过上传按钮替换并展示预览，文案按语义字段编辑。仅在必要兜底时展示文件地址。
+
+## 数据库迁移
+
+服务端业务表由 Flyway 管理，迁移文件位于 `server/src/main/resources/db/migration/`：
+
+- `V1__init_schema.sql`：用户、后台账号、店铺、风格包、装修、分类、商品、SKU、规格、购物车、订单表。
+- `V2__seed_dev_data.sql`：本地联调种子数据，包含 `platform/vendor` 后台账号、演示店铺、森系风格包、商品、购物车和订单。
+
+服务端实现不得再把业务数据硬编码在 `ConcurrentHashMap` 中；dev seed 是本地演示数据的唯一来源。

@@ -1,6 +1,9 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import Taro from '@tarojs/taro'
+import { API_ENDPOINTS } from '@/config'
+import { get } from '@/utils/request'
+import { createThemeFromStoreDecoration, persistCustomerTheme } from '@/utils/customer-theme'
 import './app.scss'
 
 // Global error handler
@@ -13,6 +16,34 @@ const unhandledRejection = (reason: any) => {
   console.error('[Unhandled Rejection]', reason)
 }
 
+function resolveAppId() {
+  if (process.env.TARO_APP_ID) {
+    return process.env.TARO_APP_ID
+  }
+  try {
+    return Taro.getAccountInfoSync?.().miniProgram?.appId || 'wx-stallmart-demo'
+  } catch {
+    return 'wx-stallmart-demo'
+  }
+}
+
+async function loadBootstrapTheme() {
+  const appId = resolveAppId()
+  try {
+    const response = await get<any>(API_ENDPOINTS.APP_BOOTSTRAP, undefined, {
+      skipAuth: true,
+      params: { appId },
+      header: { 'X-App-Id': appId },
+    })
+    const decoration = response.data?.storefront?.decoration
+    if (decoration) {
+      persistCustomerTheme(createThemeFromStoreDecoration(decoration))
+    }
+  } catch (error) {
+    console.warn('[App] Bootstrap theme failed, cached/default theme will be used:', error)
+  }
+}
+
 const App = createApp({
   onLaunch(options: Taro.AppLaunchShowOption) {
     console.log('[App] onLaunch', options)
@@ -20,6 +51,7 @@ const App = createApp({
     // Initialize pinia
     const pinia = createPinia()
     App.use(pinia)
+    void loadBootstrapTheme()
   },
 
   onShow(options: Taro.AppLaunchShowOption) {

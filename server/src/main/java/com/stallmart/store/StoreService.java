@@ -24,6 +24,8 @@ public interface StoreService {
 
     StorefrontDTO getStorefrontByQrCode(String qrCode);
 
+    StorefrontDTO getStorefrontByAppId(String appId);
+
     List<StoreDTO> listStores();
 
     List<StoreDTO> listStoresByOwner(long ownerId);
@@ -53,6 +55,8 @@ public interface StoreService {
     List<StyleDTO> listStyles();
 
     StyleDTO getStyle(long id);
+
+    StyleDTO updateStyleStatus(long id, String status);
 
     List<SpecDTO> listSpecs(long styleId);
 

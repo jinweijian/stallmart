@@ -24,6 +24,8 @@ public record StoreDecorationDTO(
         Map<String, String> imageUrls,
         Map<String, String> copywriting,
         List<StorefrontCategoryIconDTO> categoryIconLibrary,
-        List<StorefrontCategoryDTO> categories
+        List<StorefrontCategoryDTO> categories,
+        Map<String, Object> assetSizes,
+        Map<String, Object> pageThemes
 ) {
 }

@@ -31,9 +31,19 @@
 | `categories` | list | 首页左侧实际分类入口，来自分类管理，包含 `id/name/iconKey/iconUrl/fallbackText/sortOrder/status`。 |
 | `banners` | list | 店铺轮播图，包含 `id/imageUrl/title/subtitle/actionText/targetCategory`，按顺序展示。 |
 | `assetSizes` | map | 小程序展示尺寸 token。上传素材可以更大，但页面展示必须使用这里的统一尺寸。 |
-| `pageThemes` | map | 跨页面展示配置，包含 `home/cart/orders/my`，用于四个 tab 的 banner、文案、菜单 icon 和状态色。 |
+| `pageThemes` | map | 跨页面展示配置，包含 `home/cart/orders/my`，用于四个 tab 的 banner、文案、菜单 icon 和状态色；确认订单页复用 `pageThemes.cart.headerBanner` 保持点单链路风格一致。 |
 
 所有会展示在小程序端的内容，都必须归入这些字段之一。新增位置时先新增语义 key 并更新本文，再改服务端、小程序和管理端。
+
+## SaaS 加载规则
+
+同一套小程序代码服务多个商家时，小程序启动阶段通过 AppID 识别租户：
+
+```text
+小程序启动 -> GET /app/bootstrap?appId={appId} -> 写入 customer-theme 缓存 -> 页面读取缓存和接口数据
+```
+
+平台角色负责创建、修改、上传素材和上下架风格包；商家角色第一版只能选择已上架风格包。后台上传素材后保存网络 URL，小程序运行时按配置读取，不把商家素材重新打包到 `app/src/static`。
 
 ## 第一版森系风格
 
@@ -104,7 +114,7 @@
 | 点单页商品图展示位 | `cartProductImage` | `148rpx x 148rpx` |
 | 订单页商品图/骨架展示位 | `orderProductImage` | `112rpx x 112rpx` |
 | 首页吉祥物 | `mascot` | `120rpx x 120rpx` |
-| 底部购物车吉祥物 | `cartMascot` | `132rpx x 132rpx` |
+| 底部购物车吉祥物 | `cartMascot` | `140rpx x 140rpx`，等效 375px 设备上的 `70px x 70px` |
 | 我的页头像 | `profileAvatar` | `132rpx x 132rpx` |
 | 我的页菜单 icon | `menuIcon` | `44rpx x 44rpx` |
 | 数量步进器按钮 | `qtyStepper` | `44rpx x 44rpx` |
@@ -112,6 +122,7 @@
 | 点单/订单页顶部 banner | `cartHeaderBanner` | `692rpx x 120rpx` |
 | 我的页邀请 banner | `myInviteBanner` | `692rpx x 124rpx` |
 | 页面底部操作栏 | `bottomBarHeight` | `128rpx` |
+| 首页购物车浮条底部偏移 | `cartBarBottomOffset` | `60rpx`，用于控制浮条贴近原生 tabBar 的视觉位置 |
 | 原生 tabBar 预留 | `tabBarReserve` | `132rpx` |
 
 强制规则：
@@ -138,7 +149,7 @@
 
 ## 开发流程
 
-1. 新增风格包时，先在服务端 `StyleDTO.theme` 和小程序 `STORE_THEME_PACKAGES` 中补齐同名 token 与 `categoryIconLibrary`。
+1. 新增风格包时，先在服务端 `store_style.theme_json` 和小程序 `STORE_THEME_PACKAGES` 中补齐同名 token 与 `categoryIconLibrary`。
 2. 新增装修字段时，同步更新 `StoreDecorationDTO`、管理端装修页、小程序首页消费逻辑和 API 文档。
 3. 管理端只保存语义字段，不保存页面私有 class 名或布局实现细节；分类 icon 只保存 `iconKey`。
 4. 小程序页面只消费合并后的装修配置，不直接判断商家名称或风格名称来切换样式。

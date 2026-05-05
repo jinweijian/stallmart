@@ -22,7 +22,7 @@
 | `forest/mascot.png` | `mascot.png` | 我的页欢迎区、空状态吉祥物 | `256 x 256`，PNG 真实透明 |
 | `forest/cover.png` | `cover.png` | 后台风格包封面 | `360 x 360`，PNG/JPG 均可 |
 | `forest/preview.png` | `preview.png` | 后台风格包预览图 | `360 x 360`，PNG/JPG 均可 |
-| `forest/icons/cart.png` | `cart.png` | 首页底部结算栏购物车吉祥物 | `256 x 256`，PNG |
+| `forest/icons/cart.png` | `cart.png` | 首页底部结算栏购物车吉祥物 | `256 x 256`，PNG；展示尺寸由 `assetSizes.cartMascot` 固定为 `140rpx x 140rpx` |
 | `forest/icons/category-1.png` | `category-1.png` | 分类 icon 库：用户自定义类目 1 | `108 x 108`，PNG |
 | `forest/icons/category-2.png` | `category-2.png` | 分类 icon 库：用户自定义类目 2 | `108 x 108`，PNG |
 | `forest/icons/*.png` | 其他 icon | 定位、结算、菜单、分类 icon 库默认项 | `108 x 108`，PNG 真实透明 |

@@ -8,64 +8,67 @@ import com.stallmart.user.dto.UpdateProfileParams;
 import com.stallmart.auth.dto.AuthTokenDTO;
 import com.stallmart.user.dto.UserProfileDTO;
 import com.stallmart.user.UserService;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import com.stallmart.user.internal.repository.AdminAccountEntity;
+import com.stallmart.user.internal.repository.AdminAccountRepository;
+import com.stallmart.user.internal.repository.UserEntity;
+import com.stallmart.user.internal.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final AtomicLong idSequence = new AtomicLong(100);
-    private final Map<Long, UserProfileDTO> users = new ConcurrentHashMap<>();
-    private final Map<String, AdminAccount> adminAccounts = new ConcurrentHashMap<>();
     private final JwtService jwtService;
+    private final UserRepository userRepository;
+    private final AdminAccountRepository adminAccountRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(JwtService jwtService) {
+    public UserServiceImpl(
+            JwtService jwtService,
+            UserRepository userRepository,
+            AdminAccountRepository adminAccountRepository,
+            PasswordEncoder passwordEncoder
+    ) {
         this.jwtService = jwtService;
-        users.put(1L, new UserProfileDTO(1L, "市集顾客", "/static/default-avatar.png", null, false, "CUSTOMER"));
-        users.put(2L, new UserProfileDTO(2L, "海边摊主", "/static/vendor-avatar.png", "139****1201", true, "VENDOR"));
-        users.put(99L, new UserProfileDTO(99L, "平台管理员", "/static/admin-avatar.png", "138****0099", true, "ADMIN"));
-        adminAccounts.put("platform", new AdminAccount("platform", "platform123", 99L, null, "/platform/vendors"));
-        adminAccounts.put("vendor", new AdminAccount("vendor", "vendor123", 2L, 1L, "/vendor"));
+        this.userRepository = userRepository;
+        this.adminAccountRepository = adminAccountRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
+    @Transactional
     public AuthTokenDTO login(String code, String nickname, String avatarUrl) {
-        long userId = idSequence.getAndUpdate(value -> Math.max(value + 1, 2));
-        UserProfileDTO user = new UserProfileDTO(
-                userId,
-                nickname == null || nickname.isBlank() ? "微信用户" : nickname,
-                avatarUrl,
-                null,
-                false,
-                "CUSTOMER"
-        );
-        users.put(userId, user);
-        return tokenFor(user);
+        UserEntity user = new UserEntity();
+        user.openId = code == null || code.isBlank() ? "dev-openid-" + System.nanoTime() : code;
+        user.nickname = nickname == null || nickname.isBlank() ? "微信用户" : nickname;
+        user.avatarUrl = avatarUrl;
+        user.hasPhone = false;
+        user.role = "CUSTOMER";
+        user.status = "ACTIVE";
+        return tokenFor(toDto(userRepository.save(user)));
     }
 
     @Override
     public AdminSessionDTO adminLogin(String account, String password) {
-        AdminAccount adminAccount = adminAccounts.get(account);
-        if (adminAccount == null || !adminAccount.password().equals(password)) {
+        AdminAccountEntity adminAccount = adminAccountRepository.findByAccount(account)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
+        if (!"ACTIVE".equals(adminAccount.status) || !passwordEncoder.matches(password, adminAccount.passwordHash)) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
-        UserProfileDTO user = getProfile(adminAccount.userId());
-        return adminSession(user, adminAccount.storeId(), adminAccount.entryPath());
+        UserProfileDTO user = getProfile(adminAccount.userId);
+        return adminSession(user, adminAccount.storeId, adminAccount.entryPath);
     }
 
     @Override
     public AdminSessionDTO adminSession(long userId) {
         UserProfileDTO user = getProfile(userId);
-        AdminAccount account = adminAccounts.values().stream()
-                .filter(candidate -> candidate.userId().equals(user.id()))
-                .findFirst()
-                .orElse(null);
-        Long storeId = account == null ? null : account.storeId();
-        String entryPath = user.role().equals("ADMIN") ? "/platform/vendors" : "/vendor";
+        AdminAccountEntity account = adminAccountRepository.findByUserId(user.id()).orElse(null);
+        Long storeId = account == null ? null : account.storeId;
+        String entryPath = account == null
+                ? (user.role().equals("ADMIN") ? "/platform/vendors" : "/vendor")
+                : account.entryPath;
         return adminSession(user, storeId, entryPath);
     }
 
@@ -78,49 +81,33 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserProfileDTO> listUsers() {
-        return users.values().stream()
-                .sorted(Comparator.comparing(UserProfileDTO::id))
+        return userRepository.findAllByOrderByIdAsc().stream()
+                .map(this::toDto)
                 .toList();
     }
 
     @Override
+    @Transactional
     public UserProfileDTO bindPhone(long userId, String phoneCode) {
-        UserProfileDTO current = getProfile(userId);
+        UserEntity current = getUser(userId);
         String suffix = phoneCode.length() > 4 ? phoneCode.substring(phoneCode.length() - 4) : "0000";
-        UserProfileDTO updated = new UserProfileDTO(
-                current.id(),
-                current.nickname(),
-                current.avatarUrl(),
-                "138****" + suffix,
-                true,
-                current.role()
-        );
-        users.put(userId, updated);
-        return updated;
+        current.phone = "138****" + suffix;
+        current.hasPhone = true;
+        return toDto(userRepository.save(current));
     }
 
     @Override
     public UserProfileDTO getProfile(long userId) {
-        UserProfileDTO user = users.get(userId);
-        if (user == null) {
-            throw new AppException(ErrorCode.NOT_FOUND);
-        }
-        return user;
+        return toDto(getUser(userId));
     }
 
     @Override
+    @Transactional
     public UserProfileDTO updateProfile(long userId, UpdateProfileParams request) {
-        UserProfileDTO current = getProfile(userId);
-        UserProfileDTO updated = new UserProfileDTO(
-                current.id(),
-                request.nickname() == null ? current.nickname() : request.nickname(),
-                request.avatarUrl() == null ? current.avatarUrl() : request.avatarUrl(),
-                current.phone(),
-                current.hasPhone(),
-                current.role()
-        );
-        users.put(userId, updated);
-        return updated;
+        UserEntity current = getUser(userId);
+        current.nickname = request.nickname() == null ? current.nickname : request.nickname();
+        current.avatarUrl = request.avatarUrl() == null ? current.avatarUrl : request.avatarUrl();
+        return toDto(userRepository.save(current));
     }
 
     private long parseRefreshUserId(String refreshToken) {
@@ -165,6 +152,19 @@ public class UserServiceImpl implements UserService {
         );
     }
 
-    private record AdminAccount(String account, String password, Long userId, Long storeId, String entryPath) {
+    private UserEntity getUser(long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+    }
+
+    private UserProfileDTO toDto(UserEntity user) {
+        return new UserProfileDTO(
+                user.id,
+                user.nickname,
+                user.avatarUrl,
+                user.phone,
+                user.hasPhone,
+                user.role
+        );
     }
 }

@@ -58,6 +58,9 @@ docker/.env
 | `JWT_REFRESH_TOKEN_VALIDITY` | Refresh Token 有效期，单位秒。 |
 | `WECHAT_APP_ID` | 微信小程序 App ID。 |
 | `WECHAT_APP_SECRET` | 微信小程序密钥。 |
+| `SPRING_DATASOURCE_URL` | 后端 MySQL JDBC 地址。 |
+| `SPRING_DATASOURCE_USERNAME` | 后端数据库用户名。 |
+| `SPRING_DATASOURCE_PASSWORD` | 后端数据库密码。 |
 
 可选 OSS 配置目前只在模板中出现，当前代码未发现完整接入链路：
 
@@ -81,6 +84,13 @@ docker/.env
 | `app/src/app-config/index.ts` | API 地址、endpoint、设计 token、存储 key。 |
 | `app/src/app.config.ts` | 小程序页面、分包、tabBar、权限配置。 |
 
+H5 调试真实 API 时可设置：
+
+| 变量 | 用途 |
+| --- | --- |
+| `TARO_APP_ENABLE_API_MOCK=false` | 关闭小程序端 mock，让 H5 请求真实 API。 |
+| `TARO_APP_ID=wx-stallmart-demo` | 本地按 AppID 调用 `/app/bootstrap` 识别演示商家。 |
+
 当前 API base URL：
 
 | 环境 | 地址 |
@@ -101,4 +111,4 @@ docker/.env
 - `app/config/index.js` 和 `app/taro.config.ts` 都包含 Taro 构建配置；当前 CLI 构建以 `config/index.js` 为准，alias 变更必须保持两处一致。
 - `docker/docker-compose.yml` 的 `admin-web` build context 指向 `web/`。
 - `server/build.gradle` 声明 Java 21 toolchain，Dockerfile 也必须保持 Java 21。
-- 数据库脚本当前以 `docker/mysql/init/01-init.sql` 为准，服务端接入持久化后再补迁移策略。
+- 业务表结构以 `server/src/main/resources/db/migration/` 下的 Flyway migration 为准，`docker/mysql/init/01-init.sql` 不再承载业务 schema 演进。

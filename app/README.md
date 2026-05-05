@@ -34,6 +34,7 @@ npm run dev:weapp
 
 ## 当前约束
 
+
 - `ENABLE_API_MOCK` 保持开启，前端仍使用 mock 数据。
 - 业务页面不得直接调用 `Taro.request`，统一走 `src/utils/request.ts`。
 - 新增 endpoint 必须写入 `src/app-config/index.ts` 并同步 API 文档。

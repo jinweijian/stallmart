@@ -47,6 +47,7 @@
 
 - 店铺信息和商品列表不能硬编码到页面中。
 - 店铺装修必须消费服务端 `decoration` 和本地 `STORE_THEME_PACKAGES` 合并后的配置，颜色、文案、icon、banner、分类 icon 库和展示尺寸都不得散落硬编码。首页轮播 banner 必须由合并后的 `banners` 驱动，分类入口必须来自服务端 `decoration.categories`，分类 icon 由分类的 `iconKey` 解析得到，icon 与图片展示大小必须由 `assetSizes` 统一约束。首页需要将合并后的主题缓存给点单、订单、我的三个 tab 使用。完整规则见 [storefront-decoration.md](storefront-decoration.md)。
+- 小程序启动时 App Shell 可调用 `API_ENDPOINTS.APP_BOOTSTRAP`，按 AppID 获取当前商家基础配置和主题，成功后写入 `src/utils/customer-theme.ts` 缓存；失败时继续使用缓存或默认主题。
 - 商品详情弹层必须从商品 `specIds/skus` 和风格规格接口 `/styles/{styleId}/specs` 生成 SKU 选项；不可售 SKU 不得允许选择。加入购物车时保存商品快照、选中 SKU id、规格文案和最终价格。
 - 搜索、分类筛选只处理当前页面视图状态，持久化规则另行设计。
 
@@ -95,6 +96,7 @@
 - 下单前必须确认用户已登录。
 - 需要手机号时触发手机号绑定流程。
 - 不处理真实支付，v1 为线下支付。
+- 顾客端确认订单页必须读取 `src/utils/customer-theme.ts` 生成的 CSS 变量，复用 `pageThemes.cart.headerBanner` 作为顶部风格 banner，商品图和底部提交栏尺寸由风格包 `assetSizes` 驱动。
 
 ### 我的订单模块
 

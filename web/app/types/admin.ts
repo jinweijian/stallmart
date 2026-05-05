@@ -116,6 +116,8 @@ export interface Style {
   name: string
   code: string
   previewUrl: string | null
+  status?: string
+  version?: number
   theme: StorefrontTheme
 }
 
@@ -146,6 +148,8 @@ export interface StorefrontTheme {
   imageUrls: Record<string, string>
   copywriting: Record<string, string>
   categoryIconLibrary: StorefrontCategoryIcon[]
+  assetSizes?: Record<string, unknown>
+  pageThemes?: Record<string, unknown>
 }
 
 export interface StoreDecoration {
@@ -166,6 +170,8 @@ export interface StoreDecoration {
   copywriting: Record<string, string>
   categoryIconLibrary: StorefrontCategoryIcon[]
   categories: StorefrontCategory[]
+  assetSizes?: Record<string, unknown>
+  pageThemes?: Record<string, unknown>
 }
 
 export interface Spec {

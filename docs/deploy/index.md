@@ -11,6 +11,8 @@
 - `docker/Dockerfile.admin-web`
 - `docker/.env.example`
 - `docker/mysql/init/01-init.sql`
+- `server/src/main/resources/db/migration/V1__init_schema.sql`
+- `server/src/main/resources/db/migration/V2__seed_dev_data.sql`
 
 待确认内容：
 
@@ -83,7 +85,7 @@ app/dist/
 - 保持 Java 版本一致。
 - 联调前复核成功码和 endpoint 常量。
 - 复核 Taro alias 不含本机绝对路径。
-- 合并数据库初始化脚本。
+- Flyway migration 已随 API 服务启动执行，生产环境禁止手工改业务表结构。
 - 增加生产环境 Spring profile。
 - 使用强随机 `JWT_SECRET`。
 - 使用最小权限数据库账号。

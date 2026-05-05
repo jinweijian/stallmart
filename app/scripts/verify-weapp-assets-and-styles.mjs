@@ -42,6 +42,7 @@ const sourceStyleFiles = [
   'src/pages/customer/my/my.scss',
   'src/pages/customer/index/index.scss',
   'src/pages/customer/cart/cart.scss',
+  'src/pages/customer/confirm-order/confirm-order.scss',
   'src/pages/customer/my-orders/my-orders.scss',
 ]
 const maxDisplayAssetBytes = 512 * 1024
@@ -108,6 +109,7 @@ const requiredSharedThemeFiles = [
 const customerThemePages = [
   'src/pages/customer/index/index.vue',
   'src/pages/customer/cart/cart.vue',
+  'src/pages/customer/confirm-order/confirm-order.vue',
   'src/pages/customer/my-orders/my-orders.vue',
   'src/pages/customer/my/my.vue',
 ]
@@ -129,13 +131,14 @@ if (existsSync(appConfigPath)) {
     "promoBanner: { width: '692rpx', height: '220rpx' }",
     "categoryIcon: '54rpx'",
     "bottomActionIcon: '32rpx'",
-    "cartMascot: '132rpx'",
+    "cartMascot: '140rpx'",
     "cartProductImage: '148rpx'",
     "orderProductImage: '112rpx'",
     "profileAvatar: '132rpx'",
     "menuIcon: '44rpx'",
     "qtyStepper: '44rpx'",
     "progressIcon: '44rpx'",
+    "cartBarBottomOffset: '60rpx'",
     "tabBarReserve: '132rpx'",
     "banner-seasonal.jpg",
     "banner-tea.jpg",
@@ -175,6 +178,8 @@ if (!existsSync(tabbarOptimizerPath)) {
     'maxBytes',
     'tabbarFiles',
     'System.Drawing',
+    'Get-VisibleBounds',
+    'PaddingRatio',
     'sync-weapp-static.mjs',
   ]
 

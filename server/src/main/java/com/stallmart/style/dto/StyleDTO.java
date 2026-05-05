@@ -5,6 +5,8 @@ public record StyleDTO(
         String name,
         String code,
         String previewUrl,
-        StorefrontThemeDTO theme
+        StorefrontThemeDTO theme,
+        String status,
+        int version
 ) {
 }

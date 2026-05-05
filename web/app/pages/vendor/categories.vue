@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useStallmartApi } from '~/api/stallmart-api'
-import type { CategoryInput } from '~/types/admin'
+import type { Category, CategoryInput } from '~/types/admin'
 
 definePageMeta({
   role: 'VENDOR',
@@ -37,7 +37,7 @@ const save = async () => {
   await refresh()
 }
 
-const editModel = (category: CategoryInput & { id: number }) => {
+const editModel = (category: Category) => {
   if (!editing[category.id]) {
     editing[category.id] = {
       module: category.module,
@@ -47,11 +47,13 @@ const editModel = (category: CategoryInput & { id: number }) => {
       status: category.status,
     }
   }
-  return editing[category.id]
+  return editing[category.id] as CategoryInput
 }
 
 const saveEdit = async (categoryId: number) => {
-  await api.updateCategory(categoryId, { ...editing[categoryId] })
+  const payload = editing[categoryId]
+  if (!payload) return
+  await api.updateCategory(categoryId, { ...payload })
   delete editing[categoryId]
   await refresh()
 }

@@ -10,6 +10,7 @@ import com.stallmart.order.dto.OrderDTO;
 import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.store.StoreService;
 import com.stallmart.store.dto.StoreDTO;
+import com.stallmart.style.dto.StyleDTO;
 import com.stallmart.support.web.Result;
 import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
@@ -20,6 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -70,6 +72,24 @@ public class PlatformAdminController {
     public Result<VendorWorkspaceDTO> vendorSummary(@PathVariable long storeId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
         return Result.success(buildWorkspace(storeId));
+    }
+
+    @GetMapping("/styles")
+    public Result<List<StyleDTO>> styles(HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
+        return Result.success(storeService.listStyles());
+    }
+
+    @PutMapping("/styles/{styleId}/publish")
+    public Result<StyleDTO> publishStyle(@PathVariable long styleId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
+        return Result.success(storeService.updateStyleStatus(styleId, "ACTIVE"));
+    }
+
+    @PutMapping("/styles/{styleId}/unpublish")
+    public Result<StyleDTO> unpublishStyle(@PathVariable long styleId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
+        return Result.success(storeService.updateStyleStatus(styleId, "INACTIVE"));
     }
 
     @GetMapping("/vendors/{storeId}/products")

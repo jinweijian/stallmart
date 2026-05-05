@@ -200,75 +200,73 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 
+function Get-VisibleBounds {
+  param(
+    [Parameter(Mandatory = $true)][System.Drawing.Bitmap]$Bitmap
+  )
+
+  $minX = $Bitmap.Width
+  $minY = $Bitmap.Height
+  $maxX = -1
+  $maxY = -1
+
+  for ($y = 0; $y -lt $Bitmap.Height; $y++) {
+    for ($x = 0; $x -lt $Bitmap.Width; $x++) {
+      $pixel = $Bitmap.GetPixel($x, $y)
+      if ($pixel.A -gt 10) {
+        if ($x -lt $minX) { $minX = $x }
+        if ($y -lt $minY) { $minY = $y }
+        if ($x -gt $maxX) { $maxX = $x }
+        if ($y -gt $maxY) { $maxY = $y }
+      }
+    }
+  }
+
+  if ($maxX -lt 0) {
+    throw "No visible alpha pixels found"
+  }
+
+  New-Object System.Drawing.Rectangle $minX, $minY, ($maxX - $minX + 1), ($maxY - $minY + 1)
+}
+
 function Save-ResizedPng {
   param(
-    [Parameter(Mandatory = $true)][string]$SourcePath,
+    [Parameter(Mandatory = $true)][System.Drawing.Image]$Image,
+    [Parameter(Mandatory = $true)][System.Drawing.Rectangle]$SourceRect,
     [Parameter(Mandatory = $true)][string]$TargetPath,
     [Parameter(Mandatory = $true)][int]$CanvasSize
   )
 
-  $img = [System.Drawing.Image]::FromFile($SourcePath)
+  $padding = [Math]::Max(1, [Math]::Floor($CanvasSize * $PaddingRatio))
+  $targetBox = $CanvasSize - ($padding * 2)
+  if ($targetBox -lt 1) {
+    throw "Canvas size $CanvasSize is too small for padding ratio $PaddingRatio"
+  }
+
+  $canvas = New-Object System.Drawing.Bitmap $CanvasSize, $CanvasSize, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
   try {
-    $sourceBitmap = New-Object System.Drawing.Bitmap $img
+    $canvas.SetResolution(144, 144)
+    $g = [System.Drawing.Graphics]::FromImage($canvas)
     try {
-      $minX = $sourceBitmap.Width
-      $minY = $sourceBitmap.Height
-      $maxX = -1
-      $maxY = -1
+      $g.Clear([System.Drawing.Color]::Transparent)
+      $g.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+      $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+      $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+      $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
-      for ($y = 0; $y -lt $sourceBitmap.Height; $y++) {
-        for ($x = 0; $x -lt $sourceBitmap.Width; $x++) {
-          $pixel = $sourceBitmap.GetPixel($x, $y)
-          if ($pixel.A -gt 10) {
-            if ($x -lt $minX) { $minX = $x }
-            if ($y -lt $minY) { $minY = $y }
-            if ($x -gt $maxX) { $maxX = $x }
-            if ($y -gt $maxY) { $maxY = $y }
-          }
-        }
-      }
-
-      if ($maxX -lt 0) {
-        throw "No visible alpha pixels found in $SourcePath"
-      }
-
-      $sourceRect = New-Object System.Drawing.Rectangle $minX, $minY, ($maxX - $minX + 1), ($maxY - $minY + 1)
-      $padding = [Math]::Max(1, [Math]::Floor($CanvasSize * $PaddingRatio))
-      $targetBox = $CanvasSize - ($padding * 2)
-      if ($targetBox -lt 1) {
-        throw "Canvas size $CanvasSize is too small for padding ratio $PaddingRatio"
-      }
-
-    $canvas = New-Object System.Drawing.Bitmap $CanvasSize, $CanvasSize, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-    try {
-      $canvas.SetResolution(144, 144)
-      $g = [System.Drawing.Graphics]::FromImage($canvas)
-      try {
-        $g.Clear([System.Drawing.Color]::Transparent)
-        $g.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
-        $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-        $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
-        $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
-
-        $scale = [Math]::Min($targetBox / $sourceRect.Width, $targetBox / $sourceRect.Height)
-        $width = [Math]::Round($sourceRect.Width * $scale)
-        $height = [Math]::Round($sourceRect.Height * $scale)
-        $x = [Math]::Floor(($CanvasSize - $width) / 2)
-        $y = [Math]::Floor(($CanvasSize - $height) / 2)
-        $dest = New-Object System.Drawing.Rectangle $x, $y, $width, $height
-        $g.DrawImage($img, $dest, $sourceRect, [System.Drawing.GraphicsUnit]::Pixel)
-      } finally {
-        $g.Dispose()
-      }
-      $canvas.Save($TargetPath, [System.Drawing.Imaging.ImageFormat]::Png)
+      $scale = [Math]::Min($targetBox / $SourceRect.Width, $targetBox / $SourceRect.Height)
+      $width = [Math]::Round($SourceRect.Width * $scale)
+      $height = [Math]::Round($SourceRect.Height * $scale)
+      $x = [Math]::Floor(($CanvasSize - $width) / 2)
+      $y = [Math]::Floor(($CanvasSize - $height) / 2)
+      $dest = New-Object System.Drawing.Rectangle $x, $y, $width, $height
+      $g.DrawImage($Image, $dest, $SourceRect, [System.Drawing.GraphicsUnit]::Pixel)
     } finally {
-      $canvas.Dispose()
+      $g.Dispose()
     }
-    } finally {
-      $sourceBitmap.Dispose()
-    }
+    $canvas.Save($TargetPath, [System.Drawing.Imaging.ImageFormat]::Png)
   } finally {
-    $img.Dispose()
+    $canvas.Dispose()
   }
 }
 
@@ -278,20 +276,32 @@ foreach ($file in $files) {
   $target = Join-Path $OutputDir $file
   $candidate = Join-Path $OutputDir "$file.candidate.png"
   $matched = $false
+  $img = [System.Drawing.Image]::FromFile($source)
 
-  for ($size = $MaxSize; $size -ge $MinSize; $size--) {
-    Save-ResizedPng -SourcePath $source -TargetPath $candidate -CanvasSize $size
-    $bytes = (Get-Item -LiteralPath $candidate).Length
-    if ($bytes -le $MaxBytes) {
-      Move-Item -LiteralPath $candidate -Destination $target -Force
-      $matched = $true
-      break
+  try {
+    $sourceBitmap = New-Object System.Drawing.Bitmap $img
+    try {
+      $sourceRect = Get-VisibleBounds -Bitmap $sourceBitmap
+    } finally {
+      $sourceBitmap.Dispose()
     }
-    Remove-Item -LiteralPath $candidate -Force
-  }
 
-  if (-not $matched) {
-    throw "Could not fit $file under $MaxBytes bytes between $MinSize and $MaxSize pixels"
+    for ($size = $MaxSize; $size -ge $MinSize; $size--) {
+      Save-ResizedPng -Image $img -SourceRect $sourceRect -TargetPath $candidate -CanvasSize $size
+      $bytes = (Get-Item -LiteralPath $candidate).Length
+      if ($bytes -le $MaxBytes) {
+        Move-Item -LiteralPath $candidate -Destination $target -Force
+        $matched = $true
+        break
+      }
+      Remove-Item -LiteralPath $candidate -Force
+    }
+
+    if (-not $matched) {
+      throw "Could not fit $file under $MaxBytes bytes between $MinSize and $MaxSize pixels"
+    }
+  } finally {
+    $img.Dispose()
   }
 }
 `

@@ -12,6 +12,8 @@ public record StorefrontThemeDTO(
         Map<String, String> iconUrls,
         Map<String, String> imageUrls,
         Map<String, String> copywriting,
-        List<StorefrontCategoryIconDTO> categoryIconLibrary
+        List<StorefrontCategoryIconDTO> categoryIconLibrary,
+        Map<String, Object> assetSizes,
+        Map<String, Object> pageThemes
 ) {
 }

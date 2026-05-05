@@ -11,8 +11,8 @@ export const API_BASE_URL_PROD = 'https://api.stallmart.com/api/v1'
 
 export const API_BASE_URL = APP_ENV === 'production' ? API_BASE_URL_PROD : API_BASE_URL_DEV
 
-// Local preview mode: keep true until WeChat request legal domains are configured.
-export const ENABLE_API_MOCK = true
+// Local preview mode defaults to mock. Set TARO_APP_ENABLE_API_MOCK=false for H5/API integration.
+export const ENABLE_API_MOCK = process.env.TARO_APP_ENABLE_API_MOCK === 'false' ? false : true
 
 // Token Keys
 export const STORAGE_KEYS = {
@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
 
   // Store
   STORE_GET: '/stores',
+  APP_BOOTSTRAP: '/app/bootstrap',
   STORE_GET_BY_QR: (qrCode: string) => `/stores/qr/${qrCode}`,
   STORE_DETAIL: (id: string) => `/stores/${id}`,
 
@@ -153,6 +154,7 @@ export interface StorefrontAssetSizes {
     height: string
   }
   bottomBarHeight: string
+  cartBarBottomOffset: string
   tabBarReserve: string
 }
 
@@ -348,7 +350,7 @@ export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
       bottomActionIcon: '32rpx',
       productImage: '144rpx',
       mascot: '120rpx',
-      cartMascot: '132rpx',
+      cartMascot: '140rpx',
       cartProductImage: '148rpx',
       orderProductImage: '112rpx',
       profileAvatar: '132rpx',
@@ -358,6 +360,7 @@ export const STORE_THEME_PACKAGES: Record<StoreStyleCode, StoreThemePackage> = {
       cartHeaderBanner: { width: '692rpx', height: '120rpx' },
       myInviteBanner: { width: '692rpx', height: '124rpx' },
       bottomBarHeight: '128rpx',
+      cartBarBottomOffset: '60rpx',
       tabBarReserve: '132rpx',
     },
     pageThemes: {

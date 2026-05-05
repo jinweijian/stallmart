@@ -12,6 +12,7 @@ import type {
   ProductInput,
   Store,
   StoreDecoration,
+  Style,
   Spec,
   SpecInput,
   UserProfile,
@@ -68,6 +69,13 @@ export const useStallmartApi = () => {
     platformSummary: () => request<AdminSummary>('/admin/platform/summary'),
     platformVendors: () => request<Store[]>('/admin/platform/vendors'),
     platformVendor: (storeId: number) => request<VendorWorkspace>(`/admin/platform/vendors/${storeId}/summary`),
+    platformStyles: () => request<Style[]>('/admin/platform/styles'),
+    platformStylePublish: (styleId: number) => request<Style>(`/admin/platform/styles/${styleId}/publish`, {
+      method: 'PUT',
+    }),
+    platformStyleUnpublish: (styleId: number) => request<Style>(`/admin/platform/styles/${styleId}/unpublish`, {
+      method: 'PUT',
+    }),
     vendorSummary: () => request<VendorWorkspace>('/admin/vendor/me/summary'),
     vendorStore: () => request<Store>('/admin/vendor/me/store'),
     updateVendorStore: (payload: { name?: string, description?: string, logoUrl?: string, coverUrl?: string | null, status?: string }) =>

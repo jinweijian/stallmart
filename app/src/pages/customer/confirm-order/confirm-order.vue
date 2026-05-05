@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import Taro from '@tarojs/taro'
+import { DEFAULT_STORE_THEME, type StoreThemePackage } from '@/config'
 import { post } from '@/utils/request'
+import { createCustomerThemeVars, getCurrentCustomerTheme } from '@/utils/customer-theme'
 
 // ============================================================
 // Types
@@ -12,18 +14,28 @@ interface Product {
   basePrice: number
   originalPrice: number
   image: string
+  imageUrl?: string
+  mainImageUrl?: string
   category: string
   stock: number
   sales: number
   status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT'
   isHot?: boolean
   isNew?: boolean
+  selectedSpecsText?: string
   specs?: Array<{ name: string; options: Array<{ name: string; extraPrice: number }> }>
 }
 
 interface CartItem {
   product: Product
   quantity: number
+}
+
+interface OrderCreateResponse {
+  orderId?: string | number
+  id?: string | number
+  orderNo?: string
+  confirmCode?: string
 }
 
 // ============================================================
@@ -35,6 +47,7 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 const showSuccessModal = ref(false)
 const orderResult = ref<{ orderId: string; orderNo: string; confirmCode: string } | null>(null)
+const currentTheme = ref<StoreThemePackage>(DEFAULT_STORE_THEME)
 
 // Store name - read from first cart item or use default
 const storeName = ref('老王煎饼摊')
@@ -43,10 +56,6 @@ const storeId = ref('1')
 // ============================================================
 // Computed
 // ============================================================
-const totalCount = computed(() =>
-  cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
-)
-
 const totalPrice = computed(() => {
   return cartItems.value.reduce((sum, item) => {
     const specsExtra = (item.product.specs || []).reduce((s, spec) => {
@@ -58,12 +67,19 @@ const totalPrice = computed(() => {
 
 const isEmpty = computed(() => cartItems.value.length === 0)
 
-const canSubmit = computed(() => !isEmpty.value && !isSubmitting.value)
+const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
+const pageTheme = computed(() => currentTheme.value.pageThemes?.cart || {})
+const iconUrls = computed(() => currentTheme.value.iconUrls || {})
+const productPlaceholder = computed(() =>
+  currentTheme.value.imageUrls?.productPlaceholder || '/static/storefront/forest/product-placeholder.png'
+)
 
 // ============================================================
 // Lifecycle
 // ============================================================
 onMounted(() => {
+  currentTheme.value = getCurrentCustomerTheme()
+  storeName.value = pageTheme.value.storeName || storeName.value
   loadCartItems()
 })
 
@@ -131,7 +147,7 @@ async function submitOrder() {
 
   try {
     // Call API
-    const res = await post<any>('/orders', {
+    const res = await post<OrderCreateResponse>('/orders', {
       storeId: Number(storeId.value),
       items: cartItems.value.map((item) => ({
         productId: Number(item.product.id),
@@ -155,10 +171,10 @@ async function submitOrder() {
     // Show success modal
     showSuccessModal.value = true
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[ConfirmOrder] Submit failed:', err)
     Taro.showToast({
-      title: err?.message || '订单提交失败，请重试',
+      title: getErrorMessage(err) || '订单提交失败，请重试',
       icon: 'none',
       duration: 2000,
     })
@@ -200,6 +216,7 @@ function formatPrice(price: number): string {
 }
 
 function getSpecsText(product: Product): string {
+  if (product.selectedSpecsText) return product.selectedSpecsText
   if (!product.specs || product.specs.length === 0) return ''
   return product.specs
     .map((spec) => `${spec.name}: ${spec.options?.[0]?.name || ''}`)
@@ -213,13 +230,17 @@ function getItemPrice(item: CartItem): number {
   return item.product.basePrice + specsExtra
 }
 
-function getItemSubtotal(item: CartItem): number {
-  return getItemPrice(item) * item.quantity
+function getProductImage(product: Product): string {
+  return product.mainImageUrl || product.imageUrl || product.image || productPlaceholder.value
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : ''
 }
 </script>
 
 <template>
-  <view class="confirm-order-page">
+  <view class="confirm-order-page" :style="themeVars">
     <!-- ==================== Status Bar Spacer ==================== -->
     <view class="status-bar-spacer" />
 
@@ -244,11 +265,20 @@ function getItemSubtotal(item: CartItem): number {
       scroll-y
       :show-scrollbar="false"
     >
+      <view v-if="pageTheme.headerBanner?.imageUrl" class="confirm-theme-banner">
+        <image class="confirm-theme-banner-image" :src="pageTheme.headerBanner.imageUrl" mode="aspectFill" />
+        <view class="confirm-theme-banner-copy">
+          <text class="confirm-theme-banner-title">{{ pageTheme.headerBanner.title }}</text>
+          <text class="confirm-theme-banner-subtitle">{{ pageTheme.headerBanner.subtitle }}</text>
+        </view>
+      </view>
+
       <!-- ==================== Store Info Card ==================== -->
       <view class="store-card">
         <view class="store-header">
           <view class="store-icon-wrap">
-            <text class="store-icon-emoji">🏪</text>
+            <image v-if="iconUrls.location" class="store-icon-image" :src="iconUrls.location" mode="aspectFit" />
+            <text v-else class="store-icon-emoji">店</text>
           </view>
           <view class="store-info">
             <text class="store-name">{{ storeName }}</text>
@@ -269,15 +299,14 @@ function getItemSubtotal(item: CartItem): number {
           <!-- Item Image -->
           <image
             class="item-image"
-            :src="item.product.image"
+            :src="getProductImage(item.product)"
             mode="aspectFill"
-            @error="(e: any) => { e.target.src = '/static/product-placeholder.png' }"
           />
 
           <!-- Item Info -->
           <view class="item-info">
             <text class="item-name line-clamp-2">{{ item.product.name }}</text>
-            <text class="item-spec" v-if="getSpecsText(item.product)">
+            <text v-if="getSpecsText(item.product)" class="item-spec">
               {{ getSpecsText(item.product) }}
             </text>
           </view>
@@ -296,8 +325,8 @@ function getItemSubtotal(item: CartItem): number {
       <view class="remark-card">
         <text class="remark-label">订单备注</text>
         <input
-          class="remark-input"
           v-model="remark"
+          class="remark-input"
           placeholder="选填，可备注特殊需求"
           placeholder-class="remark-placeholder"
           maxlength="100"
@@ -332,7 +361,7 @@ function getItemSubtotal(item: CartItem): number {
     </scroll-view>
 
     <!-- ==================== Bottom Submit Bar ==================== -->
-    <view class="submit-bar" v-if="!isLoading">
+    <view v-if="!isLoading" class="submit-bar">
       <view class="submit-bar-left">
         <text class="submit-total-label">实付金额</text>
         <text class="submit-total-price">
@@ -351,7 +380,7 @@ function getItemSubtotal(item: CartItem): number {
     </view>
 
     <!-- ==================== Success Modal ==================== -->
-    <view class="success-modal" v-if="showSuccessModal" @tap.self="goToOrders">
+    <view v-if="showSuccessModal" class="success-modal" @tap.self="goToOrders">
       <view class="success-modal-content">
         <!-- Success Icon -->
         <view class="success-icon-wrap">
@@ -362,7 +391,7 @@ function getItemSubtotal(item: CartItem): number {
         <text class="success-desc">请等待商家接单</text>
 
         <!-- Confirm Code -->
-        <view class="confirm-code-card" v-if="orderResult">
+        <view v-if="orderResult" class="confirm-code-card">
           <text class="confirm-code-label">取餐码</text>
           <text class="confirm-code-value">{{ orderResult.confirmCode }}</text>
           <view class="confirm-code-tip" @tap="onConfirmCodeCopied">
@@ -372,7 +401,7 @@ function getItemSubtotal(item: CartItem): number {
         </view>
 
         <!-- Order Info -->
-        <view class="order-info-row" v-if="orderResult">
+        <view v-if="orderResult" class="order-info-row">
           <text class="order-info-label">订单号</text>
           <text class="order-info-value">{{ orderResult.orderNo }}</text>
         </view>

@@ -26,7 +26,8 @@
 - 页面中禁止硬编码完整 API 地址。
 - API base URL 只允许从 `API_BASE_URL` 获取。
 - 切换环境必须通过配置，不在页面里判断环境。
-- 微信小程序 request 合法域名未配置前，`ENABLE_API_MOCK` 保持开启，业务请求由 `src/mock/customer-api.ts` 返回后端契约形状的 mock 数据，不触发真实网络请求。
+- 微信小程序 request 合法域名未配置前，`ENABLE_API_MOCK` 默认开启，业务请求由 `src/mock/customer-api.ts` 返回后端契约形状的 mock 数据，不触发真实网络请求。
+- H5 联调真实 API 时使用 `TARO_APP_ENABLE_API_MOCK=false` 关闭 mock，并通过 `/app/bootstrap` 按 AppID 拉取启动主题。
 
 ## endpoint 命名规则
 
@@ -34,6 +35,7 @@
 
 ```ts
 AUTH_WECHAT_LOGIN: '/auth/wechat/login'
+APP_BOOTSTRAP: '/app/bootstrap'
 ORDERS: '/orders'
 ```
 
@@ -101,6 +103,7 @@ patch()
 | 方法 | 路径 | 页面 |
 | --- | --- | --- |
 | `GET` | `/stores/{id}` | 首页店铺信息和风格包。 |
+| `GET` | `/app/bootstrap` | 按 AppID 获取启动店铺与主题，关闭 mock 后真实请求。 |
 | `GET` | `/stores/qr/{qrCode}` | 扫码进店，返回同 `/stores/{id}` 的店铺与装修结构。 |
 | `GET` | `/stores/{storeId}/products` | 首页商品列表和加购。 |
 | `GET` | `/products/{id}` | 商品详情，返回商品基础字段、`specIds` 和 `skus`。 |

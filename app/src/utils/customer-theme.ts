@@ -66,7 +66,7 @@ export function createCustomerThemeVars(theme: StoreThemePackage): Record<string
     '--asset-bottom-action-icon-size': getSize(theme, 'bottomActionIcon', '32rpx'),
     '--asset-product-image-size': getSize(theme, 'productImage', '144rpx'),
     '--asset-mascot-size': getSize(theme, 'mascot', '120rpx'),
-    '--asset-cart-mascot-size': getSize(theme, 'cartMascot', '132rpx'),
+    '--asset-cart-mascot-size': getSize(theme, 'cartMascot', '140rpx'),
     '--asset-cart-product-image-size': getSize(theme, 'cartProductImage', '148rpx'),
     '--asset-order-product-image-size': getSize(theme, 'orderProductImage', '112rpx'),
     '--asset-profile-avatar-size': getSize(theme, 'profileAvatar', '132rpx'),
@@ -78,6 +78,50 @@ export function createCustomerThemeVars(theme: StoreThemePackage): Record<string
     '--asset-my-invite-banner-width': myInviteBanner.width,
     '--asset-my-invite-banner-height': myInviteBanner.height,
     '--asset-bottom-bar-height': getSize(theme, 'bottomBarHeight', '128rpx'),
+    '--asset-cart-bar-bottom-offset': getSize(theme, 'cartBarBottomOffset', '60rpx'),
     '--asset-tab-bar-reserve': getSize(theme, 'tabBarReserve', '132rpx'),
+  }
+}
+
+export function createThemeFromStoreDecoration(decoration: any): StoreThemePackage {
+  const theme = decoration?.theme || {}
+  const colors = {
+    ...(theme.colors || {}),
+    ...(decoration?.colors || {}),
+  }
+
+  return {
+    ...DEFAULT_STORE_THEME,
+    code: (decoration?.styleCode || theme.code || DEFAULT_STORE_THEME.code) as StoreThemePackage['code'],
+    name: theme.name || decoration?.style?.name || DEFAULT_STORE_THEME.name,
+    layoutVersion: decoration?.layoutVersion || theme.layoutVersion || DEFAULT_STORE_THEME.layoutVersion,
+    primary: colors.primary || DEFAULT_STORE_THEME.primary,
+    secondary: colors.secondary || DEFAULT_STORE_THEME.secondary,
+    accent: colors.accent || DEFAULT_STORE_THEME.accent,
+    background: colors.background || DEFAULT_STORE_THEME.background,
+    surface: colors.surface || DEFAULT_STORE_THEME.surface,
+    text: colors.text || DEFAULT_STORE_THEME.text,
+    mutedText: colors.mutedText || DEFAULT_STORE_THEME.mutedText,
+    border: colors.border || DEFAULT_STORE_THEME.border,
+    price: colors.price || colors.primary || DEFAULT_STORE_THEME.price,
+    iconNames: {
+      ...(theme.iconNames || {}),
+      ...(decoration?.iconNames || {}),
+    },
+    iconUrls: {
+      ...(theme.iconUrls || {}),
+      ...(decoration?.iconUrls || {}),
+    },
+    imageUrls: {
+      ...(theme.imageUrls || {}),
+      ...(decoration?.imageUrls || {}),
+    },
+    copywriting: {
+      ...(theme.copywriting || {}),
+      ...(decoration?.copywriting || {}),
+    },
+    categoryIconLibrary: decoration?.categoryIconLibrary || theme.categoryIconLibrary || DEFAULT_STORE_THEME.categoryIconLibrary,
+    assetSizes: decoration?.assetSizes || theme.assetSizes || DEFAULT_STORE_THEME.assetSizes,
+    pageThemes: decoration?.pageThemes || theme.pageThemes || DEFAULT_STORE_THEME.pageThemes,
   }
 }

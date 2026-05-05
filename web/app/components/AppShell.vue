@@ -8,6 +8,7 @@
       <nav class="nav">
         <NuxtLink v-if="isPlatformAdmin" to="/">平台总览</NuxtLink>
         <NuxtLink v-if="isPlatformAdmin" to="/platform/vendors">商家列表</NuxtLink>
+        <NuxtLink v-if="isPlatformAdmin" to="/platform/styles">风格包管理</NuxtLink>
         <NuxtLink v-if="isVendorAdmin" to="/vendor">商家工作台</NuxtLink>
         <NuxtLink v-if="isVendorAdmin" to="/vendor/products">商品管理</NuxtLink>
         <NuxtLink v-if="isVendorAdmin" to="/vendor/categories">分类管理</NuxtLink>

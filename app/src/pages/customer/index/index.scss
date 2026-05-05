@@ -710,7 +710,7 @@
 .cart-mascot {
   position: absolute;
   left: 34rpx;
-  bottom: 8rpx;
+  bottom: 14rpx;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -736,7 +736,7 @@
 .cart-bar {
   position: fixed;
   right: 28rpx;
-  bottom: calc(var(--asset-tab-bar-reserve, 132rpx) + env(safe-area-inset-bottom));
+  bottom: calc(var(--asset-cart-bar-bottom-offset, 60rpx) + env(safe-area-inset-bottom));
   left: 28rpx;
   z-index: 20;
   display: flex;

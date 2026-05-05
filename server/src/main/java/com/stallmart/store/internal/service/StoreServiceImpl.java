@@ -12,115 +12,72 @@ import com.stallmart.store.dto.StoreDecorationDTO;
 import com.stallmart.store.dto.StorefrontDTO;
 import com.stallmart.store.dto.UpdateDecorationParams;
 import com.stallmart.store.dto.UpdateStoreParams;
+import com.stallmart.store.internal.repository.CategoryEntity;
+import com.stallmart.store.internal.repository.CategoryRepository;
+import com.stallmart.store.internal.repository.ProductEntity;
+import com.stallmart.store.internal.repository.ProductRepository;
+import com.stallmart.store.internal.repository.ProductSkuEntity;
+import com.stallmart.store.internal.repository.ProductSkuRepository;
+import com.stallmart.store.internal.repository.ProductSpecEntity;
+import com.stallmart.store.internal.repository.ProductSpecRepository;
+import com.stallmart.store.internal.repository.StoreDecorationEntity;
+import com.stallmart.store.internal.repository.StoreDecorationRepository;
+import com.stallmart.store.internal.repository.StoreEntity;
+import com.stallmart.store.internal.repository.StoreRepository;
+import com.stallmart.store.internal.repository.StoreStyleEntity;
+import com.stallmart.store.internal.repository.StoreStyleRepository;
 import com.stallmart.style.dto.SpecDTO;
 import com.stallmart.style.dto.SpecUpsertParams;
-import com.stallmart.style.dto.StorefrontCategoryIconDTO;
 import com.stallmart.style.dto.StorefrontCategoryDTO;
+import com.stallmart.style.dto.StorefrontCategoryIconDTO;
 import com.stallmart.style.dto.StorefrontThemeDTO;
 import com.stallmart.style.dto.StyleDTO;
 import com.stallmart.support.exception.AppException;
 import com.stallmart.support.exception.ErrorCode;
+import com.stallmart.support.persistence.JsonSupport;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class StoreServiceImpl implements StoreService {
 
-    private final Map<Long, StoreDTO> stores = new ConcurrentHashMap<>();
-    private final Map<Long, ProductDTO> products = new ConcurrentHashMap<>();
-    private final Map<Long, CategoryDTO> categories = new ConcurrentHashMap<>();
-    private final Map<Long, StyleDTO> styles = new ConcurrentHashMap<>();
-    private final Map<Long, List<SpecDTO>> specsByStyle = new ConcurrentHashMap<>();
-    private final Map<Long, List<String>> bannersByStore = new ConcurrentHashMap<>();
-    private final Map<Long, Map<String, String>> colorsByStore = new ConcurrentHashMap<>();
-    private final Map<Long, Map<String, String>> iconUrlsByStore = new ConcurrentHashMap<>();
-    private final Map<Long, Map<String, String>> categoryIconUrlsByStore = new ConcurrentHashMap<>();
-    private final Map<Long, Map<String, String>> imageUrlsByStore = new ConcurrentHashMap<>();
-    private final Map<Long, Map<String, String>> copywritingByStore = new ConcurrentHashMap<>();
-    private final AtomicLong productIdSequence = new AtomicLong(4);
-    private final AtomicLong categoryIdSequence = new AtomicLong(4);
-    private final AtomicLong skuIdSequence = new AtomicLong(10);
-    private final AtomicLong specIdSequence = new AtomicLong(3);
+    private final StoreRepository storeRepository;
+    private final StoreStyleRepository styleRepository;
+    private final StoreDecorationRepository decorationRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
+    private final ProductSkuRepository skuRepository;
+    private final ProductSpecRepository specRepository;
+    private final JsonSupport json;
 
-    public StoreServiceImpl() {
-        styles.put(1L, new StyleDTO(1L, "夏威夷风", "hawaiian", null, hawaiianTheme()));
-        styles.put(2L, new StyleDTO(2L, "烧烤风", "BBQ", null, simpleTheme("BBQ", "烧烤风", "#E74C3C", "#F39C12", "#FDEDEC")));
-        styles.put(3L, new StyleDTO(3L, "市集风", "market", null, simpleTheme("market", "市集风", "#F39C12", "#8BC34A", "#FFF8E7")));
-        styles.put(6L, new StyleDTO(6L, "森系水果茶-小白款", "forestFruitTeaCrayon", "/static/storefront/forest/preview.png", forestFruitTeaTheme()));
-
-        specsByStyle.put(1L, List.of(
-                new SpecDTO(1L, 1L, "杯型", "SIZE", true, List.of("中杯", "大杯")),
-                new SpecDTO(2L, 1L, "甜度", "SWEET", false, List.of("无糖", "少糖", "正常糖"))
-        ));
-        specsByStyle.put(2L, List.of());
-        specsByStyle.put(3L, List.of());
-        specsByStyle.put(6L, List.of(
-                new SpecDTO(1L, 6L, "杯型", "SIZE", true, List.of("中杯", "大杯")),
-                new SpecDTO(2L, 6L, "甜度", "SWEET", true, List.of("少糖", "正常糖"))
-        ));
-
-        stores.put(1L, new StoreDTO(
-                1L,
-                2L,
-                6L,
-                "forestFruitTeaCrayon",
-                "小新の水果茶屋",
-                "饮品",
-                "当季鲜果茶，清爽一夏",
-                "/static/default-avatar.png",
-                "/static/storefront/forest/cover.png",
-                "stall-001",
-                "市集东入口 12 号",
-                "OPEN"
-        ));
-        bannersByStore.put(1L, List.of("/static/storefront/forest/banner-seasonal.jpg", "/static/storefront/forest/banner-tea.jpg"));
-        imageUrlsByStore.put(1L, Map.of(
-                "heroIllustration", "/static/storefront/forest/hero-forest-tea.jpg",
-                "mascot", "/static/storefront/forest/mascot.png",
-                "productPlaceholder", "/static/storefront/forest/product-placeholder.png"
-        ));
-        copywritingByStore.put(1L, Map.of(
-                "branchName", "上海环球港店",
-                "heroEyebrow", "小新の",
-                "heroTitle", "水果茶屋",
-                "heroSubtitle", "自然水果 · 新鲜现制",
-                "promoTitle", "鲜果时令上新",
-                "promoSubtitle", "当季水果 · 清爽一夏",
-                "promoActionText", "立即尝鲜"
-        ));
-
-        categories.put(1L, new CategoryDTO(1L, 1L, "PRODUCT", "清爽柠檬", "category1", 1, "ACTIVE"));
-        categories.put(2L, new CategoryDTO(2L, 1L, "PRODUCT", "多肉葡萄", "category2", 2, "ACTIVE"));
-        categories.put(3L, new CategoryDTO(3L, 1L, "PRODUCT", "香甜芒果", "mango", 3, "ACTIVE"));
-
-        products.put(1L, product(1L, 1L, 1L, "百香果柠檬茶", "酸甜清爽", null, "ACTIVE", 1, List.of(1L, 2L), List.of(
-                new ProductSkuDTO(1L, List.of("中杯", "少糖"), new BigDecimal("12.00"), 99, "ACTIVE"),
-                new ProductSkuDTO(2L, List.of("大杯", "少糖"), new BigDecimal("15.00"), 99, "ACTIVE")
-        )));
-        products.put(2L, product(2L, 1L, 2L, "阳光青提多多", "阳光玫瑰青提 + 乳酸菌", null, "ACTIVE", 2, List.of(1L, 2L), List.of(
-                new ProductSkuDTO(3L, List.of("中杯", "正常糖"), new BigDecimal("16.00"), 99, "ACTIVE"),
-                new ProductSkuDTO(4L, List.of("大杯", "正常糖"), new BigDecimal("19.00"), 99, "ACTIVE")
-        )));
-        products.put(3L, product(3L, 1L, 3L, "芒芒百香绿茶", "大颗芒果肉 + 百香果", null, "ACTIVE", 3, List.of(1L, 2L), List.of(
-                new ProductSkuDTO(5L, List.of("中杯", "少糖"), new BigDecimal("17.00"), 99, "ACTIVE"),
-                new ProductSkuDTO(6L, List.of("大杯", "正常糖"), new BigDecimal("20.00"), 99, "ACTIVE")
-        )));
+    public StoreServiceImpl(
+            StoreRepository storeRepository,
+            StoreStyleRepository styleRepository,
+            StoreDecorationRepository decorationRepository,
+            CategoryRepository categoryRepository,
+            ProductRepository productRepository,
+            ProductSkuRepository skuRepository,
+            ProductSpecRepository specRepository,
+            JsonSupport json
+    ) {
+        this.storeRepository = storeRepository;
+        this.styleRepository = styleRepository;
+        this.decorationRepository = decorationRepository;
+        this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
+        this.skuRepository = skuRepository;
+        this.specRepository = specRepository;
+        this.json = json;
     }
 
     @Override
     public StoreDTO getStore(long id) {
-        StoreDTO store = stores.get(id);
-        if (store == null) {
-            throw new AppException(ErrorCode.NOT_FOUND);
-        }
-        return store;
+        return toStoreDTO(getStoreEntity(id));
     }
 
     @Override
@@ -131,10 +88,8 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public StoreDTO getStoreByQrCode(String qrCode) {
-        return stores.values().stream()
-                .filter(store -> store.qrCode().equals(qrCode))
-                .findFirst()
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        return toStoreDTO(storeRepository.findByQrCode(qrCode)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)));
     }
 
     @Override
@@ -144,510 +99,409 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    public StorefrontDTO getStorefrontByAppId(String appId) {
+        StoreEntity store = storeRepository.findByAppId(appId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        return StorefrontDTO.from(toStoreDTO(store), getDecoration(store.id));
+    }
+
+    @Override
     public List<StoreDTO> listStores() {
-        return stores.values().stream()
-                .sorted(Comparator.comparing(StoreDTO::id))
-                .toList();
+        return storeRepository.findAllByOrderByIdAsc().stream().map(this::toStoreDTO).toList();
     }
 
     @Override
     public List<StoreDTO> listStoresByOwner(long ownerId) {
-        return stores.values().stream()
-                .filter(store -> store.ownerId().equals(ownerId))
-                .sorted(Comparator.comparing(StoreDTO::id))
-                .toList();
+        return storeRepository.findByOwnerIdOrderByIdAsc(ownerId).stream().map(this::toStoreDTO).toList();
     }
 
     @Override
+    @Transactional
     public StoreDTO updateStore(long id, UpdateStoreParams request) {
-        StoreDTO current = getStore(id);
-        StoreDTO updated = new StoreDTO(
-                current.id(),
-                current.ownerId(),
-                current.styleId(),
-                current.styleCode(),
-                request.name() == null ? current.name() : request.name(),
-                current.category(),
-                request.description() == null ? current.description() : request.description(),
-                request.logoUrl() == null ? current.avatarUrl() : request.logoUrl(),
-                request.coverUrl() == null ? current.coverUrl() : request.coverUrl(),
-                current.qrCode(),
-                current.address(),
-                request.status() == null ? current.status() : request.status()
-        );
-        stores.put(id, updated);
-        return updated;
+        StoreEntity current = getStoreEntity(id);
+        current.name = request.name() == null ? current.name : request.name();
+        current.description = request.description() == null ? current.description : request.description();
+        current.logoUrl = request.logoUrl() == null ? current.logoUrl : request.logoUrl();
+        current.coverUrl = request.coverUrl() == null ? current.coverUrl : request.coverUrl();
+        current.status = request.status() == null ? current.status : request.status();
+        return toStoreDTO(storeRepository.save(current));
     }
 
     @Override
     public List<CategoryDTO> listCategories(long storeId, String module) {
-        getStore(storeId);
-        return categories.values().stream()
-                .filter(category -> category.storeId().equals(storeId))
-                .filter(category -> module == null || category.module().equalsIgnoreCase(module))
-                .sorted(Comparator.comparingInt(CategoryDTO::sortOrder).thenComparing(CategoryDTO::id))
-                .toList();
+        getStoreEntity(storeId);
+        List<CategoryEntity> categories = module == null
+                ? categoryRepository.findByStoreIdOrderBySortOrderAscIdAsc(storeId)
+                : categoryRepository.findByStoreIdAndModuleIgnoreCaseOrderBySortOrderAscIdAsc(storeId, module);
+        return categories.stream().map(this::toCategoryDTO).toList();
     }
 
     @Override
+    @Transactional
     public CategoryDTO createCategory(long storeId, CategoryUpsertParams request) {
-        getStore(storeId);
-        CategoryDTO category = new CategoryDTO(
-                categoryIdSequence.getAndIncrement(),
-                storeId,
-                request.module() == null ? "PRODUCT" : request.module().toUpperCase(),
-                request.name(),
-                normalizeCategoryIconKey(request.iconKey()),
-                request.sortOrder(),
-                request.status() == null ? "ACTIVE" : request.status()
-        );
-        categories.put(category.id(), category);
-        return category;
+        getStoreEntity(storeId);
+        CategoryEntity category = new CategoryEntity();
+        category.storeId = storeId;
+        category.module = request.module() == null ? "PRODUCT" : request.module().toUpperCase();
+        category.name = request.name();
+        category.iconKey = normalizeCategoryIconKey(request.iconKey());
+        category.sortOrder = request.sortOrder();
+        category.status = request.status() == null ? "ACTIVE" : request.status();
+        return toCategoryDTO(categoryRepository.save(category));
     }
 
     @Override
+    @Transactional
     public CategoryDTO updateCategory(long storeId, long categoryId, CategoryUpsertParams request) {
-        getStore(storeId);
-        CategoryDTO current = categories.get(categoryId);
-        if (current == null || !current.storeId().equals(storeId)) {
-            throw new AppException(ErrorCode.NOT_FOUND);
-        }
-        CategoryDTO updated = new CategoryDTO(
-                current.id(),
-                current.storeId(),
-                request.module() == null ? current.module() : request.module().toUpperCase(),
-                request.name(),
-                normalizeCategoryIconKey(request.iconKey()),
-                request.sortOrder(),
-                request.status() == null ? current.status() : request.status()
-        );
-        categories.put(updated.id(), updated);
-        return updated;
+        getStoreEntity(storeId);
+        CategoryEntity current = categoryRepository.findById(categoryId)
+                .filter(category -> category.storeId.equals(storeId))
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        current.module = request.module() == null ? current.module : request.module().toUpperCase();
+        current.name = request.name();
+        current.iconKey = normalizeCategoryIconKey(request.iconKey());
+        current.sortOrder = request.sortOrder();
+        current.status = request.status() == null ? current.status : request.status();
+        return toCategoryDTO(categoryRepository.save(current));
     }
 
     @Override
     public List<ProductDTO> listProducts(long storeId) {
-        getStore(storeId);
-        return products.values().stream()
-                .filter(product -> product.storeId().equals(storeId))
-                .sorted(Comparator.comparingInt(ProductDTO::sortOrder))
+        getStoreEntity(storeId);
+        return productRepository.findByStoreIdOrderBySortOrderAscIdAsc(storeId).stream()
+                .map(this::toProductDTO)
                 .toList();
     }
 
     @Override
     public ProductDTO getProduct(long id) {
-        ProductDTO product = products.get(id);
-        if (product == null) {
-            throw new AppException(ErrorCode.NOT_FOUND);
-        }
-        return product;
+        return toProductDTO(getProductEntity(id));
     }
 
     @Override
+    @Transactional
     public ProductDTO createProduct(long storeId, ProductUpsertParams request) {
-        getStore(storeId);
-        long id = productIdSequence.getAndIncrement();
-        ProductDTO product = product(
-                id,
-                storeId,
-                request.categoryId(),
-                request.name(),
-                request.description(),
-                primaryImage(request),
-                request.status() == null ? "ACTIVE" : request.status(),
-                request.sortOrder(),
-                requireSpecIds(storeId, request.specIds()),
-                skuDtos(request.skus())
-        );
-        products.put(id, product);
-        return product;
+        getStoreEntity(storeId);
+        ProductEntity product = new ProductEntity();
+        product.storeId = storeId;
+        applyProductRequest(product, request, storeId);
+        ProductEntity saved = productRepository.save(product);
+        saveSkus(saved.id, request.skus());
+        return toProductDTO(saved);
     }
 
     @Override
+    @Transactional
     public ProductDTO updateProduct(long storeId, long productId, ProductUpsertParams request) {
-        getStore(storeId);
-        ProductDTO current = getProduct(productId);
-        if (!current.storeId().equals(storeId)) {
+        getStoreEntity(storeId);
+        ProductEntity current = getProductEntity(productId);
+        if (!current.storeId.equals(storeId)) {
             throw new AppException(ErrorCode.NOT_FOUND);
         }
-        ProductDTO updated = product(
-                current.id(),
-                storeId,
-                request.categoryId(),
-                request.name(),
-                request.description(),
-                primaryImage(request),
-                request.status() == null ? current.status() : request.status(),
-                request.sortOrder(),
-                requireSpecIds(storeId, request.specIds()),
-                skuDtos(request.skus())
-        );
-        products.put(productId, updated);
-        return updated;
+        applyProductRequest(current, request, storeId);
+        ProductEntity saved = productRepository.save(current);
+        skuRepository.deleteByProductId(saved.id);
+        saveSkus(saved.id, request.skus());
+        return toProductDTO(saved);
     }
 
     @Override
+    @Transactional
     public ProductDTO updateProductStatus(long storeId, long productId, String status) {
-        getStore(storeId);
-        ProductDTO current = getProduct(productId);
-        if (!current.storeId().equals(storeId)) {
+        getStoreEntity(storeId);
+        ProductEntity current = getProductEntity(productId);
+        if (!current.storeId.equals(storeId)) {
             throw new AppException(ErrorCode.NOT_FOUND);
         }
-        ProductDTO updated = new ProductDTO(
-                current.id(),
-                current.storeId(),
-                current.categoryId(),
-                current.categoryName(),
-                current.name(),
-                current.description(),
-                current.price(),
-                current.imageUrl(),
-                current.mainImageUrl(),
-                current.category(),
-                status,
-                current.sortOrder(),
-                current.specIds(),
-                current.skus()
-        );
-        products.put(productId, updated);
-        return updated;
+        current.status = status;
+        return toProductDTO(productRepository.save(current));
     }
 
     @Override
     public StoreDecorationDTO getDecoration(long storeId) {
-        StoreDTO store = getStore(storeId);
-        StyleDTO style = getStyle(store.styleId());
+        StoreEntity store = getStoreEntity(storeId);
+        StyleDTO style = getStyle(store.styleId);
+        StoreDecorationEntity decoration = decorationRepository.findById(storeId).orElse(null);
+        StorefrontThemeDTO theme = style.theme();
+        List<StorefrontCategoryIconDTO> categoryIconLibrary = resolveCategoryIconLibrary(theme, decoration);
         return new StoreDecorationDTO(
-                store.id(),
-                store.name(),
-                store.avatarUrl(),
-                store.coverUrl(),
-                bannersByStore.getOrDefault(store.id(), List.of()),
-                store.styleId(),
-                store.styleCode(),
+                store.id,
+                store.name,
+                store.logoUrl,
+                store.coverUrl,
+                decoration == null ? List.of() : json.stringList(decoration.bannersJson),
+                store.styleId,
+                style.code(),
                 style,
-                style.theme().layoutVersion(),
-                style.theme(),
-                mergeMap(style.theme().colors(), colorsByStore.get(store.id())),
-                style.theme().iconNames(),
-                mergeMap(style.theme().iconUrls(), iconUrlsByStore.get(store.id())),
-                mergeMap(style.theme().imageUrls(), imageUrlsByStore.get(store.id())),
-                mergeMap(style.theme().copywriting(), copywritingByStore.get(store.id())),
-                resolveCategoryIconLibrary(style, store.id()),
-                resolveStorefrontCategories(store.id(), resolveCategoryIconLibrary(style, store.id()))
+                theme.layoutVersion(),
+                theme,
+                mergeMap(theme.colors(), decoration == null ? null : json.stringMap(decoration.colorsJson)),
+                theme.iconNames(),
+                mergeMap(theme.iconUrls(), decoration == null ? null : json.stringMap(decoration.iconUrlsJson)),
+                mergeMap(theme.imageUrls(), decoration == null ? null : json.stringMap(decoration.imageUrlsJson)),
+                mergeMap(theme.copywriting(), decoration == null ? null : json.stringMap(decoration.copywritingJson)),
+                categoryIconLibrary,
+                resolveStorefrontCategories(storeId, categoryIconLibrary),
+                theme.assetSizes(),
+                theme.pageThemes()
         );
     }
 
     @Override
+    @Transactional
     public StoreDecorationDTO updateDecoration(long storeId, UpdateDecorationParams request) {
-        StoreDTO current = getStore(storeId);
-        StyleDTO style = request.styleId() == null ? getStyle(current.styleId()) : getStyle(request.styleId());
-        stores.put(storeId, new StoreDTO(
-                current.id(),
-                current.ownerId(),
-                style.id(),
-                style.code(),
-                current.name(),
-                current.category(),
-                request.description() == null ? current.description() : request.description(),
-                request.logoUrl() == null ? current.avatarUrl() : request.logoUrl(),
-                request.coverUrl() == null ? current.coverUrl() : request.coverUrl(),
-                current.qrCode(),
-                current.address(),
-                current.status()
-        ));
+        StoreEntity current = getStoreEntity(storeId);
+        StoreStyleEntity style = request.styleId() == null ? getStyleEntity(current.styleId) : getStyleEntity(request.styleId());
+        current.styleId = style.id;
+        current.description = request.description() == null ? current.description : request.description();
+        current.logoUrl = request.logoUrl() == null ? current.logoUrl : request.logoUrl();
+        current.coverUrl = request.coverUrl() == null ? current.coverUrl : request.coverUrl();
+        storeRepository.save(current);
+
+        StoreDecorationEntity decoration = decorationRepository.findById(storeId).orElseGet(() -> {
+            StoreDecorationEntity entity = new StoreDecorationEntity();
+            entity.storeId = storeId;
+            return entity;
+        });
         if (request.banners() != null) {
-            bannersByStore.put(storeId, List.copyOf(request.banners()));
+            decoration.bannersJson = json.write(request.banners());
         }
         if (request.colors() != null) {
-            colorsByStore.put(storeId, copyMap(request.colors()));
+            decoration.colorsJson = json.write(request.colors());
         }
         if (request.iconUrls() != null) {
-            iconUrlsByStore.put(storeId, copyMap(request.iconUrls()));
+            decoration.iconUrlsJson = json.write(request.iconUrls());
         }
         if (request.categoryIconUrls() != null) {
-            categoryIconUrlsByStore.put(storeId, copyMap(request.categoryIconUrls()));
+            decoration.categoryIconUrlsJson = json.write(request.categoryIconUrls());
         }
         if (request.imageUrls() != null) {
-            imageUrlsByStore.put(storeId, copyMap(request.imageUrls()));
+            decoration.imageUrlsJson = json.write(request.imageUrls());
         }
         if (request.copywriting() != null) {
-            copywritingByStore.put(storeId, copyMap(request.copywriting()));
+            decoration.copywritingJson = json.write(request.copywriting());
         }
+        decorationRepository.save(decoration);
         return getDecoration(storeId);
     }
 
     @Override
     public List<StyleDTO> listStyles() {
-        return styles.values().stream()
-                .sorted(Comparator.comparing(StyleDTO::id))
-                .toList();
+        return styleRepository.findAllByOrderByIdAsc().stream().map(this::toStyleDTO).toList();
     }
 
     @Override
     public StyleDTO getStyle(long id) {
-        StyleDTO style = styles.get(id);
-        if (style == null) {
-            throw new AppException(ErrorCode.NOT_FOUND);
-        }
-        return style;
+        return toStyleDTO(getStyleEntity(id));
+    }
+
+    @Override
+    @Transactional
+    public StyleDTO updateStyleStatus(long id, String status) {
+        StoreStyleEntity style = getStyleEntity(id);
+        style.status = status;
+        style.version += 1;
+        return toStyleDTO(styleRepository.save(style));
     }
 
     @Override
     public List<SpecDTO> listSpecs(long styleId) {
-        getStyle(styleId);
-        return new ArrayList<>(specsByStyle.getOrDefault(styleId, List.of()));
+        getStyleEntity(styleId);
+        return specRepository.findByStyleIdOrderByIdAsc(styleId).stream()
+                .map(this::toSpecDTO)
+                .toList();
     }
 
     @Override
+    @Transactional
     public SpecDTO createSpec(long styleId, SpecUpsertParams request) {
-        getStyle(styleId);
-        SpecDTO spec = new SpecDTO(
-                specIdSequence.getAndIncrement(),
-                styleId,
-                request.name(),
-                request.specType(),
-                request.required(),
-                request.options() == null ? List.of() : List.copyOf(request.options())
-        );
-        List<SpecDTO> specs = new ArrayList<>(specsByStyle.getOrDefault(styleId, List.of()));
-        specs.add(spec);
-        specsByStyle.put(styleId, specs);
-        return spec;
+        getStyleEntity(styleId);
+        ProductSpecEntity spec = new ProductSpecEntity();
+        spec.styleId = styleId;
+        spec.name = request.name();
+        spec.specType = request.specType();
+        spec.required = request.required();
+        spec.optionsJson = json.write(request.options() == null ? List.of() : request.options());
+        return toSpecDTO(specRepository.save(spec));
     }
 
     @Override
+    @Transactional
     public SpecDTO updateSpec(long styleId, long specId, SpecUpsertParams request) {
-        getStyle(styleId);
-        List<SpecDTO> specs = new ArrayList<>(specsByStyle.getOrDefault(styleId, List.of()));
-        for (int index = 0; index < specs.size(); index += 1) {
-            SpecDTO current = specs.get(index);
-            if (current.id().equals(specId)) {
-                SpecDTO updated = new SpecDTO(
-                        current.id(),
-                        styleId,
-                        request.name(),
-                        request.specType(),
-                        request.required(),
-                        request.options() == null ? List.of() : List.copyOf(request.options())
-                );
-                specs.set(index, updated);
-                specsByStyle.put(styleId, specs);
-                return updated;
-            }
-        }
-        throw new AppException(ErrorCode.NOT_FOUND);
+        getStyleEntity(styleId);
+        ProductSpecEntity spec = specRepository.findById(specId)
+                .filter(candidate -> candidate.styleId.equals(styleId))
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        spec.name = request.name();
+        spec.specType = request.specType();
+        spec.required = request.required();
+        spec.optionsJson = json.write(request.options() == null ? List.of() : request.options());
+        return toSpecDTO(specRepository.save(spec));
     }
 
     @Override
+    @Transactional
     public void deleteSpec(long styleId, long specId) {
-        getStyle(styleId);
-        boolean linked = products.values().stream()
-                .filter(product -> getStore(product.storeId()).styleId().equals(styleId))
-                .anyMatch(product -> product.specIds().contains(specId));
+        getStyleEntity(styleId);
+        boolean linked = productRepository.findAllByOrderByIdAsc().stream()
+                .filter(product -> getStoreEntity(product.storeId).styleId.equals(styleId))
+                .anyMatch(product -> json.longList(product.specIdsJson).contains(specId));
         if (linked) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
-        List<SpecDTO> specs = new ArrayList<>(specsByStyle.getOrDefault(styleId, List.of()));
-        boolean removed = specs.removeIf(spec -> spec.id().equals(specId));
-        if (!removed) {
-            throw new AppException(ErrorCode.NOT_FOUND);
-        }
-        specsByStyle.put(styleId, specs);
+        ProductSpecEntity spec = specRepository.findById(specId)
+                .filter(candidate -> candidate.styleId.equals(styleId))
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        specRepository.delete(spec);
     }
 
-    private ProductDTO product(
-            Long id,
-            Long storeId,
-            Long categoryId,
-            String name,
-            String description,
-            String imageUrl,
-            String status,
-            int sortOrder,
-            List<Long> specIds,
-            List<ProductSkuDTO> skus
-    ) {
-        CategoryDTO category = requireCategory(storeId, categoryId);
+    private void applyProductRequest(ProductEntity product, ProductUpsertParams request, long storeId) {
+        CategoryEntity category = requireCategory(storeId, request.categoryId());
+        product.categoryId = category.id;
+        product.name = request.name();
+        product.description = request.description();
+        product.mainImageUrl = primaryImage(request);
+        product.status = request.status() == null ? "ACTIVE" : request.status();
+        product.sortOrder = request.sortOrder();
+        product.specIdsJson = json.write(requireSpecIds(storeId, request.specIds()));
+    }
+
+    private void saveSkus(Long productId, List<ProductSkuParams> skus) {
+        if (skus == null || skus.isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+        for (ProductSkuParams sku : skus) {
+            if (sku.specValues() == null || sku.specValues().isEmpty() || sku.price() == null) {
+                throw new AppException(ErrorCode.BAD_REQUEST);
+            }
+            ProductSkuEntity entity = new ProductSkuEntity();
+            entity.productId = productId;
+            entity.specValuesJson = json.write(sku.specValues());
+            entity.price = sku.price();
+            entity.stock = sku.stock();
+            entity.status = sku.status() == null ? "ACTIVE" : sku.status();
+            skuRepository.save(entity);
+        }
+    }
+
+    private ProductDTO toProductDTO(ProductEntity product) {
+        CategoryEntity category = requireCategory(product.storeId, product.categoryId);
+        List<ProductSkuDTO> skus = skuRepository.findByProductIdOrderByIdAsc(product.id).stream()
+                .map(this::toSkuDTO)
+                .toList();
+        BigDecimal price = skus.stream()
+                .map(ProductSkuDTO::price)
+                .min(BigDecimal::compareTo)
+                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST));
         return new ProductDTO(
-                id,
-                storeId,
-                category.id(),
-                category.name(),
-                name,
-                description,
-                minSkuPrice(skus),
-                imageUrl,
-                imageUrl,
-                category.name(),
-                status,
-                sortOrder,
-                specIds,
+                product.id,
+                product.storeId,
+                category.id,
+                category.name,
+                product.name,
+                product.description,
+                price,
+                product.mainImageUrl,
+                product.mainImageUrl,
+                category.name,
+                product.status,
+                product.sortOrder,
+                json.longList(product.specIdsJson),
                 skus
         );
     }
 
-    private CategoryDTO requireCategory(long storeId, Long categoryId) {
+    private ProductSkuDTO toSkuDTO(ProductSkuEntity sku) {
+        return new ProductSkuDTO(
+                sku.id,
+                json.stringList(sku.specValuesJson),
+                sku.price,
+                sku.stock,
+                sku.status
+        );
+    }
+
+    private SpecDTO toSpecDTO(ProductSpecEntity spec) {
+        return new SpecDTO(spec.id, spec.styleId, spec.name, spec.specType, spec.required, json.stringList(spec.optionsJson));
+    }
+
+    private StoreDTO toStoreDTO(StoreEntity store) {
+        StoreStyleEntity style = getStyleEntity(store.styleId);
+        return new StoreDTO(
+                store.id,
+                store.ownerId,
+                store.styleId,
+                style.code,
+                store.name,
+                store.category,
+                store.description,
+                store.logoUrl,
+                store.coverUrl,
+                store.qrCode,
+                store.address,
+                store.status
+        );
+    }
+
+    private CategoryDTO toCategoryDTO(CategoryEntity category) {
+        return new CategoryDTO(
+                category.id,
+                category.storeId,
+                category.module,
+                category.name,
+                category.iconKey,
+                category.sortOrder,
+                category.status
+        );
+    }
+
+    private StyleDTO toStyleDTO(StoreStyleEntity style) {
+        return new StyleDTO(
+                style.id,
+                style.name,
+                style.code,
+                style.previewUrl,
+                json.read(style.themeJson, StorefrontThemeDTO.class),
+                style.status,
+                style.version
+        );
+    }
+
+    private StoreEntity getStoreEntity(long id) {
+        return storeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+    }
+
+    private StoreStyleEntity getStyleEntity(long id) {
+        return styleRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+    }
+
+    private ProductEntity getProductEntity(long id) {
+        return productRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+    }
+
+    private CategoryEntity requireCategory(long storeId, Long categoryId) {
         if (categoryId == null) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
-        CategoryDTO category = categories.get(categoryId);
-        if (category == null || !category.storeId().equals(storeId)) {
-            throw new AppException(ErrorCode.BAD_REQUEST);
-        }
-        return category;
+        return categoryRepository.findById(categoryId)
+                .filter(category -> category.storeId.equals(storeId))
+                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST));
     }
 
     private List<Long> requireSpecIds(long storeId, List<Long> specIds) {
         if (specIds == null || specIds.isEmpty()) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
-        List<Long> validIds = listSpecs(getStore(storeId).styleId()).stream().map(SpecDTO::id).toList();
+        List<Long> validIds = listSpecs(getStoreEntity(storeId).styleId).stream().map(SpecDTO::id).toList();
         if (!validIds.containsAll(specIds)) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
         return List.copyOf(specIds);
     }
 
-    private List<ProductSkuDTO> skuDtos(List<ProductSkuParams> skus) {
-        if (skus == null || skus.isEmpty()) {
-            throw new AppException(ErrorCode.BAD_REQUEST);
-        }
-        return skus.stream()
-                .map(sku -> {
-                    if (sku.specValues() == null || sku.specValues().isEmpty() || sku.price() == null) {
-                        throw new AppException(ErrorCode.BAD_REQUEST);
-                    }
-                    return new ProductSkuDTO(
-                            skuIdSequence.getAndIncrement(),
-                            List.copyOf(sku.specValues()),
-                            sku.price(),
-                            sku.stock(),
-                            sku.status() == null ? "ACTIVE" : sku.status()
-                    );
-                })
-                .toList();
-    }
-
-    private BigDecimal minSkuPrice(List<ProductSkuDTO> skus) {
-        return skus.stream()
-                .map(ProductSkuDTO::price)
-                .min(BigDecimal::compareTo)
-                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST));
-    }
-
-    private String primaryImage(ProductUpsertParams request) {
-        return request.mainImageUrl() == null || request.mainImageUrl().isBlank()
-                ? request.imageUrl()
-                : request.mainImageUrl();
-    }
-
-    private StorefrontThemeDTO forestFruitTeaTheme() {
-        return new StorefrontThemeDTO(
-                "forestFruitTeaCrayon",
-                "森系水果茶-小白款",
-                "customer-storefront-v1",
-                mapOfOrdered(
-                        "primary", "#6F9646",
-                        "secondary", "#B8C77A",
-                        "accent", "#F2B94B",
-                        "background", "#FBFAEF",
-                        "surface", "#FFFDF4",
-                        "text", "#4C6040",
-                        "mutedText", "#7A866D",
-                        "border", "#DCE6C7",
-                        "price", "#6F9646"
-                ),
-                mapOfOrdered(
-                        "location", "forest-location",
-                        "cart", "forest-cart",
-                        "checkout", "forest-checkout",
-                        "delivery", "forest-delivery",
-                        "sectionLeaf", "forest-leaf"
-                ),
-                mapOfOrdered(
-                        "location", "/static/storefront/forest/icons/location.png",
-                        "cart", "/static/storefront/forest/icons/cart.png",
-                        "checkout", "/static/storefront/forest/icons/checkout.png",
-                        "delivery", "/static/storefront/forest/icons/delivery.png",
-                        "sectionLeaf", "/static/storefront/forest/icons/leaf.png"
-                ),
-                mapOfOrdered(
-                        "heroIllustration", "/static/storefront/forest/hero-forest-tea.jpg",
-                        "mascot", "/static/storefront/forest/mascot.png",
-                        "productPlaceholder", "/static/storefront/forest/product-placeholder.png",
-                        "promoIllustration", "/static/storefront/forest/promo-drink.png"
-                ),
-                mapOfOrdered(
-                        "branchName", "上海环球港店",
-                        "heroEyebrow", "小新の",
-                        "heroTitle", "水果茶屋",
-                        "heroSubtitle", "自然水果 · 新鲜现制",
-                        "promoTitle", "鲜果时令上新",
-                        "promoSubtitle", "当季水果 · 清爽一夏",
-                        "promoActionText", "立即尝鲜"
-                ),
-                List.of(
-                        new StorefrontCategoryIconDTO("recommend", "人气推荐", "/static/storefront/forest/icons/recommend.png", "荐"),
-                        new StorefrontCategoryIconDTO("citrus", "清爽柠檬", "/static/storefront/forest/icons/citrus.png", "柠"),
-                        new StorefrontCategoryIconDTO("grape", "多肉葡萄", "/static/storefront/forest/icons/grape.png", "葡"),
-                        new StorefrontCategoryIconDTO("mango", "香甜芒果", "/static/storefront/forest/icons/mango.png", "芒"),
-                        new StorefrontCategoryIconDTO("tea", "鲜果茶桶", "/static/storefront/forest/icons/tea.png", "茶"),
-                        new StorefrontCategoryIconDTO("extra", "加料小料", "/static/storefront/forest/icons/extra.png", "料"),
-                        new StorefrontCategoryIconDTO("category1", "类目图标 1", "/static/storefront/forest/icons/category-1.png", "类"),
-                        new StorefrontCategoryIconDTO("category2", "类目图标 2", "/static/storefront/forest/icons/category-2.png", "类")
-                )
-        );
-    }
-
-    private StorefrontThemeDTO hawaiianTheme() {
-        return simpleTheme("hawaiian", "夏威夷风", "#2ECC71", "#F9D66E", "#FEF9E7");
-    }
-
-    private StorefrontThemeDTO simpleTheme(String code, String name, String primary, String secondary, String background) {
-        return new StorefrontThemeDTO(
-                code,
-                name,
-                "customer-storefront-v1",
-                mapOfOrdered(
-                        "primary", primary,
-                        "secondary", secondary,
-                        "accent", "#FF8E5E",
-                        "background", background,
-                        "surface", "#FFFFFF",
-                        "text", "#2D3436",
-                        "mutedText", "#7A7A6A",
-                        "border", "#E8E2C8",
-                        "price", primary
-                ),
-                mapOfOrdered(
-                        "location", code + "-location",
-                        "cart", code + "-cart",
-                        "checkout", code + "-checkout",
-                        "delivery", code + "-delivery",
-                        "sectionLeaf", code + "-section"
-                ),
-                Map.of(),
-                Map.of(),
-                mapOfOrdered(
-                        "heroEyebrow", "今日推荐",
-                        "heroTitle", name,
-                        "heroSubtitle", "新鲜现制 · 即点即取",
-                        "promoTitle", "本店上新",
-                        "promoSubtitle", "精选好物限时供应",
-                        "promoActionText", "去看看"
-                ),
-                List.of(
-                        new StorefrontCategoryIconDTO("recommend", "人气推荐", null, "荐"),
-                        new StorefrontCategoryIconDTO("tea", "饮品", null, "饮"),
-                        new StorefrontCategoryIconDTO("extra", "加料", null, "料")
-                )
-        );
-    }
-
-    private List<StorefrontCategoryIconDTO> resolveCategoryIconLibrary(StyleDTO style, long storeId) {
-        Map<String, String> overrides = categoryIconUrlsByStore.getOrDefault(storeId, Map.of());
-        return style.theme().categoryIconLibrary().stream()
+    private List<StorefrontCategoryIconDTO> resolveCategoryIconLibrary(StorefrontThemeDTO theme, StoreDecorationEntity decoration) {
+        Map<String, String> overrides = decoration == null ? Map.of() : json.stringMap(decoration.categoryIconUrlsJson);
+        return theme.categoryIconLibrary().stream()
                 .map(icon -> new StorefrontCategoryIconDTO(
                         icon.key(),
                         icon.name(),
@@ -698,23 +552,17 @@ public class StoreServiceImpl implements StoreService {
         return iconKey == null || iconKey.isBlank() ? "recommend" : iconKey;
     }
 
-    private Map<String, String> mapOfOrdered(String... pairs) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (int index = 0; index < pairs.length; index += 2) {
-            map.put(pairs[index], pairs[index + 1]);
-        }
-        return Map.copyOf(map);
+    private String primaryImage(ProductUpsertParams request) {
+        return request.mainImageUrl() == null || request.mainImageUrl().isBlank()
+                ? request.imageUrl()
+                : request.mainImageUrl();
     }
 
     private Map<String, String> mergeMap(Map<String, String> defaults, Map<String, String> overrides) {
-        Map<String, String> merged = new LinkedHashMap<>(defaults);
+        Map<String, String> merged = new LinkedHashMap<>(defaults == null ? Map.of() : defaults);
         if (overrides != null) {
             merged.putAll(overrides);
         }
         return Map.copyOf(merged);
-    }
-
-    private Map<String, String> copyMap(Map<String, String> source) {
-        return Map.copyOf(new LinkedHashMap<>(source));
     }
 }
