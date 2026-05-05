@@ -105,8 +105,12 @@
 | `GET` | `/admin/platform/vendors/{storeId}/carts` | 平台查看商家购物车 |
 | `GET` | `/admin/platform/vendors/{storeId}/users` | 平台查看商家关联用户 |
 | `GET` | `/admin/platform/styles` | 平台风格包列表 |
+| `POST` | `/admin/platform/styles` | 平台新增风格包 |
+| `GET` | `/admin/platform/styles/{styleId}` | 平台查看风格包详情 |
+| `PUT` | `/admin/platform/styles/{styleId}` | 平台编辑风格包 |
 | `PUT` | `/admin/platform/styles/{styleId}/publish` | 平台上架风格包 |
 | `PUT` | `/admin/platform/styles/{styleId}/unpublish` | 平台下架风格包 |
+| `DELETE` | `/admin/platform/styles/{styleId}` | 平台删除未被店铺引用的风格包 |
 | `GET` | `/admin/vendor/me/summary` | 商家 H5 工作台 |
 | `GET` | `/admin/vendor/me/store` | 商家店铺信息 |
 | `PUT` | `/admin/vendor/me/store` | 更新商家店铺 |
@@ -161,6 +165,10 @@
 - 分类按模块维护，商品分类使用 `PRODUCT` 模块；商品创建和编辑必须选择当前店铺的商品分类。分类创建和编辑必须保存 `iconKey`，该 key 来自装修配置的 `categoryIconLibrary`。
 - 管理端店铺和装修写入走 `StoreService`，小程序 `/stores/{id}` 同步读取同一份店铺数据和 `decoration` 装修配置。
 - 订单和购物车管理读取 `OrderService`、`CartService`，后续接入数据库时保持服务接口不变。
+- 平台风格包写接口只允许 `ADMIN` 调用；`VENDOR` 调用返回 HTTP `403`。
+- 平台风格包新增和编辑必须提供唯一 `code`、`name`、`theme`，且 `theme` 至少包含 `colors`、`categoryIconLibrary`、`assetSizes`、`pageThemes`。
+- 风格包删除只允许删除未被任何店铺引用的风格包；已引用风格包删除返回 HTTP `400`，应通过下架阻止新商家选择。
+- 商家装修接口只能切换到 `ACTIVE` 风格包；构造请求选择下架风格包返回 HTTP `400`。
 
 ## 店铺装修契约
 

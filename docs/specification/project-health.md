@@ -13,8 +13,8 @@
 
 ### Java 版本
 
-- `server/build.gradle` 使用 Java 21 toolchain。
-- `docker/Dockerfile.api` 使用 `eclipse-temurin:21-*`。
+- `server/build.gradle` 使用 Java 25 toolchain。
+- `docker/Dockerfile.api` 使用 `eclipse-temurin:25-*`。
 
 ### 后端测试入口
 

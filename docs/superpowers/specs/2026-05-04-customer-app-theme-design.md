@@ -47,7 +47,7 @@
 | 点单商品图 | `cartProductImage` | `148rpx x 148rpx` |
 | 订单商品图 | `orderProductImage` | `112rpx x 112rpx` |
 | 首页吉祥物 | `mascot` | `120rpx x 120rpx` |
-| 购物车吉祥物 | `cartMascot` | `94rpx x 94rpx` |
+| 购物车吉祥物 | `cartMascot` | `140rpx x 140rpx` |
 | 我的头像 | `profileAvatar` | `132rpx x 132rpx` |
 | 我的菜单 icon | `menuIcon` | `44rpx x 44rpx` |
 | 数量步进器 | `qtyStepper` | `44rpx x 44rpx` |

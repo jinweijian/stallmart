@@ -32,6 +32,7 @@ public class OrderServiceTest {
         var order = orderService.create(1L, request);
 
         assertThat(order.status()).isEqualTo("NEW");
+        assertThat(order.orderNo()).startsWith("SM");
         assertThat(order.totalAmount()).isEqualByComparingTo(new BigDecimal("24.00"));
         assertThat(order.items()).hasSize(1);
         assertThat(order.items().getFirst().productName()).isEqualTo("百香果柠檬茶");

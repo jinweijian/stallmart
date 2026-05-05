@@ -2,6 +2,8 @@ package com.stallmart.store.internal.repository;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
@@ -10,6 +12,7 @@ import jakarta.persistence.Table;
 @Table(name = "store_style")
 public class StoreStyleEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
     public String name;
     public String code;

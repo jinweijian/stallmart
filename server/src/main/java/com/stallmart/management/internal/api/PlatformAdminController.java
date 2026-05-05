@@ -11,17 +11,22 @@ import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.store.StoreService;
 import com.stallmart.store.dto.StoreDTO;
 import com.stallmart.style.dto.StyleDTO;
+import com.stallmart.style.dto.StyleUpsertParams;
 import com.stallmart.support.web.Result;
 import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -80,6 +85,31 @@ public class PlatformAdminController {
         return Result.success(storeService.listStyles());
     }
 
+    @GetMapping("/styles/{styleId}")
+    public Result<StyleDTO> style(@PathVariable long styleId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
+        return Result.success(storeService.getStyle(styleId));
+    }
+
+    @PostMapping("/styles")
+    public Result<StyleDTO> createStyle(
+            @Valid @RequestBody StyleUpsertParams params,
+            HttpServletRequest request
+    ) {
+        accessGuard.requirePlatformAdmin(request);
+        return Result.success(storeService.createStyle(params));
+    }
+
+    @PutMapping("/styles/{styleId}")
+    public Result<StyleDTO> updateStyle(
+            @PathVariable long styleId,
+            @Valid @RequestBody StyleUpsertParams params,
+            HttpServletRequest request
+    ) {
+        accessGuard.requirePlatformAdmin(request);
+        return Result.success(storeService.updateStyle(styleId, params));
+    }
+
     @PutMapping("/styles/{styleId}/publish")
     public Result<StyleDTO> publishStyle(@PathVariable long styleId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
@@ -90,6 +120,13 @@ public class PlatformAdminController {
     public Result<StyleDTO> unpublishStyle(@PathVariable long styleId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
         return Result.success(storeService.updateStyleStatus(styleId, "INACTIVE"));
+    }
+
+    @DeleteMapping("/styles/{styleId}")
+    public Result<Void> deleteStyle(@PathVariable long styleId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
+        storeService.deleteStyle(styleId);
+        return Result.success(null);
     }
 
     @GetMapping("/vendors/{storeId}/products")

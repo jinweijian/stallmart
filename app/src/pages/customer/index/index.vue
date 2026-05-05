@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import {
@@ -170,7 +170,8 @@ const bannerSlides = computed<StorefrontBannerConfig[]>(() => {
 
 const filteredProducts = computed(() => {
   if (activeCategory.value === 'recommend') {
-    return products.value.filter((product) => product.isHot || product.rank)
+    const recommended = products.value.filter((product) => product.isHot || product.rank)
+    return recommended.length > 0 ? recommended : products.value
   }
 
   return products.value.filter((product) => product.category === activeCategory.value)
@@ -212,9 +213,6 @@ const selectedSpecsText = computed(() =>
 const selectedProductPrice = computed(() => Number(selectedSku.value?.price ?? selectedProduct.value?.basePrice ?? 0))
 const selectedProductTotal = computed(() => selectedProductPrice.value * selectedQuantity.value)
 
-const storeTitle = computed(() => storeInfo.value?.heroTitle || copywriting.value.heroTitle || storeInfo.value?.name || '小新の水果茶屋')
-const storeSubtitle = computed(() => storeInfo.value?.heroSubtitle || copywriting.value.heroSubtitle || '自然水果 · 新鲜现制')
-const branchLabel = computed(() => storeInfo.value?.branchName || copywriting.value.branchName || storeInfo.value?.name || '上海环球港店')
 const promoTitle = computed(() => copywriting.value.promoTitle || '鲜果时令上新')
 const promoSubtitle = computed(() => copywriting.value.promoSubtitle || '当季水果 · 清爽一夏')
 const promoActionText = computed(() => copywriting.value.promoActionText || '立即尝鲜')
@@ -555,6 +553,7 @@ function openProductDetail(product: Product) {
   selectedQuantity.value = 1
   selectedRemark.value = ''
   selectedOptions.value = resolveDefaultSkuOptions(product)
+  void Taro.hideTabBar({ animation: true }).catch(() => undefined)
 }
 
 function closeProductDetail() {
@@ -562,6 +561,7 @@ function closeProductDetail() {
   selectedOptions.value = {}
   selectedQuantity.value = 1
   selectedRemark.value = ''
+  void Taro.showTabBar({ animation: true }).catch(() => undefined)
 }
 
 function resolveDefaultSkuOptions(product: Product): Record<string, string> {
@@ -670,55 +670,16 @@ function getStatusText(product: Product): string {
 function isProductDisabled(product: Product): boolean {
   return normalizeProductStatus(product.status) !== 'ACTIVE' || product.stock <= 0
 }
+
+onBeforeUnmount(() => {
+  void Taro.showTabBar({ animation: false }).catch(() => undefined)
+})
 </script>
 
 <template>
   <view class="fruit-tea-page" :style="themeVars">
     <view class="hero-section">
       <image v-if="imageUrls.heroIllustration" class="hero-image" :src="imageUrls.heroIllustration" mode="aspectFill" />
-      <view class="hero-leaves hero-leaves-left" />
-      <view class="hero-leaves hero-leaves-right" />
-
-      <view class="mini-program-pill">
-        <text class="pill-dot">●●●</text>
-        <view class="pill-line" />
-        <text class="pill-ring">◎</text>
-      </view>
-
-      <view class="location-card">
-        <image v-if="iconUrls.location" class="location-icon" :src="iconUrls.location" mode="aspectFit" />
-        <text v-else class="location-pin">⌖</text>
-        <view class="location-copy">
-          <text class="location-store">{{ branchLabel }}</text>
-          <text class="location-distance">距离您 {{ storeInfo?.distance || '1.3km' }}</text>
-        </view>
-      </view>
-
-      <view class="hero-title-block">
-        <text class="hero-eyebrow">{{ storeInfo?.heroEyebrow || copywriting.heroEyebrow || '小新の' }}</text>
-        <text class="hero-title">{{ storeTitle }}</text>
-        <text class="hero-subtitle">{{ storeSubtitle }}</text>
-      </view>
-
-      <view class="hero-stage">
-        <view class="fruit-basket">
-          <text class="basket-fruits">🍍🍎🍊🍇</text>
-        </view>
-        <view class="mascot-pair">
-          <image v-if="imageUrls.mascot" class="mascot-image" :src="imageUrls.mascot" mode="aspectFit" />
-          <view v-else class="white-pet">◔ᴥ◔</view>
-          <view class="crayon-boy">
-            <view class="boy-head">
-              <view class="boy-brow boy-brow-left" />
-              <view class="boy-brow boy-brow-right" />
-              <view class="boy-eye boy-eye-left" />
-              <view class="boy-eye boy-eye-right" />
-              <view class="boy-mouth" />
-            </view>
-            <view class="boy-shirt" />
-          </view>
-        </view>
-      </view>
     </view>
 
     <swiper
@@ -736,19 +697,6 @@ function isProductDisabled(product: Product): boolean {
       <swiper-item v-for="banner in bannerSlides" :key="banner.id" class="banner-slide">
         <view class="promo-card" @tap="handleBannerTap(banner)">
           <image v-if="banner.imageUrl" class="promo-bg-image" :src="banner.imageUrl" mode="aspectFill" />
-          <view class="promo-copy">
-            <text class="promo-title">{{ banner.title || promoTitle }}</text>
-            <text class="promo-subtitle">{{ banner.subtitle || promoSubtitle }}</text>
-            <view class="promo-button">
-              <text>{{ banner.actionText || promoActionText }}</text>
-              <text class="promo-arrow">›</text>
-            </view>
-          </view>
-          <view class="promo-drink">
-            <image v-if="imageUrls.promoIllustration" class="promo-image" :src="imageUrls.promoIllustration" mode="aspectFit" />
-            <text v-else class="promo-cup">饮</text>
-            <text class="promo-label">小新の水果茶屋</text>
-          </view>
         </view>
       </swiper-item>
     </swiper>

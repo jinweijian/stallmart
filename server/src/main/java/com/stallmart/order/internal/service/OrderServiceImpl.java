@@ -49,6 +49,7 @@ public class OrderServiceImpl implements OrderService {
         order.userId = userId;
         order.storeId = request.storeId();
         order.status = "NEW";
+        order.orderNo = buildPendingOrderNo();
         order.confirmCode = "1000";
         order.totalAmount = total;
         order.remark = request.remark();
@@ -193,5 +194,10 @@ public class OrderServiceImpl implements OrderService {
     private String buildOrderNo(long id) {
         String date = DateTimeFormatter.BASIC_ISO_DATE.format(LocalDate.now());
         return "SM" + date + String.format("%06d", id);
+    }
+
+    private String buildPendingOrderNo() {
+        String date = DateTimeFormatter.BASIC_ISO_DATE.format(LocalDate.now());
+        return "SM" + date + String.format("%09d", Math.floorMod(System.nanoTime(), 1_000_000_000L));
     }
 }

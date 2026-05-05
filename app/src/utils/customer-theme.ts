@@ -3,8 +3,33 @@ import { DEFAULT_STORE_THEME, type StoreThemePackage } from '@/config'
 
 export const CUSTOMER_THEME_STORAGE_KEY = 'customer_theme_package'
 
+const RPX_TO_REM = 1 / 40
+const RPX_VALUE_PATTERN = /^(-?\d+(?:\.\d+)?)rpx$/i
+
 function getAssetSizes(theme: StoreThemePackage) {
   return theme.assetSizes || DEFAULT_STORE_THEME.assetSizes
+}
+
+function toRuntimeCssSize(value: string | undefined, fallback: string): string {
+  const size = (value || fallback).trim()
+  const match = size.match(RPX_VALUE_PATTERN)
+
+  if (!match) {
+    return size
+  }
+
+  const rem = Number(match[1]) * RPX_TO_REM
+  return `${Number(rem.toFixed(4))}rem`
+}
+
+function normalizeSizePair(
+  value: { width: string; height: string } | undefined,
+  fallback: { width: string; height: string } | undefined
+) {
+  return {
+    width: toRuntimeCssSize(value?.width, fallback?.width || '0rpx'),
+    height: toRuntimeCssSize(value?.height, fallback?.height || '0rpx'),
+  }
 }
 
 function getSizePair(
@@ -13,12 +38,12 @@ function getSizePair(
 ) {
   const sizes = getAssetSizes(theme)
   const fallback = DEFAULT_STORE_THEME.assetSizes?.[key]
-  return sizes?.[key] || fallback || { width: '0rpx', height: '0rpx' }
+  return normalizeSizePair(sizes?.[key], fallback)
 }
 
 function getSize(theme: StoreThemePackage, key: keyof NonNullable<StoreThemePackage['assetSizes']>, fallback: string) {
   const value = getAssetSizes(theme)?.[key]
-  return typeof value === 'string' ? value : fallback
+  return toRuntimeCssSize(typeof value === 'string' ? value : undefined, fallback)
 }
 
 export function persistCustomerTheme(theme: StoreThemePackage): void {

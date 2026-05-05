@@ -70,7 +70,10 @@ const App = createApp({
     console.log('[App] onHide')
   },
 
-  onError(err: string) {
+  onError(err?: string) {
+    if (!err) {
+      return
+    }
     console.error('[App Error]', err)
   },
 

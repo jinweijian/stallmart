@@ -4,7 +4,7 @@
 
 - Node.js 18+
 - npm
-- JDK: 当前 `server/build.gradle` 声明 Java 21 toolchain
+- JDK: 当前 `server/build.gradle` 声明 Java 25 toolchain
 - Docker 20.10+
 - Docker Compose v2+
 - 微信开发者工具
@@ -19,7 +19,7 @@ copy .env.example .env
 docker compose up -d mysql redis
 ```
 
-`docker/docker-compose.yml` 也定义了 `api` 和 `admin-web`，管理端源码位于 `web/`。
+`docker/docker-compose.yml` 也定义了 `api`、`admin-web` 和 `app-h5`，管理端源码位于 `web/`，H5 调试源码位于 `app/`。
 
 ## 2. 启动后端
 
@@ -31,8 +31,8 @@ cd server
 默认配置读取 `server/src/main/resources/application.yml`：
 
 - 服务端口: `8080`
-- MySQL: `localhost:3306/stallmart`
-- Redis: `localhost:6379`
+- MySQL: Docker 默认映射 `localhost:3307/stallmart`；直连本机 MySQL 时按本机配置调整。
+- Redis: Docker 默认映射 `localhost:6380`；直连本机 Redis 时按本机配置调整。
 - Swagger: `http://localhost:8080/api/v1/swagger-ui/index.html`
 
 本地私有配置建议放入未提交的 `application-local.yml`。
