@@ -27,7 +27,7 @@
 - API base URL 只允许从 `API_BASE_URL` 获取。
 - 切换环境必须通过配置，不在页面里判断环境。
 - 微信小程序 request 合法域名未配置前，`ENABLE_API_MOCK` 默认开启，业务请求由 `src/mock/customer-api.ts` 返回后端契约形状的 mock 数据，不触发真实网络请求。
-- H5 联调真实 API 时使用 `TARO_APP_ENABLE_API_MOCK=false` 关闭 mock，并通过 `/app/bootstrap` 按 AppID 拉取启动主题。
+- 本阶段 app 端优先使用 H5 联调真实 API。H5 使用 `TARO_APP_ENABLE_API_MOCK=false` 关闭 mock，并通过 `/app/bootstrap` 按 AppID 拉取启动主题；小程序 request 合法域名申请完成前，weapp 只要求构建和 mock 兜底保持可用。
 
 ## endpoint 命名规则
 

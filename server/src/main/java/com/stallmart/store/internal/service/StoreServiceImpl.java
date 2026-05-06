@@ -32,6 +32,7 @@ import com.stallmart.style.dto.StorefrontCategoryDTO;
 import com.stallmart.style.dto.StorefrontCategoryIconDTO;
 import com.stallmart.style.dto.StorefrontThemeDTO;
 import com.stallmart.style.dto.StyleDTO;
+import com.stallmart.style.dto.StyleUpsertParams;
 import com.stallmart.support.exception.AppException;
 import com.stallmart.support.exception.ErrorCode;
 import com.stallmart.support.persistence.JsonSupport;
@@ -252,6 +253,9 @@ public class StoreServiceImpl implements StoreService {
     public StoreDecorationDTO updateDecoration(long storeId, UpdateDecorationParams request) {
         StoreEntity current = getStoreEntity(storeId);
         StoreStyleEntity style = request.styleId() == null ? getStyleEntity(current.styleId) : getStyleEntity(request.styleId());
+        if (request.styleId() != null && !"ACTIVE".equalsIgnoreCase(style.status)) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
         current.styleId = style.id;
         current.description = request.description() == null ? current.description : request.description();
         current.logoUrl = request.logoUrl() == null ? current.logoUrl : request.logoUrl();
@@ -291,17 +295,60 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    public List<StyleDTO> listActiveStyles() {
+        return styleRepository.findByStatusOrderByIdAsc("ACTIVE").stream().map(this::toStyleDTO).toList();
+    }
+
+    @Override
     public StyleDTO getStyle(long id) {
         return toStyleDTO(getStyleEntity(id));
     }
 
     @Override
     @Transactional
+    public StyleDTO createStyle(StyleUpsertParams request) {
+        validateStyleRequest(request, null);
+        StoreStyleEntity style = new StoreStyleEntity();
+        style.name = request.name();
+        style.code = request.code();
+        style.previewUrl = request.previewUrl();
+        style.status = normalizeStyleStatus(request.status());
+        style.version = 1;
+        style.themeJson = json.write(request.theme());
+        return toStyleDTO(styleRepository.save(style));
+    }
+
+    @Override
+    @Transactional
+    public StyleDTO updateStyle(long id, StyleUpsertParams request) {
+        StoreStyleEntity style = getStyleEntity(id);
+        validateStyleRequest(request, id);
+        style.name = request.name();
+        style.code = request.code();
+        style.previewUrl = request.previewUrl();
+        style.status = normalizeStyleStatus(request.status());
+        style.version += 1;
+        style.themeJson = json.write(request.theme());
+        return toStyleDTO(styleRepository.save(style));
+    }
+
+    @Override
+    @Transactional
     public StyleDTO updateStyleStatus(long id, String status) {
         StoreStyleEntity style = getStyleEntity(id);
-        style.status = status;
+        style.status = normalizeStyleStatus(status);
         style.version += 1;
         return toStyleDTO(styleRepository.save(style));
+    }
+
+    @Override
+    @Transactional
+    public void deleteStyle(long id) {
+        StoreStyleEntity style = getStyleEntity(id);
+        if (storeRepository.existsByStyleId(id)) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+        styleRepository.delete(style);
     }
 
     @Override
@@ -473,6 +520,38 @@ public class StoreServiceImpl implements StoreService {
 
     private StoreStyleEntity getStyleEntity(long id) {
         return styleRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+    }
+
+    private void validateStyleRequest(StyleUpsertParams request, Long currentId) {
+        if (request == null || request.theme() == null || request.name() == null || request.name().isBlank()
+                || request.code() == null || request.code().isBlank()) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+        boolean duplicateCode = styleRepository.findAllByOrderByIdAsc().stream()
+                .anyMatch(style -> style.code.equalsIgnoreCase(request.code())
+                        && (currentId == null || !style.id.equals(currentId)));
+        if (duplicateCode) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+        validateThemeContract(request.theme());
+        normalizeStyleStatus(request.status());
+    }
+
+    private void validateThemeContract(StorefrontThemeDTO theme) {
+        if (theme.colors() == null || theme.colors().isEmpty()
+                || theme.categoryIconLibrary() == null || theme.categoryIconLibrary().isEmpty()
+                || theme.assetSizes() == null || theme.assetSizes().isEmpty()
+                || theme.pageThemes() == null || theme.pageThemes().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private String normalizeStyleStatus(String status) {
+        String normalized = status == null || status.isBlank() ? "INACTIVE" : status.toUpperCase();
+        if (!normalized.equals("ACTIVE") && !normalized.equals("INACTIVE")) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+        return normalized;
     }
 
     private ProductEntity getProductEntity(long id) {

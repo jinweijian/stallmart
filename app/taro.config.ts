@@ -3,12 +3,23 @@ import { defineConfig } from 'taro-plugin-vue3'
 import path from 'node:path'
 
 const resolveSrc = (...segments: string[]) => path.resolve(__dirname, 'src', ...segments)
+const defineEnv = (name: string, fallback = '') => JSON.stringify(process.env[name] || fallback)
 
 export default defineConfig({
   appType: 'vue3',
   framework: 'vue3',
   platform: 'weapp',
-  compiler: 'webpack5',
+  compiler: {
+    type: 'webpack5',
+    prebundle: {
+      enable: false,
+    },
+  },
+  env: {
+    TARO_APP_API_BASE_URL: defineEnv('TARO_APP_API_BASE_URL'),
+    TARO_APP_ENABLE_API_MOCK: defineEnv('TARO_APP_ENABLE_API_MOCK'),
+    TARO_APP_ID: defineEnv('TARO_APP_ID'),
+  },
 
   projectName: 'stallmart-mini',
 
@@ -27,8 +38,8 @@ export default defineConfig({
   copy: {
     patterns: [
       {
-        from: resolveSrc('static/default-avatar.png'),
-        to: path.resolve(__dirname, 'dist/static/default-avatar.png'),
+        from: resolveSrc('static'),
+        to: path.resolve(__dirname, 'dist/static'),
       },
     ],
     options: {},
@@ -69,6 +80,17 @@ export default defineConfig({
     staticDirectory: 'static',
     router: {
       mode: 'hash',
+    },
+    devServer: {
+      host: '0.0.0.0',
+      port: Number(process.env.TARO_APP_H5_PORT || 10086),
+      allowedHosts: 'all',
+      client: {
+        overlay: {
+          errors: true,
+          warnings: false,
+        },
+      },
     },
   },
 

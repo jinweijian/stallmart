@@ -12,4 +12,6 @@ public interface StoreRepository extends JpaRepository<StoreEntity, Long> {
     List<StoreEntity> findByOwnerIdOrderByIdAsc(Long ownerId);
 
     List<StoreEntity> findAllByOrderByIdAsc();
+
+    boolean existsByStyleId(Long styleId);
 }

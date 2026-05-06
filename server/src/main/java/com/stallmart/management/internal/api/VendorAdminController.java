@@ -288,7 +288,7 @@ public class VendorAdminController {
                 orders,
                 carts,
                 usersForStore(store.id()),
-                storeService.listStyles(),
+                storeService.listActiveStyles(),
                 orders.size(),
                 carts.size(),
                 salesAmount(orders)

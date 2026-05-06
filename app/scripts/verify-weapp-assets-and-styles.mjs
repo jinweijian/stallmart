@@ -286,7 +286,6 @@ if (existsSync(customerIndexScssPath)) {
     '--asset-promo-banner-width',
     '--asset-promo-banner-height',
     '--asset-category-icon-size',
-    '--asset-location-icon-size',
     '--asset-bottom-action-icon-size',
     'background-size: contain',
   ]

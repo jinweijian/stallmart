@@ -1,12 +1,16 @@
 package com.stallmart.web;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,6 +30,17 @@ class ApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Test
+    void h5LocalOriginCanCallAppApi() throws Exception {
+        mockMvc.perform(options("/app/bootstrap")
+                        .header("Origin", "http://localhost:10086")
+                        .header("Access-Control-Request-Method", "GET")
+                        .header("Access-Control-Request-Headers", "content-type,x-client-version,x-platform"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:10086"))
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")));
+    }
 
     @Test
     void storeAndProductEndpointsMatchMiniProgramContract() throws Exception {
@@ -322,6 +337,90 @@ class ApiControllerTest {
                 .andExpect(jsonPath("$.code").value(10005));
     }
 
+    @Test
+    void platformCanCreateUpdateAndDeleteUnusedStylePackage() throws Exception {
+        String platformToken = loginAdmin("platform", "platform123");
+
+        String response = mockMvc.perform(post("/admin/platform/styles")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(stylePayload("果园测试风", "orchardTest", "INACTIVE", "#547D42")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.name").value("果园测试风"))
+                .andExpect(jsonPath("$.data.code").value("orchardTest"))
+                .andExpect(jsonPath("$.data.status").value("INACTIVE"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String styleId = response.replaceAll(".*\\\"id\\\":(\\d+).*", "$1");
+
+        mockMvc.perform(get("/admin/platform/styles/" + styleId)
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.code").value("orchardTest"));
+
+        mockMvc.perform(put("/admin/platform/styles/" + styleId)
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(stylePayload("果园测试风 Pro", "orchardTest", "ACTIVE", "#315F3E")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("果园测试风 Pro"))
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.version").value(2))
+                .andExpect(jsonPath("$.data.theme.colors.primary").value("#315F3E"));
+
+        mockMvc.perform(delete("/admin/platform/styles/" + styleId)
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        mockMvc.perform(get("/admin/platform/styles/" + styleId)
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void platformCannotDeleteStylePackageUsedByStore() throws Exception {
+        String platformToken = loginAdmin("platform", "platform123");
+
+        mockMvc.perform(delete("/admin/platform/styles/6")
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(10000));
+    }
+
+    @Test
+    void vendorCannotWritePlatformStylePackage() throws Exception {
+        String vendorToken = loginAdmin("vendor", "vendor123");
+
+        mockMvc.perform(post("/admin/platform/styles")
+                        .header("Authorization", "Bearer " + vendorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(stylePayload("越权风格", "vendorForbiddenStyle", "ACTIVE", "#315F3E")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(10005));
+    }
+
+    @Test
+    void vendorCannotSelectInactiveStylePackage() throws Exception {
+        String platformToken = loginAdmin("platform", "platform123");
+        String vendorToken = loginAdmin("vendor", "vendor123");
+
+        mockMvc.perform(put("/admin/platform/styles/1/unpublish")
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("INACTIVE"));
+
+        mockMvc.perform(put("/admin/vendor/me/decoration")
+                        .header("Authorization", "Bearer " + vendorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"styleId\":1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(10000));
+    }
+
     private String loginAdmin(String account, String password) throws Exception {
         String response = mockMvc.perform(post("/admin/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -334,5 +433,65 @@ class ApiControllerTest {
                 .getContentAsString();
 
         return response.replaceAll(".*\\\"accessToken\\\":\\\"([^\\\"]+)\\\".*", "$1");
+    }
+
+    private String stylePayload(String name, String code, String status, String primaryColor) {
+        return """
+                {
+                  "name": "%s",
+                  "code": "%s",
+                  "previewUrl": "/static/storefront/forest/preview.png",
+                  "status": "%s",
+                  "theme": {
+                    "code": "%s",
+                    "name": "%s",
+                    "layoutVersion": "customer-storefront-v1",
+                    "colors": {
+                      "primary": "%s",
+                      "secondary": "#B8C77A",
+                      "accent": "#F2B94B",
+                      "background": "#FBFAEF",
+                      "surface": "#FFFDF4",
+                      "text": "#4C6040",
+                      "mutedText": "#7A866D",
+                      "border": "#DCE6C7",
+                      "price": "%s"
+                    },
+                    "iconNames": {
+                      "location": "forest-location",
+                      "cart": "forest-cart",
+                      "checkout": "forest-checkout",
+                      "delivery": "forest-delivery",
+                      "sectionLeaf": "forest-leaf"
+                    },
+                    "iconUrls": {},
+                    "imageUrls": {},
+                    "copywriting": {
+                      "heroEyebrow": "今日推荐",
+                      "heroTitle": "%s",
+                      "heroSubtitle": "新鲜现制",
+                      "promoTitle": "本店上新",
+                      "promoSubtitle": "精选好物",
+                      "promoActionText": "去看看"
+                    },
+                    "categoryIconLibrary": [
+                      {
+                        "key": "recommend",
+                        "name": "人气推荐",
+                        "iconUrl": null,
+                        "fallbackText": "荐"
+                      }
+                    ],
+                    "assetSizes": {
+                      "tabBarReserve": "132rpx"
+                    },
+                    "pageThemes": {
+                      "home": {
+                        "sectionTitle": "人气推荐"
+                      }
+                    }
+                  }
+                }
+                """.formatted(name, code, status, code, name, primaryColor, primaryColor, name);
     }
 }

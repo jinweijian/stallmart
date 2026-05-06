@@ -121,6 +121,14 @@ export interface Style {
   theme: StorefrontTheme
 }
 
+export interface StyleInput {
+  name: string
+  code: string
+  previewUrl: string | null
+  status: string
+  theme: StorefrontTheme
+}
+
 export interface StorefrontCategory {
   id: string
   name: string

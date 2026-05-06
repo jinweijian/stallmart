@@ -37,198 +37,6 @@
   height: 100%;
 }
 
-.mini-program-pill {
-  position: absolute;
-  top: 84rpx;
-  right: 36rpx;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 174rpx;
-  height: 64rpx;
-  gap: 22rpx;
-  color: #111111;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1rpx solid rgba(111, 150, 70, 0.16);
-  border-radius: 34rpx;
-  box-shadow: 0 10rpx 26rpx rgba(85, 108, 55, 0.12);
-}
-
-.pill-dot {
-  font-size: 28rpx;
-}
-
-.pill-line {
-  width: 1rpx;
-  height: 34rpx;
-  background: rgba(0, 0, 0, 0.08);
-}
-
-.pill-ring {
-  font-size: 42rpx;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.location-card {
-  position: absolute;
-  top: 176rpx;
-  right: 36rpx;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  width: 184rpx;
-  min-height: 78rpx;
-  padding: 14rpx 18rpx;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1rpx solid rgba(111, 150, 70, 0.14);
-  border-radius: 28rpx;
-  box-shadow: 0 10rpx 24rpx rgba(85, 108, 55, 0.1);
-}
-
-.location-pin {
-  flex-shrink: 0;
-  margin-right: 10rpx;
-  color: var(--style-primary, #6F9646);
-  font-size: 28rpx;
-  font-weight: 700;
-}
-
-.location-icon {
-  flex-shrink: 0;
-  width: var(--asset-location-icon-size, 30rpx);
-  height: var(--asset-location-icon-size, 30rpx);
-  margin-right: 10rpx;
-}
-
-.location-copy {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.location-store,
-.location-distance {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.location-store {
-  color: #33442c;
-  font-size: 22rpx;
-  font-weight: 700;
-}
-
-.location-distance {
-  margin-top: 4rpx;
-  color: var(--style-muted-text, #7A866D);
-  font-size: 20rpx;
-}
-
-.hero-title-block {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  padding-top: 84rpx;
-  padding-right: 168rpx;
-}
-
-.hero-title-block,
-.hero-stage,
-.hero-leaves,
-.mini-program-pill {
-  display: none !important;
-}
-
-.hero-eyebrow {
-  color: var(--style-text, #4C6040);
-  font-size: 46rpx;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.hero-title {
-  margin-top: 14rpx;
-  color: var(--style-text, #4C6040);
-  font-size: 76rpx;
-  font-weight: 800;
-  line-height: 1.05;
-  text-shadow: 0 4rpx 0 rgba(255, 255, 255, 0.44);
-}
-
-.hero-subtitle {
-  margin-top: 28rpx;
-  color: var(--style-text, #4C6040);
-  font-size: 27rpx;
-  font-weight: 700;
-}
-
-.hero-stage {
-  position: absolute;
-  right: 26rpx;
-  bottom: 32rpx;
-  left: 26rpx;
-  z-index: 2;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-}
-
-.fruit-basket {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 184rpx;
-  height: 120rpx;
-  border-radius: 58rpx 58rpx 24rpx 24rpx;
-  background: rgba(150, 103, 52, 0.34);
-  box-shadow: inset 0 -16rpx 0 rgba(120, 82, 38, 0.18);
-}
-
-.basket-fruits {
-  font-size: 56rpx;
-  line-height: 1;
-}
-
-.mascot-pair {
-  display: flex;
-  align-items: flex-end;
-  gap: 26rpx;
-}
-
-.crayon-boy {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-}
-
-.hero-leaves {
-  position: absolute;
-  width: 260rpx;
-  height: 260rpx;
-  border-radius: 50%;
-  opacity: 0.72;
-  background:
-    radial-gradient(ellipse at 35% 20%, rgba(96, 141, 70, 0.28) 0 22rpx, transparent 24rpx),
-    radial-gradient(ellipse at 60% 28%, rgba(149, 177, 84, 0.28) 0 28rpx, transparent 30rpx),
-    radial-gradient(ellipse at 28% 58%, rgba(120, 162, 83, 0.34) 0 34rpx, transparent 36rpx),
-    radial-gradient(ellipse at 72% 66%, rgba(177, 195, 111, 0.3) 0 26rpx, transparent 28rpx);
-}
-
-.hero-leaves-left {
-  top: 24rpx;
-  left: -64rpx;
-}
-
-.hero-leaves-right {
-  top: 0;
-  right: -52rpx;
-}
-
 .promo-card {
   position: relative;
   z-index: 1;
@@ -265,83 +73,6 @@
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.promo-copy {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.promo-title {
-  color: var(--style-text, #4C6040);
-  font-size: 48rpx;
-  font-weight: 800;
-  line-height: 1.2;
-}
-
-.promo-subtitle {
-  margin-top: 14rpx;
-  color: var(--style-text, #4C6040);
-  font-size: 30rpx;
-  font-weight: 600;
-}
-
-.promo-button {
-  display: flex;
-  align-items: center;
-  height: 58rpx;
-  margin-top: 26rpx;
-  padding: 0 26rpx;
-  color: #ffffff;
-  font-size: 28rpx;
-  font-weight: 700;
-  background: var(--style-primary, #6F9646);
-  border-radius: 30rpx;
-}
-
-.promo-arrow {
-  margin-left: 12rpx;
-  font-size: 40rpx;
-  line-height: 1;
-}
-
-.promo-drink {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 220rpx;
-}
-
-.promo-card .promo-copy,
-.promo-card .promo-drink {
-  display: none;
-}
-
-.promo-cup {
-  font-size: 126rpx;
-  line-height: 1;
-}
-
-.promo-image {
-  width: 156rpx;
-  height: 156rpx;
-}
-
-.promo-label {
-  position: absolute;
-  right: 24rpx;
-  bottom: 28rpx;
-  max-width: 104rpx;
-  color: var(--style-text, #4C6040);
-  font-size: 18rpx;
-  font-weight: 700;
-  text-align: center;
-  white-space: normal;
 }
 
 .carousel-dots {
@@ -834,7 +565,7 @@
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 80;
+  z-index: 10000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -844,9 +575,10 @@
 .product-detail-sheet {
   position: relative;
   width: 100%;
-  max-height: 84vh;
-  padding: 32rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));
+  max-height: calc(100vh - 72rpx);
+  padding: 32rpx 28rpx calc(28rpx + env(safe-area-inset-bottom));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background:
     radial-gradient(circle at 86% 14%, rgba(242, 185, 75, 0.14), transparent 220rpx),
     #fffdf7;
@@ -1105,11 +837,14 @@
 }
 
 .detail-submit-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
   min-height: 92rpx;
   margin: 22rpx -16rpx 0;
-  padding: 10rpx 16rpx;
+  padding: 10rpx 16rpx calc(10rpx + env(safe-area-inset-bottom));
   background: rgba(255, 253, 244, 0.96);
   border: 2rpx solid rgba(220, 230, 199, 0.9);
   border-radius: 48rpx;

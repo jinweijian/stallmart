@@ -47,8 +47,8 @@
 规则：
 
 - 店铺首页负责商品浏览和商品详情弹层，不负责订单提交。
-- 店铺首页支持后台 `styleCode` 与 `decoration` 驱动风格包渲染；当前已支持森系水果茶版首页框架，包含主题头图、自动轮播 banner、左侧分类、右侧推荐列表和底部购物车栏。首页会持久化合并后的风格包，点单、订单、我的三个 tab 读取同一份主题。icon、banner、商品图、头像、菜单 icon、步进器、进度 icon 和底部栏预留等展示尺寸必须从风格包 `assetSizes` 读取，装修字段标准见 [storefront-decoration.md](storefront-decoration.md)。
-- 商品详情不新增独立路由，作为首页底部弹层实现；弹层必须使用后端商品 `specIds/skus` 和 `/styles/{styleId}/specs` 生成 SKU 选项，加入购物车时只保存已选 SKU、规格文案、价格和商品快照。
+- 店铺首页支持后台 `styleCode` 与 `decoration` 驱动风格包渲染；当前已支持森系水果茶版首页框架，包含主题头图、自动轮播 banner、左侧分类、右侧推荐列表和底部购物车栏。头图和轮播 banner 默认只展示风格包图片，不再叠加示意文案、按钮或占位符号。首页会持久化合并后的风格包，点单、订单、我的三个 tab 读取同一份主题。icon、banner、商品图、头像、菜单 icon、步进器、进度 icon 和底部栏预留等展示尺寸必须从风格包 `assetSizes` 读取，装修字段标准见 [storefront-decoration.md](storefront-decoration.md)。
+- 商品详情不新增独立路由，作为首页底部弹层实现；弹层必须使用后端商品 `specIds/skus` 和 `/styles/{styleId}/specs` 生成 SKU 选项，加入购物车时只保存已选 SKU、规格文案、价格和商品快照。弹层打开时必须临时隐藏原生 tabBar，关闭或离开页面时恢复，并保证内容可滚动、底部提交栏不被遮挡。
 - 购物车负责商品集合管理，不负责用户认证细节。
 - 购物车页面作为“点单”展示页使用 `pageThemes.cart`，保留现有数量修改、清空和结算能力，不展示配送/外卖入口。
 - 确认订单负责下单前校验和提交，必须读取同一份顾客端主题变量；顶部风格 banner 复用 `pageThemes.cart.headerBanner`，商品图、底部提交栏和安全区预留由 `assetSizes` 控制。

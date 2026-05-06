@@ -1,0 +1,23 @@
+# ================================================
+# StallMart App H5 Dockerfile
+# ================================================
+# 本地 H5 联调：docker compose up -d app-h5
+# ================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+ENV TARO_APP_ENABLE_API_MOCK=false
+ENV TARO_APP_ID=wx-stallmart-demo
+ENV TARO_APP_API_BASE_URL=http://localhost:8081/api/v1
+ENV TARO_APP_H5_PORT=10086
+
+EXPOSE 10086
+
+CMD ["npm", "run", "dev:h5"]

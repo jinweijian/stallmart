@@ -21,7 +21,7 @@
 | Vendor Pages | `src/pages/vendor/` | 摊主业务页面 | 处理顾客购物车流程 |
 | Store | `src/store/` | 跨页面共享状态 | 直接调用页面跳转作为主要业务流 |
 | Utils | `src/utils/` | request、auth、storage 等基础能力 | 写具体页面 UI 逻辑 |
-| Static | `src/static/` | 图片、tabBar 图标、默认头像 | 放运行时生成文件 |
+| Static | `src/static/` | 图片、tabBar 图标、默认头像 | 放运行时生成文件；H5 构建必须 copy 到 `dist/static/` 并以图片 MIME 返回 |
 
 ## 顾客端业务模块
 
@@ -46,7 +46,7 @@
 约束：
 
 - 店铺信息和商品列表不能硬编码到页面中。
-- 店铺装修必须消费服务端 `decoration` 和本地 `STORE_THEME_PACKAGES` 合并后的配置，颜色、文案、icon、banner、分类 icon 库和展示尺寸都不得散落硬编码。首页轮播 banner 必须由合并后的 `banners` 驱动，分类入口必须来自服务端 `decoration.categories`，分类 icon 由分类的 `iconKey` 解析得到，icon 与图片展示大小必须由 `assetSizes` 统一约束。首页需要将合并后的主题缓存给点单、订单、我的三个 tab 使用。完整规则见 [storefront-decoration.md](storefront-decoration.md)。
+- 店铺装修必须消费服务端 `decoration` 和本地 `STORE_THEME_PACKAGES` 合并后的配置，颜色、文案、icon、banner、分类 icon 库和展示尺寸都不得散落硬编码。首页轮播 banner 必须由合并后的 `banners` 驱动，头图和轮播默认只展示图片本身，不在图片上追加演示文案或符号层；分类入口必须来自服务端 `decoration.categories`，分类 icon 由分类的 `iconKey` 解析得到，icon 与图片展示大小必须由 `assetSizes` 统一约束。首页需要将合并后的主题缓存给点单、订单、我的三个 tab 使用。完整规则见 [storefront-decoration.md](storefront-decoration.md)。
 - 小程序启动时 App Shell 可调用 `API_ENDPOINTS.APP_BOOTSTRAP`，按 AppID 获取当前商家基础配置和主题，成功后写入 `src/utils/customer-theme.ts` 缓存；失败时继续使用缓存或默认主题。
 - 商品详情弹层必须从商品 `specIds/skus` 和风格规格接口 `/styles/{styleId}/specs` 生成 SKU 选项；不可售 SKU 不得允许选择。加入购物车时保存商品快照、选中 SKU id、规格文案和最终价格。
 - 搜索、分类筛选只处理当前页面视图状态，持久化规则另行设计。

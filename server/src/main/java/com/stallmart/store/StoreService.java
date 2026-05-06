@@ -10,6 +10,7 @@ import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.product.dto.ProductUpsertParams;
 import com.stallmart.style.dto.SpecDTO;
 import com.stallmart.style.dto.SpecUpsertParams;
+import com.stallmart.style.dto.StyleUpsertParams;
 import com.stallmart.store.dto.StoreDTO;
 import com.stallmart.style.dto.StyleDTO;
 import java.util.List;
@@ -54,9 +55,17 @@ public interface StoreService {
 
     List<StyleDTO> listStyles();
 
+    List<StyleDTO> listActiveStyles();
+
     StyleDTO getStyle(long id);
 
+    StyleDTO createStyle(StyleUpsertParams request);
+
+    StyleDTO updateStyle(long id, StyleUpsertParams request);
+
     StyleDTO updateStyleStatus(long id, String status);
+
+    void deleteStyle(long id);
 
     List<SpecDTO> listSpecs(long styleId);
 

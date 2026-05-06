@@ -70,9 +70,23 @@ npm run build
 
 ## H5 真实 API 调试
 
-小程序域名未配置前，优先用 H5 验证真实数据链路：
+小程序域名未配置前，优先用 H5 验证真实数据链路。开发调试：
 
 ```bash
+cd app
+TARO_APP_ENABLE_API_MOCK=false TARO_APP_ID=wx-stallmart-demo npm run dev:h5
+```
+
+H5 构建验收：
+
+```bash
+cd app
+TARO_APP_ENABLE_API_MOCK=false TARO_APP_ID=wx-stallmart-demo npm run build:h5
+```
+
+Windows CMD 可使用：
+
+```cmd
 cd app
 set TARO_APP_ENABLE_API_MOCK=false
 set TARO_APP_ID=wx-stallmart-demo
@@ -80,6 +94,26 @@ npm run dev:h5
 ```
 
 启动后 app shell 会调用 `/app/bootstrap` 写入主题缓存，页面继续读取真实 `/stores`、`/products`、`/styles`、`/orders` 等接口。
+
+Docker H5 联调验证：
+
+```bash
+cd docker
+docker compose up -d app-h5
+curl -I http://localhost:10086/
+curl -s http://localhost:10086/ | grep -E "taro|app"
+curl -s -D - -o /tmp/stallmart-h5-cart.png http://localhost:10086/static/storefront/forest/icons/cart.png
+file /tmp/stallmart-h5-cart.png
+```
+
+预期 H5 返回 `HTTP/1.1 200 OK`，且正文不是目录索引；静态图片必须返回真实图片类型，不得回退为 H5 `index.html`。该容器默认关闭 mock，并通过 `TARO_APP_API_BASE_URL=http://localhost:8081/api/v1` 访问 Docker 后端。
+
+小程序 request 合法域名申请完成前，weapp 构建需要保持通过，但真实 API 联调先不作为阻塞项：
+
+```bash
+cd app
+npm run build:weapp
+```
 
 ## 提交前检查
 

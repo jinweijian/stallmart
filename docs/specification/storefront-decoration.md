@@ -43,7 +43,7 @@
 小程序启动 -> GET /app/bootstrap?appId={appId} -> 写入 customer-theme 缓存 -> 页面读取缓存和接口数据
 ```
 
-平台角色负责创建、修改、上传素材和上下架风格包；商家角色第一版只能选择已上架风格包。后台上传素材后保存网络 URL，小程序运行时按配置读取，不把商家素材重新打包到 `app/src/static`。
+平台角色负责创建、修改、上传素材、上下架和删除未使用的风格包；已被店铺引用的风格包不能硬删，只能下架来阻止后续选择。商家角色第一版只能选择已上架风格包，服务端必须拒绝商家切换到下架风格包。后台上传素材后保存网络 URL，小程序运行时按配置读取，不把商家素材重新打包到 `app/src/static`。
 
 ## 第一版森系风格
 
@@ -128,6 +128,7 @@
 强制规则：
 
 - 小程序展示尺寸只从 `assetSizes` 生成的 CSS 变量读取，不在页面局部重新定义 icon 大小。
+- `assetSizes` 仍以 `rpx` 作为后台和小程序设计 token；H5 调试端由 `src/utils/customer-theme.ts` 在生成 CSS 变量时转换为浏览器可识别的单位，避免运行时 CSS 变量保留 `rpx` 后导致图片容器高度失效。
 - 风格包不得绑定固定商品分类；分类名称、排序、启停和 `iconKey` 归分类管理。风格包只提供 `categoryIconLibrary`。
 - 分类管理保存 `iconKey`，小程序首页渲染服务端返回的 `categories[].iconUrl`，缺失时使用 `fallbackText`。
 - `pages/customer/index/index`、`pages/customer/cart/cart`、`pages/customer/my-orders/my-orders`、`pages/customer/my/my` 必须通过 `src/utils/customer-theme.ts` 读取同一份主题变量。
