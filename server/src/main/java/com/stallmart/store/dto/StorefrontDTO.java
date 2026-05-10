@@ -1,5 +1,7 @@
 package com.stallmart.store.dto;
 
+import com.stallmart.store.internal.model.StoreStatus;
+
 public record StorefrontDTO(
         Long id,
         Long ownerId,
@@ -12,7 +14,7 @@ public record StorefrontDTO(
         String coverUrl,
         String qrCode,
         String address,
-        String status,
+        StoreStatus status,
         StoreDecorationDTO decoration
 ) {
     public static StorefrontDTO from(StoreDTO store, StoreDecorationDTO decoration) {

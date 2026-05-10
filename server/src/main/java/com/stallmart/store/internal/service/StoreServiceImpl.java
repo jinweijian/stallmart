@@ -10,6 +10,8 @@ import com.stallmart.store.dto.StoreDecorationDTO;
 import com.stallmart.store.dto.StorefrontDTO;
 import com.stallmart.store.dto.UpdateDecorationParams;
 import com.stallmart.store.dto.UpdateStoreParams;
+import com.stallmart.store.internal.model.ProductStatus;
+import com.stallmart.store.internal.model.StoreStyleStatus;
 import com.stallmart.store.internal.repository.StoreDecorationEntity;
 import com.stallmart.store.internal.repository.StoreDecorationRepository;
 import com.stallmart.store.internal.repository.StoreEntity;
@@ -149,7 +151,7 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     @Transactional
-    public ProductDTO updateProductStatus(long storeId, long productId, String status) {
+    public ProductDTO updateProductStatus(long storeId, long productId, ProductStatus status) {
         return productCatalogService.updateProductStatus(storeId, productId, status);
     }
 
@@ -169,7 +171,7 @@ public class StoreServiceImpl implements StoreService {
         }
         StoreEntity current = getStoreEntity(storeId);
         StoreStyleEntity style = request.styleId() == null ? getStyleEntity(current.styleId) : getStyleEntity(request.styleId());
-        if (request.styleId() != null && !"ACTIVE".equalsIgnoreCase(style.status)) {
+        if (request.styleId() != null && style.status != StoreStyleStatus.ACTIVE) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
         current.styleId = style.id;
@@ -242,7 +244,7 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     @Transactional
-    public StyleDTO updateStyleStatus(long id, String status) {
+    public StyleDTO updateStyleStatus(long id, StoreStyleStatus status) {
         return stylePackageService.updateStyleStatus(id, status);
     }
 

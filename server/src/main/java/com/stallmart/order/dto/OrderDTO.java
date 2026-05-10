@@ -1,5 +1,6 @@
 package com.stallmart.order.dto;
 
+import com.stallmart.order.internal.model.OrderStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -9,7 +10,7 @@ public record OrderDTO(
         String orderNo,
         Long userId,
         Long storeId,
-        String status,
+        OrderStatus status,
         String confirmCode,
         BigDecimal totalAmount,
         String remark,

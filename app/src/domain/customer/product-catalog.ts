@@ -14,7 +14,7 @@ export interface Product {
   category: string
   stock: number
   sales: number
-  status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT' | 'active' | 'off_sale' | 'sold_out'
+  status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT'
   specIds?: Array<string | number>
   skus?: ProductSku[]
   selectedSkuId?: string | number
@@ -32,14 +32,14 @@ export interface ProductSku {
   specValues: string[]
   price: number
   stock: number
-  status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT' | 'active' | 'off_sale' | 'sold_out'
+  status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT'
 }
 
 export interface StorefrontSpec {
   id: string | number
   styleId: string | number
   name: string
-  specType: string
+  specType: 'SIZE' | 'SWEET' | 'ICE' | 'OTHER'
   required: boolean
   options: string[]
 }

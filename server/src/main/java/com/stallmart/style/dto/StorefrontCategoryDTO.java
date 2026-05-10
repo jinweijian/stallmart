@@ -1,5 +1,7 @@
 package com.stallmart.style.dto;
 
+import com.stallmart.store.internal.model.CategoryStatus;
+
 public record StorefrontCategoryDTO(
         String id,
         String name,
@@ -7,6 +9,6 @@ public record StorefrontCategoryDTO(
         String iconUrl,
         String fallbackText,
         int sortOrder,
-        String status
+        CategoryStatus status
 ) {
 }

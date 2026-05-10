@@ -4,6 +4,7 @@ import com.stallmart.cart.CartService;
 import com.stallmart.cart.dto.AddCartItemParams;
 import com.stallmart.cart.dto.CartDTO;
 import com.stallmart.cart.dto.CartItemDTO;
+import com.stallmart.cart.internal.model.CartStatus;
 import com.stallmart.cart.internal.repository.CartEntity;
 import com.stallmart.cart.internal.repository.CartItemEntity;
 import com.stallmart.cart.internal.repository.CartItemRepository;
@@ -62,7 +63,7 @@ public class CartServiceImpl implements CartService {
             CartEntity created = new CartEntity();
             created.userId = userId;
             created.storeId = request.storeId();
-            created.status = "ACTIVE";
+            created.status = CartStatus.ACTIVE;
             return created;
         });
         cart.updatedAt = Instant.now();

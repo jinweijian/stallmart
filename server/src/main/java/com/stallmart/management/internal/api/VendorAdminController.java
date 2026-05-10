@@ -14,6 +14,7 @@ import com.stallmart.product.dto.CategoryDTO;
 import com.stallmart.product.dto.CategoryUpsertParams;
 import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.product.dto.ProductUpsertParams;
+import com.stallmart.store.internal.model.ProductStatus;
 import com.stallmart.style.dto.SpecDTO;
 import com.stallmart.style.dto.SpecUpsertParams;
 import com.stallmart.store.StoreService;
@@ -164,17 +165,17 @@ public class VendorAdminController {
 
     @PutMapping("/products/{productId}/on-sale")
     public Result<ProductDTO> onSale(@PathVariable long productId, HttpServletRequest request) {
-        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, "ACTIVE"));
+        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, ProductStatus.ACTIVE));
     }
 
     @PutMapping("/products/{productId}/off-sale")
     public Result<ProductDTO> offSale(@PathVariable long productId, HttpServletRequest request) {
-        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, "INACTIVE"));
+        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, ProductStatus.INACTIVE));
     }
 
     @PutMapping("/products/{productId}/sold-out")
     public Result<ProductDTO> soldOut(@PathVariable long productId, HttpServletRequest request) {
-        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, "SOLD_OUT"));
+        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, ProductStatus.SOLD_OUT));
     }
 
     @GetMapping("/orders")

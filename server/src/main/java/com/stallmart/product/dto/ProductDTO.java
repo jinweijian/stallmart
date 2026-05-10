@@ -1,5 +1,6 @@
 package com.stallmart.product.dto;
 
+import com.stallmart.store.internal.model.ProductStatus;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -14,7 +15,7 @@ public record ProductDTO(
         String imageUrl,
         String mainImageUrl,
         String category,
-        String status,
+        ProductStatus status,
         int sortOrder,
         List<Long> specIds,
         List<ProductSkuDTO> skus

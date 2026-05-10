@@ -6,6 +6,10 @@ import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.product.dto.ProductSkuDTO;
 import com.stallmart.product.dto.ProductSkuParams;
 import com.stallmart.product.dto.ProductUpsertParams;
+import com.stallmart.store.internal.model.CategoryModule;
+import com.stallmart.store.internal.model.CategoryStatus;
+import com.stallmart.store.internal.model.ProductStatus;
+import com.stallmart.store.internal.model.SkuStatus;
 import com.stallmart.store.internal.repository.CategoryEntity;
 import com.stallmart.store.internal.repository.CategoryRepository;
 import com.stallmart.store.internal.repository.ProductEntity;
@@ -62,11 +66,11 @@ public class ProductCatalogService {
         getStoreEntity(storeId);
         CategoryEntity category = new CategoryEntity();
         category.storeId = storeId;
-        category.module = request.module() == null ? "PRODUCT" : request.module().toUpperCase();
+        category.module = request.module() == null ? CategoryModule.PRODUCT : request.module();
         category.name = request.name();
         category.iconKey = normalizeCategoryIconKey(request.iconKey());
         category.sortOrder = request.sortOrder();
-        category.status = request.status() == null ? "ACTIVE" : request.status();
+        category.status = request.status() == null ? CategoryStatus.ACTIVE : request.status();
         return toCategoryDTO(categoryRepository.save(category));
     }
 
@@ -76,7 +80,7 @@ public class ProductCatalogService {
         CategoryEntity current = categoryRepository.findById(categoryId)
                 .filter(category -> category.storeId.equals(storeId))
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        current.module = request.module() == null ? current.module : request.module().toUpperCase();
+        current.module = request.module() == null ? current.module : request.module();
         current.name = request.name();
         current.iconKey = normalizeCategoryIconKey(request.iconKey());
         current.sortOrder = request.sortOrder();
@@ -121,7 +125,7 @@ public class ProductCatalogService {
     }
 
     @Transactional
-    public ProductDTO updateProductStatus(long storeId, long productId, String status) {
+    public ProductDTO updateProductStatus(long storeId, long productId, ProductStatus status) {
         getStoreEntity(storeId);
         ProductEntity current = getProductEntity(productId);
         if (!current.storeId.equals(storeId)) {
@@ -137,7 +141,7 @@ public class ProductCatalogService {
         product.name = request.name();
         product.description = request.description();
         product.mainImageUrl = primaryImage(request);
-        product.status = request.status() == null ? "ACTIVE" : request.status();
+        product.status = request.status() == null ? ProductStatus.ACTIVE : request.status();
         product.sortOrder = request.sortOrder();
         product.specIdsJson = json.write(requireSpecIds(storeId, request.specIds()));
     }
@@ -155,7 +159,7 @@ public class ProductCatalogService {
             entity.specValuesJson = json.write(sku.specValues());
             entity.price = sku.price();
             entity.stock = sku.stock();
-            entity.status = sku.status() == null ? "ACTIVE" : sku.status();
+            entity.status = sku.status() == null ? SkuStatus.ACTIVE : sku.status();
             skuRepository.save(entity);
         }
     }

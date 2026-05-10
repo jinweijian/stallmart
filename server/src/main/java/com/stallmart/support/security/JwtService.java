@@ -1,5 +1,6 @@
 package com.stallmart.support.security;
 
+import com.stallmart.user.internal.model.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -27,12 +28,12 @@ public class JwtService {
         this.refreshTokenValidity = refreshTokenValidity;
     }
 
-    public String generateAccessToken(Long userId, String role, boolean hasPhone) {
+    public String generateAccessToken(Long userId, UserRole role, boolean hasPhone) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenValidity * 1000);
         return Jwts.builder()
                 .subject(userId.toString())
-                .claim("role", role)
+                .claim("role", role.name())
                 .claim("hasPhone", hasPhone)
                 .issuedAt(now)
                 .expiration(expiry)

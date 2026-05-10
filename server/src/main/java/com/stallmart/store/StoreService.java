@@ -8,6 +8,8 @@ import com.stallmart.product.dto.CategoryDTO;
 import com.stallmart.product.dto.CategoryUpsertParams;
 import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.product.dto.ProductUpsertParams;
+import com.stallmart.store.internal.model.ProductStatus;
+import com.stallmart.store.internal.model.StoreStyleStatus;
 import com.stallmart.style.dto.SpecDTO;
 import com.stallmart.style.dto.SpecUpsertParams;
 import com.stallmart.style.dto.StyleUpsertParams;
@@ -47,7 +49,7 @@ public interface StoreService {
 
     ProductDTO updateProduct(long storeId, long productId, ProductUpsertParams request);
 
-    ProductDTO updateProductStatus(long storeId, long productId, String status);
+    ProductDTO updateProductStatus(long storeId, long productId, ProductStatus status);
 
     StoreDecorationDTO getDecoration(long storeId);
 
@@ -63,7 +65,7 @@ public interface StoreService {
 
     StyleDTO updateStyle(long id, StyleUpsertParams request);
 
-    StyleDTO updateStyleStatus(long id, String status);
+    StyleDTO updateStyleStatus(long id, StoreStyleStatus status);
 
     void deleteStyle(long id);
 

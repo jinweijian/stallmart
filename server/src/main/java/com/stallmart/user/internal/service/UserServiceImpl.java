@@ -8,6 +8,8 @@ import com.stallmart.user.dto.UpdateProfileParams;
 import com.stallmart.auth.dto.AuthTokenDTO;
 import com.stallmart.user.dto.UserProfileDTO;
 import com.stallmart.user.UserService;
+import com.stallmart.user.internal.model.UserRole;
+import com.stallmart.user.internal.model.UserStatus;
 import java.util.List;
 import com.stallmart.user.internal.repository.AdminAccountEntity;
 import com.stallmart.user.internal.repository.AdminAccountRepository;
@@ -45,8 +47,8 @@ public class UserServiceImpl implements UserService {
         user.nickname = nickname == null || nickname.isBlank() ? "微信用户" : nickname;
         user.avatarUrl = avatarUrl;
         user.hasPhone = false;
-        user.role = "CUSTOMER";
-        user.status = "ACTIVE";
+        user.role = UserRole.CUSTOMER;
+        user.status = UserStatus.ACTIVE;
         return tokenFor(toDto(userRepository.save(user)));
     }
 
@@ -54,7 +56,7 @@ public class UserServiceImpl implements UserService {
     public AdminSessionDTO adminLogin(String account, String password) {
         AdminAccountEntity adminAccount = adminAccountRepository.findByAccount(account)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
-        if (!"ACTIVE".equals(adminAccount.status) || !passwordEncoder.matches(password, adminAccount.passwordHash)) {
+        if (adminAccount.status != com.stallmart.user.internal.model.AdminAccountStatus.ACTIVE || !passwordEncoder.matches(password, adminAccount.passwordHash)) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
         UserProfileDTO user = getProfile(adminAccount.userId);
@@ -67,7 +69,7 @@ public class UserServiceImpl implements UserService {
         AdminAccountEntity account = adminAccountRepository.findByUserId(user.id()).orElse(null);
         Long storeId = account == null ? null : account.storeId;
         String entryPath = account == null
-                ? (user.role().equals("ADMIN") ? "/platform/vendors" : "/vendor")
+                ? (user.role() == UserRole.ADMIN ? "/platform/vendors" : "/vendor")
                 : account.entryPath;
         return adminSession(user, storeId, entryPath);
     }

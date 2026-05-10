@@ -9,7 +9,7 @@ export interface UserInfo {
   nickname: string
   avatar: string
   phone: string
-  role: 'customer' | 'vendor' | 'admin'
+  role: 'CUSTOMER' | 'VENDOR' | 'ADMIN'
   createdAt: string
 }
 
@@ -28,7 +28,7 @@ export const useUserStore = defineStore('user', () => {
   // Getters
   const isLoggedIn = computed(() => !!userInfo.value)
   
-  const isVendor = computed(() => userInfo.value?.role === 'vendor' || userInfo.value?.role === 'admin')
+  const isVendor = computed(() => userInfo.value?.role === 'VENDOR' || userInfo.value?.role === 'ADMIN')
   
   const openid = computed(() => userInfo.value?.openid || '')
   

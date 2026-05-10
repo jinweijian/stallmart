@@ -1,7 +1,10 @@
 package com.stallmart.store.internal.repository;
 
+import com.stallmart.store.internal.model.SpecType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,7 +21,8 @@ public class ProductSpecEntity {
     public Long styleId;
     public String name;
     @Column(name = "spec_type")
-    public String specType;
+    @Enumerated(EnumType.STRING)
+    public SpecType specType;
     @Column(name = "is_required")
     public boolean required;
     @Lob

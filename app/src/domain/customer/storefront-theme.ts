@@ -49,7 +49,7 @@ export interface StoreInfo {
   description: string
   rating: number
   sales: number
-  status?: string
+  status?: 'OPEN' | 'CLOSED'
   styleCode: StoreStyleCode
   styleId?: number
   isOpen?: boolean

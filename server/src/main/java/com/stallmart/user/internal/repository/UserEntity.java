@@ -1,7 +1,11 @@
 package com.stallmart.user.internal.repository;
 
+import com.stallmart.user.internal.model.UserRole;
+import com.stallmart.user.internal.model.UserStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -21,6 +25,8 @@ public class UserEntity {
     public String phone;
     @Column(name = "has_phone")
     public boolean hasPhone;
-    public String role;
-    public String status;
+    @Enumerated(EnumType.STRING)
+    public UserRole role;
+    @Enumerated(EnumType.STRING)
+    public UserStatus status;
 }

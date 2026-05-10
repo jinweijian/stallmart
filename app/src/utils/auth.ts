@@ -21,7 +21,7 @@ export interface LoginResult {
     nickname: string
     avatar: string
     phone?: string
-    role: 'customer' | 'vendor' | 'admin'
+    role: 'CUSTOMER' | 'VENDOR' | 'ADMIN'
   }
 }
 

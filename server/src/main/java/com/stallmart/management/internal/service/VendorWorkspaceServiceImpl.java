@@ -6,6 +6,7 @@ import com.stallmart.management.VendorWorkspaceService;
 import com.stallmart.management.dto.VendorWorkspaceDTO;
 import com.stallmart.order.OrderService;
 import com.stallmart.order.dto.OrderDTO;
+import com.stallmart.order.internal.model.OrderStatus;
 import com.stallmart.store.StoreService;
 import com.stallmart.store.dto.StoreDTO;
 import com.stallmart.user.UserService;
@@ -69,7 +70,7 @@ public class VendorWorkspaceServiceImpl implements VendorWorkspaceService {
 
     private BigDecimal salesAmount(List<OrderDTO> orders) {
         return orders.stream()
-                .filter(order -> !order.status().equals("REJECTED"))
+                .filter(order -> order.status() != OrderStatus.REJECTED)
                 .map(OrderDTO::totalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

@@ -1,7 +1,10 @@
 package com.stallmart.store.internal.repository;
 
+import com.stallmart.store.internal.model.StoreStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -26,5 +29,6 @@ public class StoreEntity {
     @Column(name = "qr_code")
     public String qrCode;
     public String address;
-    public String status;
+    @Enumerated(EnumType.STRING)
+    public StoreStatus status;
 }

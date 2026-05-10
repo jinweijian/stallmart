@@ -9,6 +9,7 @@ import com.stallmart.support.exception.ErrorCode;
 import com.stallmart.support.security.CurrentUserResolver;
 import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
+import com.stallmart.user.internal.model.UserRole;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,7 @@ public class AdminAccessGuard {
 
     public UserProfileDTO requirePlatformAdmin(HttpServletRequest request) {
         UserProfileDTO user = currentUser(request);
-        if (!user.role().equals("ADMIN")) {
+        if (user.role() != UserRole.ADMIN) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
         return user;
@@ -35,7 +36,7 @@ public class AdminAccessGuard {
 
     public StoreDTO requireVendorStore(HttpServletRequest request) {
         UserProfileDTO user = currentUser(request);
-        if (user.role().equals("ADMIN")) {
+        if (user.role() == UserRole.ADMIN) {
             String storeId = request.getHeader("X-Store-Id");
             if (storeId == null || storeId.isBlank()) {
                 throw new AppException(ErrorCode.FORBIDDEN);
@@ -46,7 +47,7 @@ public class AdminAccessGuard {
                 throw new AppException(ErrorCode.FORBIDDEN);
             }
         }
-        if (!user.role().equals("VENDOR")) {
+        if (user.role() != UserRole.VENDOR) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
         return storeService.listStoresByOwner(user.id()).stream()

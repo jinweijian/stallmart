@@ -1,7 +1,10 @@
 package com.stallmart.store.internal.repository;
 
+import com.stallmart.store.internal.model.ProductStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,7 +25,8 @@ public class ProductEntity {
     public String description;
     @Column(name = "main_image_url")
     public String mainImageUrl;
-    public String status;
+    @Enumerated(EnumType.STRING)
+    public ProductStatus status;
     @Column(name = "sort_order")
     public int sortOrder;
     @Lob

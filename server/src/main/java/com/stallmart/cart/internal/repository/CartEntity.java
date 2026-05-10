@@ -1,7 +1,10 @@
 package com.stallmart.cart.internal.repository;
 
+import com.stallmart.cart.internal.model.CartStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,7 +21,8 @@ public class CartEntity {
     public Long userId;
     @Column(name = "store_id")
     public Long storeId;
-    public String status;
+    @Enumerated(EnumType.STRING)
+    public CartStatus status;
     @Column(name = "updated_at")
     public Instant updatedAt;
 }

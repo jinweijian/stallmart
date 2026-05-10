@@ -1,5 +1,6 @@
 package com.stallmart.product.dto;
 
+import com.stallmart.store.internal.model.SkuStatus;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -8,6 +9,6 @@ public record ProductSkuDTO(
         List<String> specValues,
         BigDecimal price,
         int stock,
-        String status
+        SkuStatus status
 ) {
 }

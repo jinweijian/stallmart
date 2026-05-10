@@ -1,3 +1,19 @@
+// 状态枚举
+export type StoreStatus = 'OPEN' | 'CLOSED'
+export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT'
+export type SkuStatus = 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT'
+export type CategoryStatus = 'ACTIVE' | 'INACTIVE'
+export type CartStatus = 'ACTIVE' | 'CHECKED_OUT'
+export type OrderStatus = 'NEW' | 'ACCEPTED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'REJECTED'
+export type UserStatus = 'ACTIVE' | 'DISABLED'
+export type AdminAccountStatus = 'ACTIVE' | 'DISABLED'
+export type StoreStyleStatus = 'ACTIVE' | 'INACTIVE'
+
+// 类型枚举
+export type UserRole = 'CUSTOMER' | 'VENDOR' | 'ADMIN'
+export type CategoryModule = 'PRODUCT'
+export type SpecType = 'SIZE' | 'SWEET' | 'ICE' | 'OTHER'
+
 export interface ApiResult<T> {
   code: number
   message: string
@@ -38,7 +54,7 @@ export interface Store {
   coverUrl: string | null
   qrCode: string
   address: string
-  status: string
+  status: StoreStatus
 }
 
 export interface Product {
@@ -52,7 +68,7 @@ export interface Product {
   imageUrl: string | null
   mainImageUrl: string | null
   category: string
-  status: string
+  status: ProductStatus
   sortOrder: number
   specIds: number[]
   skus: ProductSku[]
@@ -66,7 +82,7 @@ export interface ProductInput {
   imageUrl: string | null
   mainImageUrl: string | null
   category: string
-  status: string
+  status: ProductStatus
   sortOrder: number
   specIds: number[]
   skus: ProductSkuInput[]
@@ -77,32 +93,32 @@ export interface ProductSku {
   specValues: string[]
   price: number
   stock: number
-  status: string
+  status: SkuStatus
 }
 
 export interface ProductSkuInput {
   specValues: string[]
   price: number
   stock: number
-  status: string
+  status: SkuStatus
 }
 
 export interface Category {
   id: number
   storeId: number
-  module: string
+  module: CategoryModule
   name: string
   iconKey: string
   sortOrder: number
-  status: string
+  status: CategoryStatus
 }
 
 export interface CategoryInput {
-  module: string
+  module: CategoryModule
   name: string
   iconKey: string
   sortOrder: number
-  status: string
+  status: CategoryStatus
 }
 
 export interface Asset {
@@ -116,7 +132,7 @@ export interface Style {
   name: string
   code: string
   previewUrl: string | null
-  status?: string
+  status?: StoreStyleStatus
   version?: number
   theme: StorefrontTheme
 }
@@ -125,7 +141,7 @@ export interface StyleInput {
   name: string
   code: string
   previewUrl: string | null
-  status: string
+  status: StoreStyleStatus
   theme: StorefrontTheme
 }
 
@@ -136,7 +152,7 @@ export interface StorefrontCategory {
   iconUrl: string | null
   fallbackText: string
   sortOrder: number
-  status: string
+  status: CategoryStatus
 }
 
 export interface StorefrontCategoryIcon {
@@ -186,7 +202,7 @@ export interface Spec {
   id: number
   styleId: number
   name: string
-  specType: string
+  specType: SpecType
   required: boolean
   options: string[]
 }
@@ -194,7 +210,7 @@ export interface Spec {
 export interface SpecInput {
   styleId: number
   name: string
-  specType: string
+  specType: SpecType
   required: boolean
   options: string[]
 }
@@ -212,7 +228,7 @@ export interface Order {
   orderNo: string
   userId: number
   storeId: number
-  status: string
+  status: OrderStatus
   confirmCode: string
   totalAmount: number
   remark: string | null
@@ -232,7 +248,7 @@ export interface Cart {
   id: number
   userId: number
   storeId: number
-  status: string
+  status: CartStatus
   updatedAt: string
   items: CartItem[]
 }
@@ -243,7 +259,7 @@ export interface UserProfile {
   avatarUrl: string
   phone: string | null
   hasPhone: boolean
-  role: string
+  role: UserRole
 }
 
 export interface VendorWorkspace {

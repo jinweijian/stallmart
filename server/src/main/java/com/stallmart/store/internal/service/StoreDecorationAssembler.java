@@ -2,6 +2,7 @@ package com.stallmart.store.internal.service;
 
 import com.stallmart.product.dto.CategoryDTO;
 import com.stallmart.store.dto.StoreDecorationDTO;
+import com.stallmart.store.internal.model.CategoryStatus;
 import com.stallmart.store.internal.repository.StoreDecorationEntity;
 import com.stallmart.store.internal.repository.StoreEntity;
 import com.stallmart.style.dto.StorefrontCategoryDTO;
@@ -89,12 +90,12 @@ public class StoreDecorationAssembler {
                     recommendIcon.iconUrl(),
                     recommendIcon.fallbackText(),
                     0,
-                    "ACTIVE"
+                    CategoryStatus.ACTIVE
             ));
         }
 
         categories.stream()
-                .filter(category -> "ACTIVE".equalsIgnoreCase(category.status()))
+                .filter(category -> category.status() == CategoryStatus.ACTIVE)
                 .forEach(category -> {
                     StorefrontCategoryIconDTO icon = iconsByKey.get(category.iconKey());
                     storefrontCategories.add(new StorefrontCategoryDTO(

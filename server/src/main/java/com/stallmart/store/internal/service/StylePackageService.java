@@ -1,5 +1,7 @@
 package com.stallmart.store.internal.service;
 
+import com.stallmart.store.internal.model.SpecType;
+import com.stallmart.store.internal.model.StoreStyleStatus;
 import com.stallmart.store.internal.repository.ProductRepository;
 import com.stallmart.store.internal.repository.ProductSpecEntity;
 import com.stallmart.store.internal.repository.ProductSpecRepository;
@@ -46,7 +48,7 @@ public class StylePackageService {
     }
 
     public List<StyleDTO> listActiveStyles() {
-        return styleRepository.findByStatusOrderByIdAsc("ACTIVE").stream().map(this::toStyleDTO).toList();
+        return styleRepository.findByStatusOrderByIdAsc(StoreStyleStatus.ACTIVE).stream().map(this::toStyleDTO).toList();
     }
 
     public StyleDTO getStyle(long id) {
@@ -80,9 +82,9 @@ public class StylePackageService {
     }
 
     @Transactional
-    public StyleDTO updateStyleStatus(long id, String status) {
+    public StyleDTO updateStyleStatus(long id, StoreStyleStatus status) {
         StoreStyleEntity style = getStyleEntity(id);
-        style.status = normalizeStyleStatus(status);
+        style.status = status;
         style.version += 1;
         return toStyleDTO(styleRepository.save(style));
     }
@@ -177,7 +179,6 @@ public class StylePackageService {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
         validateThemeContract(request.theme());
-        normalizeStyleStatus(request.status());
     }
 
     private void validateThemeContract(StorefrontThemeDTO theme) {
@@ -187,13 +188,5 @@ public class StylePackageService {
                 || theme.pageThemes() == null || theme.pageThemes().isEmpty()) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
-    }
-
-    private String normalizeStyleStatus(String status) {
-        String normalized = status == null || status.isBlank() ? "INACTIVE" : status.toUpperCase();
-        if (!normalized.equals("ACTIVE") && !normalized.equals("INACTIVE")) {
-            throw new AppException(ErrorCode.BAD_REQUEST);
-        }
-        return normalized;
     }
 }

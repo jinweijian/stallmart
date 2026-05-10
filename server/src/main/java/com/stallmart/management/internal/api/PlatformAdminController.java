@@ -7,14 +7,17 @@ import com.stallmart.management.dto.VendorWorkspaceDTO;
 import com.stallmart.management.internal.security.AdminAccessGuard;
 import com.stallmart.order.OrderService;
 import com.stallmart.order.dto.OrderDTO;
+import com.stallmart.order.internal.model.OrderStatus;
 import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.store.StoreService;
 import com.stallmart.store.dto.StoreDTO;
+import com.stallmart.store.internal.model.StoreStyleStatus;
 import com.stallmart.style.dto.StyleDTO;
 import com.stallmart.style.dto.StyleUpsertParams;
 import com.stallmart.support.web.Result;
 import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
+import com.stallmart.user.internal.model.UserRole;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -113,13 +116,13 @@ public class PlatformAdminController {
     @PutMapping("/styles/{styleId}/publish")
     public Result<StyleDTO> publishStyle(@PathVariable long styleId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
-        return Result.success(storeService.updateStyleStatus(styleId, "ACTIVE"));
+        return Result.success(storeService.updateStyleStatus(styleId, StoreStyleStatus.ACTIVE));
     }
 
     @PutMapping("/styles/{styleId}/unpublish")
     public Result<StyleDTO> unpublishStyle(@PathVariable long styleId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
-        return Result.success(storeService.updateStyleStatus(styleId, "INACTIVE"));
+        return Result.success(storeService.updateStyleStatus(styleId, StoreStyleStatus.INACTIVE));
     }
 
     @DeleteMapping("/styles/{styleId}")
@@ -179,13 +182,13 @@ public class PlatformAdminController {
                 .map(CartDTO::userId)
                 .forEach(userIds::add);
         return userService.listUsers().stream()
-                .filter(user -> userIds.contains(user.id()) || user.role().equals("ADMIN"))
+                .filter(user -> userIds.contains(user.id()) || user.role() == UserRole.ADMIN)
                 .toList();
     }
 
     private BigDecimal salesAmount(List<OrderDTO> orders) {
         return orders.stream()
-                .filter(order -> !order.status().equals("REJECTED"))
+                .filter(order -> order.status() != OrderStatus.REJECTED)
                 .map(OrderDTO::totalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

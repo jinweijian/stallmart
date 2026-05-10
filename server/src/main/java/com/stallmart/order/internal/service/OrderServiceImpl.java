@@ -60,7 +60,7 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity order = new OrderEntity();
         order.userId = userId;
         order.storeId = request.storeId();
-        order.status = "NEW";
+        order.status = OrderStatus.NEW;
         order.orderNo = numberGenerator.pendingOrderNo();
         order.confirmCode = "1000";
         order.totalAmount = total;
@@ -123,9 +123,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderCountsDTO counts(long userId) {
         List<OrderDTO> userOrders = list(userId);
-        long pending = userOrders.stream().filter(order -> order.status().equals("NEW") || order.status().equals("ACCEPTED")).count();
-        long preparing = userOrders.stream().filter(order -> order.status().equals("PREPARING") || order.status().equals("READY")).count();
-        long completed = userOrders.stream().filter(order -> order.status().equals("COMPLETED")).count();
+        long pending = userOrders.stream().filter(order -> order.status() == OrderStatus.NEW || order.status() == OrderStatus.ACCEPTED).count();
+        long preparing = userOrders.stream().filter(order -> order.status() == OrderStatus.PREPARING || order.status() == OrderStatus.READY).count();
+        long completed = userOrders.stream().filter(order -> order.status() == OrderStatus.COMPLETED).count();
         return new OrderCountsDTO(userOrders.size(), pending, preparing, completed);
     }
 
@@ -169,8 +169,8 @@ public class OrderServiceImpl implements OrderService {
 
     private OrderDTO transition(long id, String action) {
         OrderEntity current = orderRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        OrderStatus nextStatus = statusTransition.next(OrderStatus.from(current.status), action);
-        current.status = nextStatus.name();
+        OrderStatus nextStatus = statusTransition.next(current.status, action);
+        current.status = nextStatus;
         return toDTO(orderRepository.save(current));
     }
 

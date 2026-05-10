@@ -441,7 +441,7 @@ export function getMockApiResponse(options: RequestOptions): ApiResponse | null 
       avatarUrl: '/static/default-avatar.png',
       phone: '138****8000',
       hasPhone: true,
-      role: 'customer',
+      role: 'CUSTOMER',
     })
   }
 
