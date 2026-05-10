@@ -10,3 +10,6 @@
 | [app-style.md](app-style.md) | 小程序视觉与交互规范。 |
 | [storefront-decoration.md](storefront-decoration.md) | 小程序店铺装修风格包与配置规范。 |
 | [project-health.md](project-health.md) | 已知风险和处理状态。 |
+| [server-refactor-plan.md](server-refactor-plan.md) | 服务端渐进式重构方案。 |
+| [web-refactor-plan.md](web-refactor-plan.md) | 管理端渐进式重构方案。 |
+| [app-refactor-plan.md](app-refactor-plan.md) | 小程序端渐进式重构方案。 |

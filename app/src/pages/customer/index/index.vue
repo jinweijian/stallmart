@@ -5,125 +5,37 @@ import Taro from '@tarojs/taro'
 import {
   API_ENDPOINTS,
   DEFAULT_STORE_THEME,
-  STORE_THEME_PACKAGES,
-  type StorefrontAssetSizes,
   type StorefrontBannerConfig,
   type StorefrontCategoryConfig,
-  type StorefrontCategoryIconConfig,
-  type StoreStyleCode,
-  type StoreThemePagePackages,
-  type StoreThemePackage,
 } from '@/config'
 import { get } from '@/utils/request'
 import { createCustomerThemeVars, persistCustomerTheme } from '@/utils/customer-theme'
-
-interface StorefrontThemePayload {
-  code: StoreStyleCode
-  name: string
-  layoutVersion?: string
-  colors?: Record<string, string>
-  iconNames?: Record<string, string>
-  iconUrls?: Record<string, string>
-  imageUrls?: Record<string, string>
-  copywriting?: Record<string, string>
-  categories?: StorefrontCategoryConfig[]
-  categoryIconLibrary?: StorefrontCategoryIconConfig[]
-  banners?: Array<StorefrontBannerConfig | string>
-  assetSizes?: Partial<StorefrontAssetSizes>
-  pageThemes?: StoreThemePagePackages
-}
-
-interface StorefrontDecorationPayload {
-  layoutVersion?: string
-  theme?: StorefrontThemePayload
-  colors?: Record<string, string>
-  iconNames?: Record<string, string>
-  iconUrls?: Record<string, string>
-  imageUrls?: Record<string, string>
-  copywriting?: Record<string, string>
-  categories?: StorefrontCategoryConfig[]
-  categoryIconLibrary?: StorefrontCategoryIconConfig[]
-  banners?: Array<StorefrontBannerConfig | string>
-  assetSizes?: Partial<StorefrontAssetSizes>
-  pageThemes?: StoreThemePagePackages
-}
-
-interface StoreInfo {
-  id: string
-  name: string
-  logo?: string
-  avatarUrl?: string
-  description: string
-  rating: number
-  sales: number
-  styleCode: StoreStyleCode
-  styleId?: number
-  isOpen?: boolean
-  distance?: string
-  branchName?: string
-  heroEyebrow?: string
-  heroTitle?: string
-  heroSubtitle?: string
-  decoration?: StorefrontDecorationPayload
-}
-
-interface Product {
-  id: string
-  storeId?: string | number
-  name: string
-  basePrice: number
-  price?: number
-  originalPrice: number
-  image: string
-  imageUrl?: string
-  mainImageUrl?: string
-  categoryId?: string | number
-  categoryName?: string
-  description?: string
-  category: string
-  stock: number
-  sales: number
-  status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT' | 'active' | 'off_sale' | 'sold_out'
-  specIds?: Array<string | number>
-  skus?: ProductSku[]
-  selectedSkuId?: string | number
-  selectedSpecsText?: string
-  isHot?: boolean
-  isNew?: boolean
-  tags?: string[]
-  flavor?: string
-  rank?: number
-  illustration?: string
-}
-
-interface ProductSku {
-  id: string | number
-  specValues: string[]
-  price: number
-  stock: number
-  status: 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT' | 'active' | 'off_sale' | 'sold_out'
-}
-
-interface StorefrontSpec {
-  id: string | number
-  styleId: string | number
-  name: string
-  specType: string
-  required: boolean
-  options: string[]
-}
-
-interface SkuGroup {
-  id: string
-  name: string
-  required: boolean
-  options: string[]
-}
-
-interface CartItem {
-  product: Product
-  quantity: number
-}
+import {
+  createMockStore,
+  normalizeStore,
+  resolveCategories,
+  resolveCurrentTheme,
+  resolveFallbackCategories,
+  type StoreInfo,
+} from '@/domain/customer/storefront-theme'
+import {
+  buildSelectedSpecsText,
+  createSelectedCartProduct,
+  filterProductsByCategory,
+  findSelectedSku,
+  getMockProducts,
+  getStatusText,
+  isProductDisabled,
+  isSkuOptionAvailable,
+  normalizeProduct,
+  resolveDefaultSkuOptions,
+  resolveSkuGroups,
+  type CartItem,
+  type Product,
+  type ProductSku,
+  type SkuGroup,
+  type StorefrontSpec,
+} from '@/domain/customer/product-catalog'
 
 const categories = ref<StorefrontCategoryConfig[]>(resolveFallbackCategories(DEFAULT_STORE_THEME))
 
@@ -142,9 +54,7 @@ const selectedQuantity = ref(1)
 const selectedRemark = ref('')
 
 const currentTheme = computed(() => {
-  const styleCode = storeInfo.value?.styleCode
-  const base = styleCode ? STORE_THEME_PACKAGES[styleCode] || DEFAULT_STORE_THEME : DEFAULT_STORE_THEME
-  return mergeStorefrontTheme(base, storeInfo.value?.decoration)
+  return resolveCurrentTheme(storeInfo.value)
 })
 
 const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
@@ -169,45 +79,19 @@ const bannerSlides = computed<StorefrontBannerConfig[]>(() => {
 })
 
 const filteredProducts = computed(() => {
-  if (activeCategory.value === 'recommend') {
-    const recommended = products.value.filter((product) => product.isHot || product.rank)
-    return recommended.length > 0 ? recommended : products.value
-  }
-
-  return products.value.filter((product) => product.category === activeCategory.value)
+  return filterProductsByCategory(activeCategory.value, products.value)
 })
 
 const skuGroups = computed<SkuGroup[]>(() => {
-  const product = selectedProduct.value
-  if (!product) return []
-
-  return (product.specIds || [])
-    .map((specId) => styleSpecs.value.find((spec) => String(spec.id) === String(specId)))
-    .filter((spec): spec is StorefrontSpec => Boolean(spec))
-    .map((spec) => ({
-      id: String(spec.id),
-      name: spec.name,
-      required: spec.required,
-      options: spec.options || [],
-    }))
+  return resolveSkuGroups(selectedProduct.value, styleSpecs.value)
 })
 
 const selectedSku = computed<ProductSku | null>(() => {
-  const product = selectedProduct.value
-  if (!product?.skus || product.skus.length === 0) return null
-  if (skuGroups.value.some((group) => group.required && !selectedOptions.value[group.id])) return null
-
-  return product.skus.find((sku) =>
-    sku.status === 'ACTIVE' &&
-    skuGroups.value.every((group, index) => sku.specValues[index] === selectedOptions.value[group.id])
-  ) || null
+  return findSelectedSku(selectedProduct.value, skuGroups.value, selectedOptions.value)
 })
 
 const selectedSpecsText = computed(() =>
-  skuGroups.value
-    .map((group) => selectedOptions.value[group.id])
-    .filter(Boolean)
-    .join(' / ')
+  buildSelectedSpecsText(skuGroups.value, selectedOptions.value)
 )
 
 const selectedProductPrice = computed(() => Number(selectedSku.value?.price ?? selectedProduct.value?.basePrice ?? 0))
@@ -243,8 +127,8 @@ async function loadData() {
     products.value = (productsRes.data || []).map(normalizeProduct)
     styleSpecs.value = specsRes.data || []
     Taro.setStorageSync('current_store_id', storeInfo.value.id)
-  } catch (error) {
-    storeInfo.value = getMockStore()
+  } catch {
+    storeInfo.value = createMockStore()
     categories.value = resolveCategories(storeInfo.value)
     products.value = getMockProducts()
     styleSpecs.value = []
@@ -254,258 +138,11 @@ async function loadData() {
   }
 }
 
-function mergeStorefrontTheme(base: StoreThemePackage, decoration?: StorefrontDecorationPayload): StoreThemePackage {
-  if (!decoration) return base
-  const theme = decoration.theme
-  const colors = decoration.colors || theme?.colors || {}
-
-  return {
-    ...base,
-    layoutVersion: decoration.layoutVersion || theme?.layoutVersion || base.layoutVersion,
-    primary: colors.primary || base.primary,
-    secondary: colors.secondary || base.secondary,
-    accent: colors.accent || base.accent,
-    background: colors.background || base.background,
-    surface: colors.surface || base.surface,
-    text: colors.text || base.text,
-    mutedText: colors.mutedText || base.mutedText,
-    border: colors.border || base.border,
-    price: colors.price || base.price || colors.primary || base.primary,
-    iconNames: { ...(base.iconNames || {}), ...(theme?.iconNames || {}), ...(decoration.iconNames || {}) },
-    iconUrls: { ...(base.iconUrls || {}), ...(theme?.iconUrls || {}), ...(decoration.iconUrls || {}) },
-    imageUrls: { ...(base.imageUrls || {}), ...(theme?.imageUrls || {}), ...(decoration.imageUrls || {}) },
-    copywriting: { ...(base.copywriting || {}), ...(theme?.copywriting || {}), ...(decoration.copywriting || {}) },
-    banners: normalizeBannerConfigs(decoration.banners) || normalizeBannerConfigs(theme?.banners) || base.banners,
-    categoryIconLibrary: decoration.categoryIconLibrary || theme?.categoryIconLibrary || base.categoryIconLibrary,
-    assetSizes: { ...(base.assetSizes || {}), ...(theme?.assetSizes || {}), ...(decoration.assetSizes || {}) } as StorefrontAssetSizes,
-    pageThemes: { ...(base.pageThemes || {}), ...(theme?.pageThemes || {}) },
-  }
-}
-
-function normalizeBannerConfigs(banners?: Array<StorefrontBannerConfig | string>): StorefrontBannerConfig[] | undefined {
-  if (!banners || banners.length === 0) return undefined
-
-  return banners
-    .map((banner, index) => {
-      if (typeof banner === 'string') {
-        return {
-          id: `decoration-banner-${index}`,
-          imageUrl: banner,
-          targetCategory: index === 0 ? 'recommend' : 'tea',
-        }
-      }
-
-      return banner
-    })
-    .filter((banner) => !!banner.imageUrl)
-}
-
-function resolveCategories(store: StoreInfo): StorefrontCategoryConfig[] {
-  if (store.decoration?.categories && store.decoration.categories.length > 0) {
-    return store.decoration.categories
-  }
-
-  return resolveFallbackCategories(mergeStorefrontTheme(STORE_THEME_PACKAGES[store.styleCode] || DEFAULT_STORE_THEME, store.decoration))
-}
-
-function resolveFallbackCategories(theme: StoreThemePackage): StorefrontCategoryConfig[] {
-  return (theme.categoryIconLibrary || []).map((icon) => ({
-    id: icon.key,
-    name: icon.name,
-    iconKey: icon.key,
-    iconUrl: icon.iconUrl,
-    fallbackText: icon.fallbackText,
-    status: 'ACTIVE',
-  }))
-}
-
-function normalizeStore(store: StoreInfo): StoreInfo {
-  return {
-    ...store,
-    id: String(store.id),
-    logo: store.logo || store.avatarUrl || '/static/default-avatar.png',
-    rating: store.rating || 4.9,
-    sales: store.sales || 3286,
-    styleCode: store.styleCode || (store.styleId === 6 ? 'forestFruitTeaCrayon' : 'forestFruitTeaCrayon'),
-    isOpen: store.isOpen ?? store.status !== 'closed',
-    distance: store.distance || '1.3km',
-    branchName: store.branchName || store.name,
-    heroEyebrow: store.heroEyebrow || store.decoration?.copywriting?.heroEyebrow || '小新の',
-    heroTitle: store.heroTitle || store.decoration?.copywriting?.heroTitle || store.name || '水果茶屋',
-    heroSubtitle: store.heroSubtitle || store.decoration?.copywriting?.heroSubtitle || store.description || '自然水果 · 新鲜现制',
-  }
-}
-
-function normalizeProduct(product: Product): Product {
-  const normalizedSkus = (product.skus || []).map((sku) => ({
-    ...sku,
-    price: Number(sku.price || 0),
-    stock: Number(sku.stock || 0),
-    status: normalizeProductStatus(sku.status),
-  }))
-  const activeSkuPrices = normalizedSkus
-    .filter((sku) => sku.status === 'ACTIVE')
-    .map((sku) => sku.price)
-    .filter((price) => price > 0)
-  const lowestSkuPrice = activeSkuPrices.length > 0 ? Math.min(...activeSkuPrices) : undefined
-  const totalSkuStock = normalizedSkus.reduce((sum, sku) => sum + Number(sku.stock || 0), 0)
-  const basePrice = Number(product.basePrice ?? product.price ?? lowestSkuPrice ?? 0)
-  const normalizedStatus = normalizeProductStatus(product.status)
-
-  return {
-    ...product,
-    id: String(product.id),
-    basePrice,
-    originalPrice: product.originalPrice || basePrice,
-    image: product.image || product.mainImageUrl || product.imageUrl || '',
-    category: String(product.categoryId ?? product.category ?? 'citrus'),
-    stock: product.stock ?? (totalSkuStock || 99),
-    sales: product.sales ?? 0,
-    status: normalizedStatus,
-    specIds: product.specIds || [],
-    skus: normalizedSkus,
-    flavor: product.flavor || product.description || '',
-    tags: product.tags || [],
-    isHot: product.isHot ?? !!product.rank,
-    illustration: product.illustration || '🥤',
-  }
-}
-
-function normalizeProductStatus(status: Product['status']): 'ACTIVE' | 'INACTIVE' | 'SOLD_OUT' {
-  if (status === 'active' || status === 'ACTIVE') return 'ACTIVE'
-  if (status === 'sold_out' || status === 'SOLD_OUT') return 'SOLD_OUT'
-  return 'INACTIVE'
-}
-
 function getStoreId(): string {
   const pages = Taro.getCurrentPages()
   const current = pages[pages.length - 1]
   const options = (current as { options?: Record<string, string> })?.options || {}
   return options.storeId || Taro.getStorageSync('current_store_id') || '1'
-}
-
-function getMockStore(): StoreInfo {
-  return {
-    id: '1',
-    name: '小新の水果茶屋',
-    logo: '/static/default-avatar.png',
-    description: '当季鲜果茶，清爽一夏',
-    rating: 4.9,
-    sales: 3286,
-    styleCode: 'forestFruitTeaCrayon',
-    isOpen: true,
-    distance: '1.3km',
-    branchName: '上海环球港店',
-    heroEyebrow: '小新の',
-    heroTitle: '水果茶屋',
-    heroSubtitle: '自然水果 · 新鲜现制',
-    decoration: {
-      layoutVersion: DEFAULT_STORE_THEME.layoutVersion,
-      colors: {
-        primary: DEFAULT_STORE_THEME.primary,
-        secondary: DEFAULT_STORE_THEME.secondary,
-        accent: DEFAULT_STORE_THEME.accent,
-        background: DEFAULT_STORE_THEME.background,
-        surface: DEFAULT_STORE_THEME.surface,
-        text: DEFAULT_STORE_THEME.text,
-        mutedText: DEFAULT_STORE_THEME.mutedText,
-        border: DEFAULT_STORE_THEME.border,
-        price: DEFAULT_STORE_THEME.price || DEFAULT_STORE_THEME.primary,
-      },
-      iconNames: DEFAULT_STORE_THEME.iconNames,
-      iconUrls: DEFAULT_STORE_THEME.iconUrls,
-      imageUrls: DEFAULT_STORE_THEME.imageUrls,
-      copywriting: DEFAULT_STORE_THEME.copywriting,
-      categoryIconLibrary: DEFAULT_STORE_THEME.categoryIconLibrary,
-      categories: resolveFallbackCategories(DEFAULT_STORE_THEME),
-      banners: DEFAULT_STORE_THEME.banners,
-      assetSizes: DEFAULT_STORE_THEME.assetSizes,
-      pageThemes: DEFAULT_STORE_THEME.pageThemes,
-    },
-  }
-}
-
-function getMockProducts(): Product[] {
-  return [
-    {
-      id: 'fruit-tea-1',
-      name: '霸气西柚柠檬茶',
-      basePrice: 18,
-      originalPrice: 22,
-      image: '',
-      category: 'citrus',
-      stock: 30,
-      sales: 1280,
-      status: 'ACTIVE',
-      isHot: true,
-      isNew: true,
-      rank: 1,
-      flavor: '西柚果肉 + 香水柠檬 + 茉莉绿茶',
-      tags: ['清爽解腻', '维C满满'],
-      illustration: '🍹',
-    },
-    {
-      id: 'fruit-tea-2',
-      name: '阳光青提多多',
-      basePrice: 16,
-      originalPrice: 19,
-      image: '',
-      category: 'grape',
-      stock: 42,
-      sales: 956,
-      status: 'ACTIVE',
-      isHot: true,
-      rank: 2,
-      flavor: '阳光玫瑰青提 + 乳酸菌 + 绿茶',
-      tags: ['清甜多汁', '人气TOP'],
-      illustration: '🥤',
-    },
-    {
-      id: 'fruit-tea-3',
-      name: '芒芒百香绿茶',
-      basePrice: 17,
-      originalPrice: 20,
-      image: '',
-      category: 'mango',
-      stock: 26,
-      sales: 820,
-      status: 'ACTIVE',
-      isHot: true,
-      rank: 3,
-      flavor: '大颗芒果肉 + 百香果 + 茉莉绿茶',
-      tags: ['香甜浓郁', '果肉满满'],
-      illustration: '🧋',
-    },
-    {
-      id: 'fruit-tea-4',
-      name: '整颗柠檬冰茶桶',
-      basePrice: 24,
-      originalPrice: 29,
-      image: '',
-      category: 'tea',
-      stock: 18,
-      sales: 620,
-      status: 'ACTIVE',
-      isNew: true,
-      flavor: '香水柠檬 + 冰萃绿茶 + 清甜果露',
-      tags: ['大杯分享', '冰爽'],
-      illustration: '🍋',
-    },
-    {
-      id: 'fruit-tea-5',
-      name: '葡萄冻冻加料',
-      basePrice: 4,
-      originalPrice: 5,
-      image: '',
-      category: 'extra',
-      stock: 88,
-      sales: 360,
-      status: 'ACTIVE',
-      flavor: '手作葡萄冻',
-      tags: ['Q弹', '推荐搭配'],
-      illustration: '🍇',
-    },
-  ]
 }
 
 function selectCategory(id: string) {
@@ -527,7 +164,7 @@ function loadCart() {
     const stored = Taro.getStorageSync('cart_items')
     cartItems.value = stored ? (JSON.parse(stored) as CartItem[]) : []
     recalcCart()
-  } catch (error) {
+  } catch {
     cartItems.value = []
     recalcCart()
   }
@@ -552,7 +189,7 @@ function openProductDetail(product: Product) {
   selectedProduct.value = product
   selectedQuantity.value = 1
   selectedRemark.value = ''
-  selectedOptions.value = resolveDefaultSkuOptions(product)
+  selectedOptions.value = resolveDefaultSkuOptions(product, styleSpecs.value)
   void Taro.hideTabBar({ animation: true }).catch(() => undefined)
 }
 
@@ -564,19 +201,6 @@ function closeProductDetail() {
   void Taro.showTabBar({ animation: true }).catch(() => undefined)
 }
 
-function resolveDefaultSkuOptions(product: Product): Record<string, string> {
-  const groups = (product.specIds || [])
-    .map((specId) => styleSpecs.value.find((spec) => String(spec.id) === String(specId)))
-    .filter((spec): spec is StorefrontSpec => Boolean(spec))
-  const activeSku = product.skus?.find((sku) => sku.status === 'ACTIVE' && sku.stock > 0)
-
-  return groups.reduce<Record<string, string>>((options, group, index) => {
-    const skuValue = activeSku?.specValues[index]
-    options[String(group.id)] = skuValue || group.options[0] || ''
-    return options
-  }, {})
-}
-
 function selectSkuOption(group: SkuGroup, option: string) {
   if (isSkuOptionDisabled(group, option)) return
   selectedOptions.value = {
@@ -586,19 +210,7 @@ function selectSkuOption(group: SkuGroup, option: string) {
 }
 
 function isSkuOptionDisabled(group: SkuGroup, option: string): boolean {
-  const product = selectedProduct.value
-  if (!product?.skus || product.skus.length === 0) return false
-  const groupIndex = skuGroups.value.findIndex((item) => item.id === group.id)
-  if (groupIndex < 0) return false
-
-  return !product.skus.some((sku) => {
-    if (sku.status !== 'ACTIVE' || sku.stock <= 0 || sku.specValues[groupIndex] !== option) return false
-    return skuGroups.value.every((otherGroup, index) => {
-      if (index === groupIndex) return true
-      const selected = selectedOptions.value[otherGroup.id]
-      return !selected || sku.specValues[index] === selected
-    })
-  })
+  return !isSkuOptionAvailable(selectedProduct.value, skuGroups.value, selectedOptions.value, group, option)
 }
 
 function changeSelectedQuantity(delta: number) {
@@ -615,14 +227,7 @@ function addSelectedProductToCart() {
     return
   }
 
-  const cartProduct: Product = {
-    ...product,
-    basePrice: selectedProductPrice.value,
-    originalPrice: selectedProductPrice.value,
-    selectedSkuId: selectedSku.value?.id,
-    selectedSpecsText: selectedSpecsText.value,
-    stock: selectedSku.value?.stock ?? product.stock,
-  }
+  const cartProduct = createSelectedCartProduct(product, selectedSku.value, selectedProductPrice.value, selectedSpecsText.value)
   const existing = cartItems.value.find((item) =>
     item.product.id === cartProduct.id &&
     item.product.selectedSkuId === cartProduct.selectedSkuId &&
@@ -658,17 +263,6 @@ function goToCheckout() {
 
 function formatPrice(price: number): string {
   return price.toFixed(0)
-}
-
-function getStatusText(product: Product): string {
-  const status = normalizeProductStatus(product.status)
-  if (status === 'SOLD_OUT' || product.stock <= 0) return '已售罄'
-  if (status === 'INACTIVE') return '已下架'
-  return ''
-}
-
-function isProductDisabled(product: Product): boolean {
-  return normalizeProductStatus(product.status) !== 'ACTIVE' || product.stock <= 0
 }
 
 onBeforeUnmount(() => {
@@ -882,5 +476,5 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss">
-@import './index.scss';
+@use './index.scss';
 </style>

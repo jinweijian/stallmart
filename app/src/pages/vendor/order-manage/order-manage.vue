@@ -438,5 +438,5 @@ function getActionLoading(orderId: string): boolean {
 </template>
 
 <style lang="scss">
-@import './order-manage.scss';
+@use './order-manage.scss';
 </style>

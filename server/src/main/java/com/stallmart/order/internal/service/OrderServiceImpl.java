@@ -5,6 +5,7 @@ import com.stallmart.order.dto.CreateOrderParams;
 import com.stallmart.order.dto.OrderCountsDTO;
 import com.stallmart.order.dto.OrderDTO;
 import com.stallmart.order.dto.OrderItemDTO;
+import com.stallmart.order.internal.model.OrderStatus;
 import com.stallmart.order.internal.repository.OrderEntity;
 import com.stallmart.order.internal.repository.OrderItemEntity;
 import com.stallmart.order.internal.repository.OrderItemRepository;
@@ -15,9 +16,10 @@ import com.stallmart.support.exception.AppException;
 import com.stallmart.support.exception.ErrorCode;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +29,21 @@ public class OrderServiceImpl implements OrderService {
     private final StoreService catalogService;
     private final OrderRepository orderRepository;
     private final OrderItemRepository itemRepository;
+    private final OrderStatusTransition statusTransition;
+    private final OrderNumberGenerator numberGenerator;
 
-    public OrderServiceImpl(StoreService catalogService, OrderRepository orderRepository, OrderItemRepository itemRepository) {
+    public OrderServiceImpl(
+            StoreService catalogService,
+            OrderRepository orderRepository,
+            OrderItemRepository itemRepository,
+            OrderStatusTransition statusTransition,
+            OrderNumberGenerator numberGenerator
+    ) {
         this.catalogService = catalogService;
         this.orderRepository = orderRepository;
         this.itemRepository = itemRepository;
+        this.statusTransition = statusTransition;
+        this.numberGenerator = numberGenerator;
     }
 
     @Override
@@ -49,14 +61,14 @@ public class OrderServiceImpl implements OrderService {
         order.userId = userId;
         order.storeId = request.storeId();
         order.status = "NEW";
-        order.orderNo = buildPendingOrderNo();
+        order.orderNo = numberGenerator.pendingOrderNo();
         order.confirmCode = "1000";
         order.totalAmount = total;
         order.remark = request.remark();
         order.createdAt = Instant.now();
         OrderEntity saved = orderRepository.save(order);
-        saved.orderNo = buildOrderNo(saved.id);
-        saved.confirmCode = String.format("%04d", 1000 + saved.id);
+        saved.orderNo = numberGenerator.orderNo(saved.id);
+        saved.confirmCode = numberGenerator.confirmCode(saved.id);
         saved = orderRepository.save(saved);
 
         for (OrderItemDTO item : items) {
@@ -88,26 +100,24 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderDTO> list(long userId) {
-        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::toDTO).toList();
+        return toDTOs(orderRepository.findByUserIdOrderByCreatedAtDesc(userId));
     }
 
     @Override
     public List<OrderDTO> listAll() {
-        return orderRepository.findAllByOrderByCreatedAtDesc().stream().map(this::toDTO).toList();
+        return toDTOs(orderRepository.findAllByOrderByCreatedAtDesc());
     }
 
     @Override
     public List<OrderDTO> listByStore(long storeId) {
         catalogService.getStore(storeId);
-        return orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId).stream().map(this::toDTO).toList();
+        return toDTOs(orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId));
     }
 
     @Override
     public List<OrderDTO> listByStoreAndUser(long storeId, long userId) {
         catalogService.getStore(storeId);
-        return orderRepository.findByStoreIdAndUserIdOrderByCreatedAtDesc(storeId, userId).stream()
-                .map(this::toDTO)
-                .toList();
+        return toDTOs(orderRepository.findByStoreIdAndUserIdOrderByCreatedAtDesc(storeId, userId));
     }
 
     @Override
@@ -122,31 +132,31 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderDTO accept(long id) {
-        return transition(id, "ACCEPTED", "NEW");
+        return transition(id, "accept");
     }
 
     @Override
     @Transactional
     public OrderDTO reject(long id) {
-        return transition(id, "REJECTED", "NEW");
+        return transition(id, "reject");
     }
 
     @Override
     @Transactional
     public OrderDTO prepare(long id) {
-        return transition(id, "PREPARING", "ACCEPTED");
+        return transition(id, "prepare");
     }
 
     @Override
     @Transactional
     public OrderDTO ready(long id) {
-        return transition(id, "READY", "PREPARING");
+        return transition(id, "ready");
     }
 
     @Override
     @Transactional
     public OrderDTO complete(long id) {
-        return transition(id, "COMPLETED", "READY");
+        return transition(id, "complete");
     }
 
     private OrderItemDTO toOrderItem(Long storeId, CreateOrderParams.Item item) {
@@ -157,12 +167,10 @@ public class OrderServiceImpl implements OrderService {
         return new OrderItemDTO(product.id(), product.name(), item.quantity(), product.price(), item.specsText());
     }
 
-    private OrderDTO transition(long id, String nextStatus, String requiredCurrentStatus) {
+    private OrderDTO transition(long id, String action) {
         OrderEntity current = orderRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        if (!current.status.equals(requiredCurrentStatus)) {
-            throw new AppException(ErrorCode.INVALID_ORDER_STATUS);
-        }
-        current.status = nextStatus;
+        OrderStatus nextStatus = statusTransition.next(OrderStatus.from(current.status), action);
+        current.status = nextStatus.name();
         return toDTO(orderRepository.save(current));
     }
 
@@ -171,6 +179,22 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderDTO toDTO(OrderEntity order) {
+        return toDTO(order, itemRepository.findByOrderIdOrderByIdAsc(order.id));
+    }
+
+    private List<OrderDTO> toDTOs(List<OrderEntity> orders) {
+        if (orders.isEmpty()) {
+            return List.of();
+        }
+        List<Long> orderIds = orders.stream().map(order -> order.id).toList();
+        Map<Long, List<OrderItemEntity>> itemsByOrderId = itemRepository.findByOrderIdInOrderByOrderIdAscIdAsc(orderIds).stream()
+                .collect(Collectors.groupingBy(item -> item.orderId, LinkedHashMap::new, Collectors.toList()));
+        return orders.stream()
+                .map(order -> toDTO(order, itemsByOrderId.getOrDefault(order.id, List.of())))
+                .toList();
+    }
+
+    private OrderDTO toDTO(OrderEntity order, List<OrderItemEntity> items) {
         return new OrderDTO(
                 order.id,
                 order.orderNo,
@@ -181,7 +205,7 @@ public class OrderServiceImpl implements OrderService {
                 order.totalAmount,
                 order.remark,
                 order.createdAt,
-                itemRepository.findByOrderIdOrderByIdAsc(order.id).stream()
+                items.stream()
                         .map(this::toItemDTO)
                         .toList()
         );
@@ -191,13 +215,4 @@ public class OrderServiceImpl implements OrderService {
         return new OrderItemDTO(item.productId, item.productName, item.quantity, item.unitPrice, item.specsText);
     }
 
-    private String buildOrderNo(long id) {
-        String date = DateTimeFormatter.BASIC_ISO_DATE.format(LocalDate.now());
-        return "SM" + date + String.format("%06d", id);
-    }
-
-    private String buildPendingOrderNo() {
-        String date = DateTimeFormatter.BASIC_ISO_DATE.format(LocalDate.now());
-        return "SM" + date + String.format("%09d", Math.floorMod(System.nanoTime(), 1_000_000_000L));
-    }
 }

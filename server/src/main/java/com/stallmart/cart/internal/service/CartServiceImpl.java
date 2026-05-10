@@ -13,7 +13,10 @@ import com.stallmart.store.StoreService;
 import com.stallmart.support.exception.AppException;
 import com.stallmart.support.exception.ErrorCode;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,18 +35,18 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public List<CartDTO> listByUser(long userId) {
-        return cartRepository.findByUserIdOrderByUpdatedAtDesc(userId).stream().map(this::toDTO).toList();
+        return toDTOs(cartRepository.findByUserIdOrderByUpdatedAtDesc(userId));
     }
 
     @Override
     public List<CartDTO> listByStore(long storeId) {
         storeService.getStore(storeId);
-        return cartRepository.findByStoreIdOrderByUpdatedAtDesc(storeId).stream().map(this::toDTO).toList();
+        return toDTOs(cartRepository.findByStoreIdOrderByUpdatedAtDesc(storeId));
     }
 
     @Override
     public List<CartDTO> listAll() {
-        return cartRepository.findAllByOrderByUpdatedAtDesc().stream().map(this::toDTO).toList();
+        return toDTOs(cartRepository.findAllByOrderByUpdatedAtDesc());
     }
 
     @Override
@@ -84,13 +87,29 @@ public class CartServiceImpl implements CartService {
     }
 
     private CartDTO toDTO(CartEntity cart) {
+        return toDTO(cart, itemRepository.findByCartIdOrderByIdAsc(cart.id));
+    }
+
+    private List<CartDTO> toDTOs(List<CartEntity> carts) {
+        if (carts.isEmpty()) {
+            return List.of();
+        }
+        List<Long> cartIds = carts.stream().map(cart -> cart.id).toList();
+        Map<Long, List<CartItemEntity>> itemsByCartId = itemRepository.findByCartIdInOrderByCartIdAscIdAsc(cartIds).stream()
+                .collect(Collectors.groupingBy(item -> item.cartId, LinkedHashMap::new, Collectors.toList()));
+        return carts.stream()
+                .map(cart -> toDTO(cart, itemsByCartId.getOrDefault(cart.id, List.of())))
+                .toList();
+    }
+
+    private CartDTO toDTO(CartEntity cart, List<CartItemEntity> items) {
         return new CartDTO(
                 cart.id,
                 cart.userId,
                 cart.storeId,
                 cart.status,
                 cart.updatedAt,
-                itemRepository.findByCartIdOrderByIdAsc(cart.id).stream()
+                items.stream()
                         .map(this::toItemDTO)
                         .toList()
         );

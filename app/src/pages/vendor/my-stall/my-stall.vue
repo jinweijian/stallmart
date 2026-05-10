@@ -311,5 +311,5 @@ function getItemSummary(items: OrderItem[]): string {
 </template>
 
 <style lang="scss">
-@import './my-stall.scss';
+@use './my-stall.scss';
 </style>

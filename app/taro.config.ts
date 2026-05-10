@@ -4,6 +4,8 @@ import path from 'node:path'
 
 const resolveSrc = (...segments: string[]) => path.resolve(__dirname, 'src', ...segments)
 const defineEnv = (name: string, fallback = '') => JSON.stringify(process.env[name] || fallback)
+const h5AssetBudgetBytes = 650 * 1024
+const h5EntrypointBudgetBytes = 900 * 1024
 
 export default defineConfig({
   appType: 'vue3',
@@ -92,9 +94,19 @@ export default defineConfig({
         },
       },
     },
+    webpackChain(chain) {
+      chain.performance
+        .hints('warning')
+        .maxAssetSize(h5AssetBudgetBytes)
+        .maxEntrypointSize(h5EntrypointBudgetBytes)
+    },
   },
 
   webpackChain(chain) {
     chain.resolve.alias.set('@', resolveSrc()).set('@/config', resolveSrc('app-config'))
+    chain.performance
+      .hints('warning')
+      .maxAssetSize(h5AssetBudgetBytes)
+      .maxEntrypointSize(h5EntrypointBudgetBytes)
   },
 } as UserConfig)

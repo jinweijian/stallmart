@@ -266,7 +266,7 @@ class ApiControllerTest {
     }
 
     @Test
-    void vendorCanUploadDecorationImageAndUpdateThemeColors() throws Exception {
+    void vendorCanUploadDecorationImageAndUpdateStoreDisplayFields() throws Exception {
         String vendorToken = loginAdmin("vendor", "vendor123");
         MockMultipartFile image = new MockMultipartFile(
                 "file",
@@ -288,16 +288,49 @@ class ApiControllerTest {
                         .content("""
                                 {
                                   "styleId": 6,
-                                  "colors": {
-                                    "primary": "#2F7A4F",
-                                    "secondary": "#A5C98A",
-                                    "accent": "#F2B94B"
-                                  }
+                                  "logoUrl": "/uploads/decoration/new-logo.png",
+                                  "coverUrl": "/uploads/decoration/new-cover.png",
+                                  "banners": ["/uploads/decoration/banner.png"],
+                                  "description": "只更新商家自己的展示信息"
                                 }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.colors.primary").value("#2F7A4F"));
+                .andExpect(jsonPath("$.data.logoUrl").value("/uploads/decoration/new-logo.png"))
+                .andExpect(jsonPath("$.data.coverUrl").value("/uploads/decoration/new-cover.png"))
+                .andExpect(jsonPath("$.data.banners[0]").value("/uploads/decoration/banner.png"))
+                .andExpect(jsonPath("$.data.colors.primary").value("#6F9646"));
+    }
+
+    @Test
+    void vendorCannotOverrideStylePackageFieldsFromDecorationApi() throws Exception {
+        String vendorToken = loginAdmin("vendor", "vendor123");
+
+        mockMvc.perform(put("/admin/vendor/me/decoration")
+                        .header("Authorization", "Bearer " + vendorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "styleId": 6,
+                                  "colors": {
+                                    "primary": "#2F7A4F"
+                                  },
+                                  "copywriting": {
+                                    "heroTitle": "商家私改风格文案"
+                                  },
+                                  "iconUrls": {
+                                    "cart": "/uploads/decoration/cart.png"
+                                  },
+                                  "categoryIconUrls": {
+                                    "recommend": "/uploads/decoration/recommend.png"
+                                  },
+                                  "imageUrls": {
+                                    "heroIllustration": "/uploads/decoration/hero.png"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(10000));
     }
 
     @Test

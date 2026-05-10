@@ -340,5 +340,5 @@ function goToCustomerHome() {
 </template>
 
 <style lang="scss">
-@import './stall-settings.scss';
+@use './stall-settings.scss';
 </style>

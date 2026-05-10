@@ -7,13 +7,15 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "test:proxy-headers": "node scripts/verify-proxy-headers.mjs",
     "test:runtime-config": "node scripts/verify-runtime-config.mjs",
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "nuxt": "4.4.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vue-router": "^5.0.6"
   },
   "devDependencies": {
     "@types/node": "^20.19.26",

@@ -98,11 +98,16 @@ for (const file of sourceStyleFiles) {
 }
 
 const appConfigPath = resolve(projectRoot, 'src/app-config/index.ts')
+const appConfigEndpointPath = resolve(projectRoot, 'src/app-config/endpoints.ts')
 const packageJsonPath = resolve(projectRoot, 'package.json')
 const tabbarOptimizerPath = resolve(projectRoot, 'scripts/optimize-tabbar-icons.mjs')
 const mockCustomerApiPath = resolve(projectRoot, 'src/mock/customer-api.ts')
 const customerIndexVuePath = resolve(projectRoot, 'src/pages/customer/index/index.vue')
 const customerIndexScssPath = resolve(projectRoot, 'src/pages/customer/index/index.scss')
+const customerDomainPaths = [
+  resolve(projectRoot, 'src/domain/customer/storefront-theme.ts'),
+  resolve(projectRoot, 'src/domain/customer/product-catalog.ts'),
+]
 const requiredSharedThemeFiles = [
   'src/utils/customer-theme.ts',
 ]
@@ -115,7 +120,13 @@ const customerThemePages = [
 ]
 
 if (existsSync(appConfigPath)) {
-  const source = readFileSync(appConfigPath, 'utf8')
+  const source = [
+    appConfigPath,
+    appConfigEndpointPath,
+  ]
+    .filter(path => existsSync(path))
+    .map(path => readFileSync(path, 'utf8'))
+    .join('\n')
   const requiredConfigSnippets = [
     'interface StorefrontBannerConfig',
     'interface StorefrontAssetSizes',
@@ -249,7 +260,13 @@ for (const file of customerThemePages) {
 }
 
 if (existsSync(customerIndexVuePath)) {
-  const source = readFileSync(customerIndexVuePath, 'utf8')
+  const source = [
+    customerIndexVuePath,
+    ...customerDomainPaths,
+  ]
+    .filter(path => existsSync(path))
+    .map(path => readFileSync(path, 'utf8'))
+    .join('\n')
   const requiredVueSnippets = [
     '<swiper',
     'class="banner-swiper"',
@@ -287,6 +304,7 @@ if (existsSync(customerIndexScssPath)) {
     '--asset-promo-banner-height',
     '--asset-category-icon-size',
     '--asset-bottom-action-icon-size',
+    'bottom: calc(var(--asset-tab-bar-reserve, 132rpx) + var(--asset-cart-bar-bottom-offset, 60rpx) + env(safe-area-inset-bottom));',
     'background-size: contain',
   ]
 

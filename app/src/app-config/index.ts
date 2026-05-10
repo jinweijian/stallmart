@@ -3,70 +3,9 @@
  * Contains API base URLs, app constants, and environment settings
  */
 
-export const APP_ENV = process.env.NODE_ENV || 'development'
-
-// API Base URLs
-export const API_BASE_URL_DEV = 'http://localhost:8080/api/v1'
-export const API_BASE_URL_PROD = 'https://api.stallmart.com/api/v1'
-
-export const API_BASE_URL = process.env.TARO_APP_API_BASE_URL || (APP_ENV === 'production' ? API_BASE_URL_PROD : API_BASE_URL_DEV)
-
-// Local preview mode defaults to mock. Set TARO_APP_ENABLE_API_MOCK=false for H5/API integration.
-export const ENABLE_API_MOCK = process.env.TARO_APP_ENABLE_API_MOCK === 'false' ? false : true
-
-// Token Keys
-export const STORAGE_KEYS = {
-  ACCESS_TOKEN: 'access_token',
-  REFRESH_TOKEN: 'refresh_token',
-  USER_INFO: 'user_info',
-  CART: 'cart',
-} as const
-
-// Token Expiration
-export const TOKEN_EXPIRY = {
-  ACCESS_TOKEN: 2 * 60 * 60 * 1000, // 2 hours in ms
-  REFRESH_TOKEN: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-} as const
-
-// API Endpoints
-export const API_ENDPOINTS = {
-  // Auth
-  AUTH_WECHAT_LOGIN: '/auth/wechat/login',
-  AUTH_REFRESH: '/auth/refresh',
-  AUTH_LOGOUT: '/auth/logout',
-  AUTH_BIND_PHONE: '/auth/phone/bind',
-
-  // User
-  USER_PROFILE: '/user/profile',
-  USER_UPDATE: '/user/profile',
-
-  // Store
-  STORE_GET: '/stores',
-  APP_BOOTSTRAP: '/app/bootstrap',
-  STORE_GET_BY_QR: (qrCode: string) => `/stores/qr/${qrCode}`,
-  STORE_DETAIL: (id: string) => `/stores/${id}`,
-
-  // Products
-  PRODUCTS: (storeId: string) => `/stores/${storeId}/products`,
-  PRODUCT_DETAIL: (id: string) => `/products/${id}`,
-  STYLE_SPECS: (styleId: string | number) => `/styles/${styleId}/specs`,
-
-  // Orders
-  ORDERS: '/orders',
-  ORDER_DETAIL: (id: string) => `/orders/${id}`,
-  ORDER_CREATE: '/orders',
-  ORDER_STATUS: (id: string) => `/orders/${id}/status`,
-  ORDER_ACCEPT: (id: string) => `/orders/${id}/accept`,
-  ORDER_REJECT: (id: string) => `/orders/${id}/reject`,
-  ORDER_PREPARE: (id: string) => `/orders/${id}/prepare`,
-  ORDER_READY: (id: string) => `/orders/${id}/ready`,
-  ORDER_COMPLETE: (id: string) => `/orders/${id}/complete`,
-
-  // Vendor
-  VENDOR_STALL: '/vendor/stall',
-  VENDOR_ORDERS: '/vendor/orders',
-  VENDOR_SETTINGS: '/vendor/settings',
-} as const
+export * from './env'
+export * from './storage-keys'
+export * from './endpoints'
 
 // Design System Colors
 export const COLORS = {

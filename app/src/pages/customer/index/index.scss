@@ -1,6 +1,6 @@
 .fruit-tea-page {
   min-height: 100vh;
-  padding-bottom: calc(var(--asset-bottom-bar-height, 128rpx) + var(--asset-tab-bar-reserve, 132rpx) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--asset-bottom-bar-height, 128rpx) + var(--asset-tab-bar-reserve, 132rpx) + var(--asset-cart-bar-bottom-offset, 60rpx) + env(safe-area-inset-bottom));
   color: var(--style-text, #4C6040);
   overflow-x: hidden;
   background:
@@ -467,7 +467,7 @@
 .cart-bar {
   position: fixed;
   right: 28rpx;
-  bottom: calc(var(--asset-cart-bar-bottom-offset, 60rpx) + env(safe-area-inset-bottom));
+  bottom: calc(var(--asset-tab-bar-reserve, 132rpx) + var(--asset-cart-bar-bottom-offset, 60rpx) + env(safe-area-inset-bottom));
   left: 28rpx;
   z-index: 20;
   display: flex;

@@ -133,7 +133,7 @@
 | `GET` | `/admin/vendor/me/users` | 商家用户列表 |
 | `GET` | `/admin/vendor/me/users/{userId}/orders` | 商家查看顾客订单记录 |
 | `GET` | `/admin/vendor/me/decoration` | 商家装修设置 |
-| `PUT` | `/admin/vendor/me/decoration` | 更新商家装修设置 |
+| `PUT` | `/admin/vendor/me/decoration` | 更新商家装修设置；商家只允许提交 `styleId/logoUrl/coverUrl/banners/description` |
 | `GET` | `/admin/vendor/me/specs` | 商家商品规格列表 |
 | `POST` | `/admin/vendor/me/specs` | 新增商品规格 |
 | `PUT` | `/admin/vendor/me/specs/{specId}` | 更新商品规格 |
@@ -169,6 +169,7 @@
 - 平台风格包新增和编辑必须提供唯一 `code`、`name`、`theme`，且 `theme` 至少包含 `colors`、`categoryIconLibrary`、`assetSizes`、`pageThemes`。
 - 风格包删除只允许删除未被任何店铺引用的风格包；已引用风格包删除返回 HTTP `400`，应通过下架阻止新商家选择。
 - 商家装修接口只能切换到 `ACTIVE` 风格包；构造请求选择下架风格包返回 HTTP `400`。
+- 商家装修接口不得修改风格包内容；构造请求提交 `colors/iconUrls/categoryIconUrls/imageUrls/copywriting` 返回 HTTP `400`。这些字段只能由平台风格包管理维护。
 
 ## 店铺装修契约
 
@@ -189,7 +190,7 @@
 
 详细标准见 [../specification/storefront-decoration.md](../specification/storefront-decoration.md)。
 
-管理端装修页必须以可视化配置为主：颜色用色板/取色器，Logo、封面、Banner、图标和主题图片通过上传按钮替换并展示预览，文案按语义字段编辑。仅在必要兜底时展示文件地址。
+管理端商家装修页必须以可视化预览为主：商家可选择已上架风格包，并维护 Logo、封面、Banner 和展示描述；颜色、文案、图标、分类 icon 库和主题图片只读展示，修改入口在平台风格包管理。
 
 ## 数据库迁移
 

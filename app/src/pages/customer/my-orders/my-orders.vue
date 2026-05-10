@@ -709,5 +709,5 @@ function getMockOrders(): Order[] {
 </template>
 
 <style lang="scss">
-@import './my-orders.scss';
+@use './my-orders.scss';
 </style>

@@ -2,6 +2,9 @@ package com.stallmart.management.internal.api;
 
 import com.stallmart.cart.CartService;
 import com.stallmart.cart.dto.CartDTO;
+import com.stallmart.management.VendorAssetService;
+import com.stallmart.management.VendorOrderCommandService;
+import com.stallmart.management.VendorWorkspaceService;
 import com.stallmart.management.dto.VendorWorkspaceDTO;
 import com.stallmart.management.internal.security.AdminAccessGuard;
 import com.stallmart.order.OrderService;
@@ -21,18 +24,11 @@ import com.stallmart.store.dto.UpdateStoreParams;
 import com.stallmart.support.exception.AppException;
 import com.stallmart.support.exception.ErrorCode;
 import com.stallmart.support.web.Result;
-import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import java.math.BigDecimal;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,31 +44,35 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/admin/vendor/me")
 public class VendorAdminController {
 
-    private static final long MAX_PRODUCT_IMAGE_SIZE = 10L * 1024L * 1024L;
-
     private final StoreService storeService;
     private final OrderService orderService;
     private final CartService cartService;
-    private final UserService userService;
+    private final VendorAssetService vendorAssetService;
+    private final VendorOrderCommandService vendorOrderCommandService;
+    private final VendorWorkspaceService vendorWorkspaceService;
     private final AdminAccessGuard accessGuard;
 
     public VendorAdminController(
             StoreService storeService,
             OrderService orderService,
             CartService cartService,
-            UserService userService,
+            VendorAssetService vendorAssetService,
+            VendorOrderCommandService vendorOrderCommandService,
+            VendorWorkspaceService vendorWorkspaceService,
             AdminAccessGuard accessGuard
     ) {
         this.storeService = storeService;
         this.orderService = orderService;
         this.cartService = cartService;
-        this.userService = userService;
+        this.vendorAssetService = vendorAssetService;
+        this.vendorOrderCommandService = vendorOrderCommandService;
+        this.vendorWorkspaceService = vendorWorkspaceService;
         this.accessGuard = accessGuard;
     }
 
     @GetMapping("/summary")
     public Result<VendorWorkspaceDTO> summary(HttpServletRequest request) {
-        return Result.success(buildWorkspace(resolveStore(request)));
+        return Result.success(vendorWorkspaceService.buildVendorWorkspace(resolveStore(request)));
     }
 
     @GetMapping("/store")
@@ -137,18 +137,7 @@ public class VendorAdminController {
             HttpServletRequest request,
             String folder
     ) throws IOException {
-        StoreDTO store = resolveStore(request);
-        String contentType = file.getContentType() == null ? "" : file.getContentType();
-        if (file.isEmpty() || file.getSize() > MAX_PRODUCT_IMAGE_SIZE || !contentType.startsWith("image/")) {
-            throw new AppException(ErrorCode.BAD_REQUEST);
-        }
-        String extension = extensionOf(file.getOriginalFilename(), contentType);
-        String filename = UUID.randomUUID() + extension;
-        Path directory = Path.of("uploads", "stores", String.valueOf(store.id()), folder).toAbsolutePath().normalize();
-        Files.createDirectories(directory);
-        Path target = directory.resolve(filename);
-        file.transferTo(target);
-        return Result.success(new AssetDTO("/uploads/stores/" + store.id() + "/" + folder + "/" + filename, filename, file.getSize()));
+        return Result.success(vendorAssetService.upload(resolveStore(request), file, folder));
     }
 
     @PostMapping("/products")
@@ -195,16 +184,7 @@ public class VendorAdminController {
 
     @PutMapping("/orders/{orderId}/{action}")
     public Result<OrderDTO> transitionOrder(@PathVariable long orderId, @PathVariable String action, HttpServletRequest request) {
-        StoreDTO store = resolveStore(request);
-        accessGuard.requireOrderInStore(store, orderService.getAdmin(orderId));
-        return switch (action) {
-            case "accept" -> Result.success(orderService.accept(orderId));
-            case "reject" -> Result.success(orderService.reject(orderId));
-            case "prepare" -> Result.success(orderService.prepare(orderId));
-            case "ready" -> Result.success(orderService.ready(orderId));
-            case "complete" -> Result.success(orderService.complete(orderId));
-            default -> throw new AppException(ErrorCode.BAD_REQUEST);
-        };
+        return Result.success(vendorOrderCommandService.transition(resolveStore(request), orderId, action));
     }
 
     @GetMapping("/orders/{orderId}")
@@ -222,13 +202,13 @@ public class VendorAdminController {
 
     @GetMapping("/users")
     public Result<List<UserProfileDTO>> users(HttpServletRequest request) {
-        return Result.success(usersForStore(resolveStore(request).id()));
+        return Result.success(vendorWorkspaceService.listUsersForStore(resolveStore(request).id()));
     }
 
     @GetMapping("/users/{userId}/orders")
     public Result<List<OrderDTO>> userOrders(@PathVariable long userId, HttpServletRequest request) {
         StoreDTO store = resolveStore(request);
-        boolean userBelongsToStore = usersForStore(store.id()).stream()
+        boolean userBelongsToStore = vendorWorkspaceService.listUsersForStore(store.id()).stream()
                 .anyMatch(user -> user.id().equals(userId));
         if (!userBelongsToStore) {
             throw new AppException(ErrorCode.NOT_FOUND);
@@ -278,58 +258,8 @@ public class VendorAdminController {
         return Result.success(null);
     }
 
-    private VendorWorkspaceDTO buildWorkspace(StoreDTO store) {
-        List<OrderDTO> orders = orderService.listByStore(store.id());
-        List<CartDTO> carts = cartService.listByStore(store.id());
-        return new VendorWorkspaceDTO(
-                store,
-                storeService.getDecoration(store.id()),
-                storeService.listProducts(store.id()),
-                orders,
-                carts,
-                usersForStore(store.id()),
-                storeService.listActiveStyles(),
-                orders.size(),
-                carts.size(),
-                salesAmount(orders)
-        );
-    }
-
     private StoreDTO resolveStore(HttpServletRequest request) {
         return accessGuard.requireVendorStore(request);
     }
 
-    private List<UserProfileDTO> usersForStore(long storeId) {
-        Set<Long> userIds = orderService.listByStore(storeId).stream()
-                .map(OrderDTO::userId)
-                .collect(Collectors.toSet());
-        cartService.listByStore(storeId).stream()
-                .map(CartDTO::userId)
-                .forEach(userIds::add);
-        return userService.listUsers().stream()
-                .filter(user -> userIds.contains(user.id()))
-                .toList();
-    }
-
-    private BigDecimal salesAmount(List<OrderDTO> orders) {
-        return orders.stream()
-                .filter(order -> !order.status().equals("REJECTED"))
-                .map(OrderDTO::totalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private String extensionOf(String filename, String contentType) {
-        if (filename != null && filename.contains(".")) {
-            String extension = filename.substring(filename.lastIndexOf(".")).toLowerCase();
-            if (extension.matches("\\.(png|jpg|jpeg|gif|webp)")) {
-                return extension;
-            }
-        }
-        return switch (contentType) {
-            case "image/png" -> ".png";
-            case "image/gif" -> ".gif";
-            case "image/webp" -> ".webp";
-            default -> ".jpg";
-        };
-    }
 }

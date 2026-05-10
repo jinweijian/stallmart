@@ -340,5 +340,5 @@ function getItemSubtotal(item: CartItem): number {
 </template>
 
 <style lang="scss">
-@import './cart.scss';
+@use './cart.scss';
 </style>

@@ -125,6 +125,7 @@ patch()
 - 订单 item 使用后端 `productId/productName/quantity/unitPrice/specsText`，页面展示前把 `specsText` 拆成规格文案。
 - 订单统计 `/orders/counts` 使用后端 `total/pending/preparing/completed`，页面的 `inProgress` 从 `preparing` 映射。
 - 店铺 `avatarUrl/styleId/status/decoration` 转为顾客端展示所需的 `logo/styleCode/isOpen` 和装修配置。装修配置遵循 [../specification/storefront-decoration.md](../specification/storefront-decoration.md)，其中 `banners` 驱动首页自动轮播，`categoryIconLibrary` 提供分类 icon 可选库，`categories` 是后台分类管理返回的实际分类入口，`pageThemes` 驱动点单、订单、我的页 banner/文案/icon/状态色，`assetSizes` 驱动 icon、banner、商品图、头像、步进器、进度 icon 和底部栏预留等展示尺寸。
+- App 端只消费服务端合并后的 `decoration`，不区分字段来自平台风格包还是店铺自有展示配置。商家端第一版只能选择已上架风格包，不能通过装修接口覆盖风格包颜色、文案、图标或主题图片。
 
 ## Storage 规范
 

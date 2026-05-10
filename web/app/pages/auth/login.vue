@@ -21,7 +21,10 @@ onMounted(async () => {
 const submit = async () => {
   errorMessage.value = ''
   try {
-    await auth.login(form)
+    await auth.login({
+      account: form.account.trim(),
+      password: form.password,
+    })
   } catch {
     errorMessage.value = '账号或密码错误'
   }

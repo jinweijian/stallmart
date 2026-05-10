@@ -6,6 +6,8 @@ const path = require('path')
 
 const resolveSrc = (...segments) => path.resolve(__dirname, '..', 'src', ...segments)
 const defineEnv = (name, fallback = '') => JSON.stringify(process.env[name] || fallback)
+const h5AssetBudgetBytes = 650 * 1024
+const h5EntrypointBudgetBytes = 900 * 1024
 
 module.exports = {
   appid: 'wxe4f198ad2958a1fe',
@@ -64,8 +66,18 @@ module.exports = {
         },
       },
     },
+    webpackChain(chain) {
+      chain.performance
+        .hints('warning')
+        .maxAssetSize(h5AssetBudgetBytes)
+        .maxEntrypointSize(h5EntrypointBudgetBytes)
+    },
   },
   webpackChain(chain) {
     chain.resolve.alias.set('@', resolveSrc()).set('@/config', resolveSrc('app-config'))
+    chain.performance
+      .hints('warning')
+      .maxAssetSize(h5AssetBudgetBytes)
+      .maxEntrypointSize(h5EntrypointBudgetBytes)
   },
 }

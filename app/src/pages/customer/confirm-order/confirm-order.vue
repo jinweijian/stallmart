@@ -421,5 +421,5 @@ function getErrorMessage(error: unknown): string {
 </template>
 
 <style lang="scss">
-@import './confirm-order.scss';
+@use './confirm-order.scss';
 </style>

@@ -367,5 +367,5 @@ function maskPhone(phone: string): string {
 </template>
 
 <style lang="scss">
-@import './my.scss';
+@use './my.scss';
 </style>

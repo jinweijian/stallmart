@@ -45,7 +45,7 @@ npm run build
 - `/vendor/orders` 订单管理
 - `/vendor/orders/:id` 订单详情与备餐操作
 - `/vendor/store` 店铺管理
-- `/vendor/decoration` 装修设置，维护小程序风格包、banner、文案、通用 icon、分类 icon 库和主题图片地址
+- `/vendor/decoration` 装修设置，商家只能选择已上架风格包，并维护 Logo、封面、Banner 和展示描述
 - `/vendor/users` 用户管理
 - `/vendor/carts` 购物车管理
 

@@ -25,6 +25,7 @@ cd server
 - 断言优先使用 AssertJ。
 - Spring 集成测试使用 `@SpringBootTest` 和 `@ActiveProfiles("test")`。
 - 测试方法命名使用 `should<Outcome>_when<Condition>`。
+- 管理端装修权限回归由 `ApiControllerTest` 覆盖：商家可更新 Logo、封面、Banner、展示描述和已上架风格包选择，但提交 `colors/iconUrls/categoryIconUrls/imageUrls/copywriting` 必须返回 HTTP `400`。
 
 ## 小程序
 
