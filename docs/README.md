@@ -21,6 +21,7 @@
 | 修改服务端 | [../server/README.md](../server/README.md), [specification/server.md](specification/server.md) |
 | 修改小程序 | [../app/README.md](../app/README.md), [specification/app-module.md](specification/app-module.md) |
 | 修改管理端 | [../web/README.md](../web/README.md), [specification/web.md](specification/web.md) |
+| 修改个人官网 | [specification/site.md](specification/site.md) |
 | 修改 API | [api-server/index.md](api-server/index.md), [api-app/index.md](api-app/index.md) |
 | 修改 Docker 或配置 | [guide/configuration.md](guide/configuration.md), [deploy/index.md](deploy/index.md) |
 | 准备提交 | [guide/testing.md](guide/testing.md), [standards/review-checklist.md](standards/review-checklist.md) |
