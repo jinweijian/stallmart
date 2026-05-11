@@ -6,12 +6,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.stallmart.cart.dto.CartDTO;
+import com.stallmart.cart.internal.model.CartStatus;
 import com.stallmart.cart.internal.repository.CartEntity;
 import com.stallmart.cart.internal.repository.CartItemEntity;
 import com.stallmart.cart.internal.repository.CartItemRepository;
 import com.stallmart.cart.internal.repository.CartRepository;
 import com.stallmart.store.StoreService;
 import com.stallmart.store.dto.StoreDTO;
+import com.stallmart.store.internal.model.StoreStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -54,7 +56,7 @@ class CartServiceImplMappingTest {
 
     private StoreDTO store() {
         return new StoreDTO(1L, 2L, 6L, "forestFruitTeaCrayon", "小新の水果茶屋", "饮品", "自然水果",
-                "/avatar.png", "/cover.png", "stall-001", "上海环球港店", "OPEN");
+                "/avatar.png", "/cover.png", "stall-001", "上海环球港店", StoreStatus.OPEN);
     }
 
     private CartEntity cart(long id, long userId) {
@@ -62,7 +64,7 @@ class CartServiceImplMappingTest {
         cart.id = id;
         cart.userId = userId;
         cart.storeId = 1L;
-        cart.status = "ACTIVE";
+        cart.status = CartStatus.ACTIVE;
         cart.updatedAt = Instant.parse("2026-05-10T00:00:00Z");
         return cart;
     }

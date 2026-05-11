@@ -60,7 +60,7 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity order = new OrderEntity();
         order.userId = userId;
         order.storeId = request.storeId();
-        order.status = OrderStatus.NEW;
+        order.status = OrderStatus.NEW.name();
         order.orderNo = numberGenerator.pendingOrderNo();
         order.confirmCode = "1000";
         order.totalAmount = total;
@@ -169,8 +169,8 @@ public class OrderServiceImpl implements OrderService {
 
     private OrderDTO transition(long id, String action) {
         OrderEntity current = orderRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        OrderStatus nextStatus = statusTransition.next(current.status, action);
-        current.status = nextStatus;
+        OrderStatus nextStatus = statusTransition.next(OrderStatus.from(current.status), action);
+        current.status = nextStatus.name();
         return toDTO(orderRepository.save(current));
     }
 
@@ -200,7 +200,7 @@ public class OrderServiceImpl implements OrderService {
                 order.orderNo,
                 order.userId,
                 order.storeId,
-                order.status,
+                OrderStatus.from(order.status),
                 order.confirmCode,
                 order.totalAmount,
                 order.remark,

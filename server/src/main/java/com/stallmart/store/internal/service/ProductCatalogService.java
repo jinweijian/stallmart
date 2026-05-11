@@ -57,7 +57,7 @@ public class ProductCatalogService {
         getStoreEntity(storeId);
         List<CategoryEntity> categories = module == null
                 ? categoryRepository.findByStoreIdOrderBySortOrderAscIdAsc(storeId)
-                : categoryRepository.findByStoreIdAndModuleIgnoreCaseOrderBySortOrderAscIdAsc(storeId, module);
+                : categoryRepository.findByStoreIdAndModuleOrderBySortOrderAscIdAsc(storeId, CategoryModule.from(module));
         return categories.stream().map(this::toCategoryDTO).toList();
     }
 

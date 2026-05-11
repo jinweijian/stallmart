@@ -3,8 +3,9 @@ package com.stallmart.order;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.stallmart.support.exception.AppException;
 import com.stallmart.order.dto.CreateOrderParams;
+import com.stallmart.order.internal.model.OrderStatus;
+import com.stallmart.support.exception.AppException;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +32,7 @@ public class OrderServiceTest {
 
         var order = orderService.create(1L, request);
 
-        assertThat(order.status()).isEqualTo("NEW");
+        assertThat(order.status()).isEqualTo(OrderStatus.NEW);
         assertThat(order.orderNo()).startsWith("SM");
         assertThat(order.totalAmount()).isEqualByComparingTo(new BigDecimal("24.00"));
         assertThat(order.items()).hasSize(1);
@@ -46,10 +47,10 @@ public class OrderServiceTest {
                 List.of(new CreateOrderParams.Item(2L, 1, null))
         ));
 
-        assertThat(orderService.accept(order.id()).status()).isEqualTo("ACCEPTED");
-        assertThat(orderService.prepare(order.id()).status()).isEqualTo("PREPARING");
-        assertThat(orderService.ready(order.id()).status()).isEqualTo("READY");
-        assertThat(orderService.complete(order.id()).status()).isEqualTo("COMPLETED");
+        assertThat(orderService.accept(order.id()).status()).isEqualTo(OrderStatus.ACCEPTED);
+        assertThat(orderService.prepare(order.id()).status()).isEqualTo(OrderStatus.PREPARING);
+        assertThat(orderService.ready(order.id()).status()).isEqualTo(OrderStatus.READY);
+        assertThat(orderService.complete(order.id()).status()).isEqualTo(OrderStatus.COMPLETED);
     }
 
     @Test

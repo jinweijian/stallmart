@@ -5,6 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stallmart.product.dto.CategoryDTO;
 import com.stallmart.store.dto.StoreDecorationDTO;
+import com.stallmart.store.internal.model.CategoryModule;
+import com.stallmart.store.internal.model.CategoryStatus;
+import com.stallmart.store.internal.model.StoreStyleStatus;
 import com.stallmart.store.internal.repository.StoreDecorationEntity;
 import com.stallmart.store.internal.repository.StoreEntity;
 import com.stallmart.style.dto.StorefrontCategoryIconDTO;
@@ -31,7 +34,7 @@ class StoreDecorationAssemblerTest {
                 store(),
                 style(),
                 decoration,
-                List.of(new CategoryDTO(1L, 1L, "PRODUCT", "清爽柠檬", "category1", 10, "ACTIVE"))
+                List.of(new CategoryDTO(1L, 1L, CategoryModule.PRODUCT, "清爽柠檬", "category1", 10, CategoryStatus.ACTIVE))
         );
 
         assertThat(result.colors()).containsEntry("primary", "#315F3E");
@@ -72,6 +75,6 @@ class StoreDecorationAssemblerTest {
                 Map.of("tabBarReserve", "132rpx"),
                 Map.of("home", Map.of("sectionTitle", "人气推荐"))
         );
-        return new StyleDTO(6L, "森系水果茶", "forestFruitTeaCrayon", "/preview.png", theme, "ACTIVE", 1);
+        return new StyleDTO(6L, "森系水果茶", "forestFruitTeaCrayon", "/preview.png", theme, StoreStyleStatus.ACTIVE, 1);
     }
 }

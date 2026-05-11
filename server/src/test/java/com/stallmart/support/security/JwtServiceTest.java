@@ -2,6 +2,7 @@ package com.stallmart.support.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.stallmart.user.internal.model.UserRole;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +17,7 @@ class JwtServiceTest {
 
     @Test
     void shouldParseUserId_whenAccessTokenIsGenerated() {
-        String token = jwtService.generateAccessToken(12L, "VENDOR", true);
+        String token = jwtService.generateAccessToken(12L, UserRole.VENDOR, true);
 
         assertThat(jwtService.isExpired(token)).isFalse();
         assertThat(jwtService.getUserId(token)).isEqualTo(12L);

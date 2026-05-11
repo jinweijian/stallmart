@@ -6,6 +6,7 @@
 
 | 文档 | 作用 |
 | --- | --- |
+| [comprehensive-standards.md](comprehensive-standards.md) | **综合技术规范**，整合所有核心规范，作为长期维护标准。 |
 | [project-standards.md](project-standards.md) | 项目结构、命名、安全、文档维护等总规范。 |
 | [development.md](development.md) | 日常开发规范。 |
 | [code-style.md](code-style.md) | 从 `review/code-style.md` 拆解后的代码风格强制规则。 |

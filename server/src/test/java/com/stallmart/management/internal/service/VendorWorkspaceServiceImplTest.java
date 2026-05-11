@@ -6,16 +6,22 @@ import static org.mockito.Mockito.when;
 
 import com.stallmart.cart.CartService;
 import com.stallmart.cart.dto.CartDTO;
+import com.stallmart.cart.internal.model.CartStatus;
 import com.stallmart.management.dto.VendorWorkspaceDTO;
 import com.stallmart.order.OrderService;
 import com.stallmart.order.dto.OrderDTO;
+import com.stallmart.order.internal.model.OrderStatus;
 import com.stallmart.product.dto.ProductDTO;
 import com.stallmart.store.StoreService;
 import com.stallmart.store.dto.StoreDTO;
 import com.stallmart.store.dto.StoreDecorationDTO;
+import com.stallmart.store.internal.model.ProductStatus;
+import com.stallmart.store.internal.model.StoreStatus;
+import com.stallmart.store.internal.model.StoreStyleStatus;
 import com.stallmart.style.dto.StyleDTO;
 import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
+import com.stallmart.user.internal.model.UserRole;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -48,9 +54,9 @@ class VendorWorkspaceServiceImplTest {
         OrderDTO paidOrder = order(101L, 10L, store.id(), "COMPLETED", "12.00");
         OrderDTO rejectedOrder = order(102L, 11L, store.id(), "REJECTED", "99.00");
         CartDTO cart = cart(201L, 20L, store.id());
-        UserProfileDTO orderUser = user(10L, "下单用户", "USER");
-        UserProfileDTO cartUser = user(20L, "购物车用户", "USER");
-        UserProfileDTO unrelatedUser = user(30L, "无关用户", "USER");
+        UserProfileDTO orderUser = user(10L, "下单用户", "CUSTOMER");
+        UserProfileDTO cartUser = user(20L, "购物车用户", "CUSTOMER");
+        UserProfileDTO unrelatedUser = user(30L, "无关用户", "CUSTOMER");
         UserProfileDTO adminUser = user(40L, "平台管理员", "ADMIN");
         StyleDTO activeStyle = style(6L, "ACTIVE");
 
@@ -96,7 +102,7 @@ class VendorWorkspaceServiceImplTest {
                 "/cover.png",
                 "stall-001",
                 "上海环球港店",
-                "OPEN"
+                StoreStatus.OPEN
         );
     }
 
@@ -136,7 +142,7 @@ class VendorWorkspaceServiceImplTest {
                 "/product.png",
                 "/product.png",
                 "清爽柠檬",
-                "ACTIVE",
+                ProductStatus.ACTIVE,
                 1,
                 List.of(1L, 2L),
                 List.of()
@@ -149,7 +155,7 @@ class VendorWorkspaceServiceImplTest {
                 "SM20260101000001",
                 userId,
                 storeId,
-                status,
+                OrderStatus.valueOf(status),
                 "1001",
                 new BigDecimal(totalAmount),
                 null,
@@ -159,14 +165,14 @@ class VendorWorkspaceServiceImplTest {
     }
 
     private CartDTO cart(long id, long userId, long storeId) {
-        return new CartDTO(id, userId, storeId, "ACTIVE", Instant.parse("2026-01-01T00:00:00Z"), List.of());
+        return new CartDTO(id, userId, storeId, CartStatus.ACTIVE, Instant.parse("2026-01-01T00:00:00Z"), List.of());
     }
 
     private UserProfileDTO user(long id, String nickname, String role) {
-        return new UserProfileDTO(id, nickname, "/avatar.png", null, false, role);
+        return new UserProfileDTO(id, nickname, "/avatar.png", null, false, UserRole.valueOf(role));
     }
 
     private StyleDTO style(long id, String status) {
-        return new StyleDTO(id, "森系水果茶", "forestFruitTeaCrayon", "/preview.png", null, status, 1);
+        return new StyleDTO(id, "森系水果茶", "forestFruitTeaCrayon", "/preview.png", null, StoreStyleStatus.valueOf(status), 1);
     }
 }

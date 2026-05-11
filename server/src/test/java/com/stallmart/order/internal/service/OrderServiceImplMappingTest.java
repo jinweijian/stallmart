@@ -6,12 +6,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.stallmart.order.dto.OrderDTO;
+import com.stallmart.order.internal.model.OrderStatus;
 import com.stallmart.order.internal.repository.OrderEntity;
 import com.stallmart.order.internal.repository.OrderItemEntity;
 import com.stallmart.order.internal.repository.OrderItemRepository;
 import com.stallmart.order.internal.repository.OrderRepository;
 import com.stallmart.store.StoreService;
 import com.stallmart.store.dto.StoreDTO;
+import com.stallmart.store.internal.model.StoreStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -60,7 +62,7 @@ class OrderServiceImplMappingTest {
 
     private StoreDTO store() {
         return new StoreDTO(1L, 2L, 6L, "forestFruitTeaCrayon", "小新の水果茶屋", "饮品", "自然水果",
-                "/avatar.png", "/cover.png", "stall-001", "上海环球港店", "OPEN");
+                "/avatar.png", "/cover.png", "stall-001", "上海环球港店", StoreStatus.OPEN);
     }
 
     private OrderEntity order(long id, long userId) {
@@ -69,7 +71,7 @@ class OrderServiceImplMappingTest {
         order.orderNo = "SM2026051000000" + id;
         order.userId = userId;
         order.storeId = 1L;
-        order.status = "NEW";
+        order.status = OrderStatus.NEW.name();
         order.confirmCode = "100" + id;
         order.totalAmount = new BigDecimal("12.00");
         order.createdAt = Instant.parse("2026-05-10T00:00:00Z");

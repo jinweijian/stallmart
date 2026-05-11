@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.stallmart.product.dto.AssetDTO;
 import com.stallmart.store.dto.StoreDTO;
+import com.stallmart.store.internal.model.StoreStatus;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class LocalVendorAssetServiceTest {
                 "/cover.png",
                 "stall-001",
                 "上海环球港店",
-                "OPEN"
+                StoreStatus.OPEN
         );
     }
 }

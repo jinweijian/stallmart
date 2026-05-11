@@ -6,6 +6,7 @@
 web/app/
   api/          接口 client，统一处理 Result 响应
   components/   跨页面通用组件
+  composables/  组合式函数
   pages/        Nuxt 路由页面
   types/        管理端类型定义
   assets/css/   全局样式
@@ -17,8 +18,52 @@ web/app/
 - 商家 H5 管理页面放在 `web/app/pages/vendor/`。
 - 平台进入单个商家模块时，读取服务端 `/admin/platform/vendors/{storeId}/summary`。
 - 商家自己的后台使用 `/admin/vendor/me/*`，当前开发种子商家账号为 `vendor / vendor123`。
-- 登录页放在 `web/app/pages/auth/login.vue`。
+- 登录页放在 `web/app/pages/auth/login/index.vue`。
 - 全局鉴权放在 `web/app/middleware/auth.global.ts`，页面通过 `definePageMeta({ role: 'ADMIN' | 'VENDOR' })` 区分角色。
+
+## Nuxt 路由目录结构规范
+
+**强制要求**：所有页面必须使用目录 + `index.vue` 的结构，不得使用单文件页面。
+
+原因：当 `xxx.vue` 和 `xxx/` 目录同时存在时，Nuxt 路由会产生冲突，导致子路由无法正确匹配。
+
+正确结构：
+
+```text
+web/app/pages/
+  index.vue                           # /
+  auth/
+    login/index.vue                   # /auth/login
+  platform/
+    vendors/
+      index.vue                       # /platform/vendors
+      [id]/index.vue                  # /platform/vendors/:id
+    styles/index.vue                  # /platform/styles
+  vendor/
+    index.vue                         # /vendor
+    products/
+      index.vue                       # /vendor/products
+      [id]/index.vue                  # /vendor/products/:id
+    orders/
+      index.vue                       # /vendor/orders
+      [id]/index.vue                  # /vendor/orders/:id
+    categories/index.vue              # /vendor/categories
+    specs/index.vue                   # /vendor/specs
+    users/index.vue                   # /vendor/users
+    store/index.vue                   # /vendor/store
+    decoration/index.vue              # /vendor/decoration
+    carts/index.vue                   # /vendor/carts
+```
+
+错误示例（禁止）：
+
+```text
+web/app/pages/
+  vendor/
+    products.vue                      # ❌ 与 products/ 目录冲突
+    products/
+      [id]/index.vue
+```
 
 ## 接口约定
 

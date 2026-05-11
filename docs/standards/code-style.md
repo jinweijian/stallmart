@@ -12,6 +12,25 @@
 - 命名要表达业务含义，不使用 `data1`、`temp`、`foo` 这类模糊名称。
 - 不为了抽象而抽象，只有重复和复杂度真实存在时才抽取。
 
+## 重构原则
+
+重构时必须遵循：
+
+1. 先理解业务，再动手改代码
+2. 保持原有行为一致，不做无关变更
+3. 小步重构，每步可验证
+4. 降低回归风险，优先补充测试
+5. 不做无关格式化，保持 diff 清晰
+6. 优先可维护性，不追求过度设计
+
+禁止项：
+
+- 为了设计模式而设计模式
+- 为了抽象而抽象
+- 提前抽象（YAGNI 原则）
+- 过度封装
+- 过度泛化
+
 ## TypeScript / 小程序
 
 ### 命名
@@ -65,10 +84,69 @@
 - 不允许把后端 Entity 形状直接当作前端 UI 类型，必要时定义 ViewModel。
 - `tsconfig` 已启用 strict，新增代码必须符合 strict。
 
+### API 和类型拆分规范
+
+**强制要求**：API 和类型必须按业务域拆分，禁止所有接口和类型放在单个文件。
+
+API 拆分：
+
+```text
+web/app/api/
+  client.ts           # 基础请求封装，处理 token、header、Result 解包、401 refresh
+  auth-api.ts         # 登录、刷新、当前会话
+  platform-api.ts     # 平台总览、商家、平台风格包
+  vendor-api.ts       # 商家工作台、店铺、用户、购物车
+  product-api.ts      # 商品、分类、规格、上传商品图
+  order-api.ts        # 订单列表、详情、状态动作
+  decoration-api.ts   # 装修读取、保存、装修图片上传
+  stallmart-api.ts    # 兼容聚合层，组合所有域 API
+```
+
+类型拆分：
+
+```text
+web/app/types/
+  auth.ts             # 会话、用户、登录相关
+  store.ts            # 店铺、装修、风格包
+  product.ts          # 商品、SKU、分类、规格
+  order.ts            # 订单、订单项
+  cart.ts             # 购物车
+  user.ts             # 用户管理
+  admin.ts            # 兼容导出，re-export 其他类型
+```
+
+拆分原则：
+
+- 新增接口必须明确放到对应的 `*-api.ts`。
+- 类型变更影响范围从文件名可判断。
+- `stallmart-api.ts` 变成兼容聚合层，新代码应从具体域 API 导入。
+
+### Composables 规范
+
+**强制要求**：页面复杂逻辑必须抽离到 composables，禁止页面直接维护复杂表单、状态和业务规则。
+
+Composables 目录结构：
+
+```text
+web/app/composables/
+  vendor/
+    useVendorDecorationForm.ts
+    useVendorProductCreateForm.ts
+    useVendorProductActions.ts
+  platform/
+    usePlatformStyleForm.ts
+```
+
+职责：
+
+- Composable 承载页面状态、表单提交和错误处理。
+- 页面只负责路由级编排和组合组件。
+- 纯函数（如 SKU 文本解析、payload 构造）优先抽到 utils 或 domain 层。
+
 ### Pinia
 
 - Store 只维护跨页面共享状态。
-- 页面局部状态留在页面。
+- 页面局部状态留在页面或 composable。
 - Store action 的副作用要清晰，不要同时做请求、跳转、toast、复杂计算。
 - 用户态、购物车、订单状态建议拆分 store。
 
@@ -155,9 +233,41 @@ if (user != null) {
 
 ## 注释
 
-- 只写解释“为什么”的注释，不写“这行代码做什么”的空注释。
+- 只写解释"为什么"的注释，不写"这行代码做什么"的空注释。
 - 复杂状态机、权限判断、第三方约束需要注释。
 - 临时 TODO 必须带原因和后续处理方向。
+
+正确注释示例：
+
+```java
+// 必须保存快照，避免题目后续修改影响历史考试记录
+snapshot.setQuestionTitle(question.getTitle());
+```
+
+```java
+// 状态流转必须校验当前状态，防止并发场景下的非法跳转
+if (!order.getStatus().equals(requiredCurrentStatus)) {
+    throw new AppException(ErrorCode.INVALID_ORDER_STATUS);
+}
+```
+
+错误注释示例（禁止）：
+
+```java
+// 设置用户名
+user.setName(name);
+```
+
+## 命名规范
+
+禁止使用的命名：
+
+- `Util`、`Helper`、`Manager`、`Common`、`Base`、`Processor`
+
+推荐使用：
+
+- 明确业务语义的名称，直接表达职责
+- 例如：`LearningProgressCalculator`、`ExamScoreService`、`QuestionImportValidator`
 
 ## 禁止项
 
@@ -167,3 +277,8 @@ if (user != null) {
 - 禁止页面直接发业务 `Taro.request`。
 - 禁止后端 Controller 写 SQL 或复杂业务。
 - 禁止文档写已知不真实的功能状态。
+- 禁止使用字符串常量表示状态，必须使用枚举。
+- 禁止 Controller 直接操作数据库。
+- 禁止 Service 无限互相调用，避免循环依赖。
+- 禁止 God Object（上帝类）和超大 Service。
+- 禁止使用 `@Autowired` 字段注入，优先构造器注入。

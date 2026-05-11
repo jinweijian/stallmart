@@ -167,6 +167,10 @@ public class StylePackageService {
         return styleRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
     }
 
+    private StoreStyleStatus normalizeStyleStatus(StoreStyleStatus status) {
+        return status == null ? StoreStyleStatus.INACTIVE : status;
+    }
+
     private void validateStyleRequest(StyleUpsertParams request, Long currentId) {
         if (request == null || request.theme() == null || request.name() == null || request.name().isBlank()
                 || request.code() == null || request.code().isBlank()) {

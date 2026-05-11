@@ -8,7 +8,9 @@ import static org.mockito.Mockito.when;
 import com.stallmart.management.internal.security.AdminAccessGuard;
 import com.stallmart.order.OrderService;
 import com.stallmart.order.dto.OrderDTO;
+import com.stallmart.order.internal.model.OrderStatus;
 import com.stallmart.store.dto.StoreDTO;
+import com.stallmart.store.internal.model.StoreStatus;
 import com.stallmart.support.exception.AppException;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -69,7 +71,7 @@ class VendorOrderCommandServiceImplTest {
                 "/cover.png",
                 "stall-001",
                 "上海环球港店",
-                "OPEN"
+                StoreStatus.OPEN
         );
     }
 
@@ -79,7 +81,7 @@ class VendorOrderCommandServiceImplTest {
                 "SM20260101000001",
                 10L,
                 1L,
-                status,
+                OrderStatus.valueOf(status),
                 "1001",
                 new BigDecimal("12.00"),
                 null,
