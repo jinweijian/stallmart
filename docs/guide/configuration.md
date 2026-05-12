@@ -19,6 +19,17 @@ server/src/main/resources/application.yml
 | OpenAPI docs | `/api/v1/v3/api-docs` |
 | Healthcheck | `/api/v1/actuator/health` |
 
+后端核心依赖基线：
+
+| 依赖 | 版本 |
+| --- | --- |
+| Spring Boot | `4.0.6` |
+| Spring Framework | `7.0.7` |
+| SpringDoc OpenAPI WebMVC UI | `3.0.3` |
+| JJWT | `0.12.6` |
+| Logback | `1.5.25` |
+| Gradle Wrapper | `9.4.0` |
+
 本地私有覆盖建议使用：
 
 ```text

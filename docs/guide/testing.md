@@ -23,6 +23,7 @@ cd server
 
 - 使用 JUnit 5。
 - 断言优先使用 AssertJ。
+- Java 25 下测试任务通过 Gradle 显式加载 Mockito agent，避免 Mockito inline mock maker 运行时自挂载 agent；测试 JVM 关闭 class data sharing，避免 javaagent 追加 bootstrap classpath 时输出 CDS 警告。
 - Spring 集成测试使用 `@SpringBootTest` 和 `@ActiveProfiles("test")`。
 - 测试方法命名使用 `should<Outcome>_when<Condition>`。
 - 管理端装修权限回归由 `ApiControllerTest` 覆盖：商家可更新 Logo、封面、Banner、展示描述和已上架风格包选择，但提交 `colors/iconUrls/categoryIconUrls/imageUrls/copywriting` 必须返回 HTTP `400`。
