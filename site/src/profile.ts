@@ -42,11 +42,11 @@ export interface SiteProfile {
 }
 
 export const siteProfile = {
-  nickname: '白哥',
+  nickname: '大白',
   forbiddenTerms: ['金钱', '企业', '小程序', 'SaaS', 'saas', '商业', '变现', '客户', '公司'],
   hero: {
     eyebrow: 'TECH LAB / NOTES / SYSTEMS',
-    title: '白哥的技术实验室',
+    title: '大白的技术实验室',
     subtitle: '记录前端工程、后端架构、系统设计与代码质量实践，把复杂问题拆成清楚、稳定、可演进的实现。',
     links: [
       { label: '技术栈', href: '#stack' },
@@ -111,5 +111,5 @@ export const siteProfile = {
       tag: 'ARCH'
     }
   ],
-  footer: '白哥 / 技术实验室 / 保持清晰，持续打磨。'
+  footer: '大白 / 技术实验室 / 保持清晰，持续打磨。'
 } satisfies SiteProfile

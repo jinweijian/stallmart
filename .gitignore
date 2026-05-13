@@ -6,6 +6,8 @@ tmp/
 # Build output
 .gradle/
 dist/
+!site/dist/
+!site/dist/**
 build/
 target/
 out/

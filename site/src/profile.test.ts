@@ -8,9 +8,9 @@ const stringifyPublishedCopy = (profile: SiteProfile) => {
 }
 
 describe('siteProfile', () => {
-  it('uses Bai Ge as the personal identity', () => {
-    expect(siteProfile.nickname).toBe('白哥')
-    expect(siteProfile.hero.title).toContain('白哥')
+  it('uses Da Bai as the personal identity', () => {
+    expect(siteProfile.nickname).toBe('大白')
+    expect(siteProfile.hero.title).toContain('大白')
     expect(siteProfile.hero.title).toContain('技术实验室')
   })
 
