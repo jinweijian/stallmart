@@ -1,0 +1,4 @@
+interface:
+  display_name: "StallMart API Contract Update"
+  short_description: "Sync API changes across server, app, web, docs."
+  default_prompt: "Use $stallmart-api-contract-update to update a StallMart API contract and synchronize affected code, docs, and tests."
