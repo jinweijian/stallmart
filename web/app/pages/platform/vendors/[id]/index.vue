@@ -18,7 +18,10 @@ const { data: workspace } = await useAsyncData(`platform-vendor-${storeId}`, () 
         <h1>{{ workspace.store.name }}</h1>
         <p>平台视角的商家模块：用户、装修、订单、购物车和商品。</p>
       </div>
-      <NuxtLink class="button" to="/platform/vendors">返回列表</NuxtLink>
+      <div class="actions">
+        <NuxtLink class="button" :to="`/platform/vendors/${storeId}/operation-logs`">操作日志</NuxtLink>
+        <NuxtLink class="button" to="/platform/vendors">返回列表</NuxtLink>
+      </div>
     </div>
 
     <section v-if="workspace" class="grid cols-4">

@@ -56,7 +56,10 @@ public class UserServiceImpl implements UserService {
     public AdminSessionDTO adminLogin(String account, String password) {
         AdminAccountEntity adminAccount = adminAccountRepository.findByAccount(account)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
-        if (adminAccount.status != com.stallmart.user.internal.model.AdminAccountStatus.ACTIVE || !passwordEncoder.matches(password, adminAccount.passwordHash)) {
+        if (adminAccount.status != com.stallmart.user.internal.model.AdminAccountStatus.ACTIVE
+                || adminAccount.passwordSalt == null
+                || adminAccount.passwordSalt.isBlank()
+                || !passwordEncoder.matches(password + adminAccount.passwordSalt, adminAccount.passwordHash)) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
         UserProfileDTO user = getProfile(adminAccount.userId);

@@ -2,8 +2,13 @@ package com.stallmart.management.internal.api;
 
 import com.stallmart.cart.CartService;
 import com.stallmart.cart.dto.CartDTO;
+import com.stallmart.management.OperationLogService;
 import com.stallmart.management.dto.AdminSummaryDTO;
+import com.stallmart.management.dto.OperationLogDTO;
+import com.stallmart.management.dto.OperationLogRecordParams;
 import com.stallmart.management.dto.VendorWorkspaceDTO;
+import com.stallmart.management.internal.model.OperationLogResult;
+import com.stallmart.management.internal.model.OperationLogScope;
 import com.stallmart.management.internal.security.AdminAccessGuard;
 import com.stallmart.order.OrderService;
 import com.stallmart.order.dto.OrderDTO;
@@ -14,10 +19,12 @@ import com.stallmart.store.dto.StoreDTO;
 import com.stallmart.store.internal.model.StoreStyleStatus;
 import com.stallmart.style.dto.StyleDTO;
 import com.stallmart.style.dto.StyleUpsertParams;
+import com.stallmart.support.security.CurrentUserResolver;
 import com.stallmart.support.web.Result;
 import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
 import com.stallmart.user.internal.model.UserRole;
+import com.stallmart.user.internal.repository.AdminAccountRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -42,19 +49,28 @@ public class PlatformAdminController {
     private final CartService cartService;
     private final UserService userService;
     private final AdminAccessGuard accessGuard;
+    private final OperationLogService operationLogService;
+    private final CurrentUserResolver currentUserResolver;
+    private final AdminAccountRepository adminAccountRepository;
 
     public PlatformAdminController(
             StoreService storeService,
             OrderService orderService,
             CartService cartService,
             UserService userService,
-            AdminAccessGuard accessGuard
+            AdminAccessGuard accessGuard,
+            OperationLogService operationLogService,
+            CurrentUserResolver currentUserResolver,
+            AdminAccountRepository adminAccountRepository
     ) {
         this.storeService = storeService;
         this.orderService = orderService;
         this.cartService = cartService;
         this.userService = userService;
         this.accessGuard = accessGuard;
+        this.operationLogService = operationLogService;
+        this.currentUserResolver = currentUserResolver;
+        this.adminAccountRepository = adminAccountRepository;
     }
 
     @GetMapping("/summary")
@@ -88,6 +104,12 @@ public class PlatformAdminController {
         return Result.success(storeService.listStyles());
     }
 
+    @GetMapping("/operation-logs")
+    public Result<List<OperationLogDTO>> operationLogs(HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
+        return Result.success(operationLogService.listPlatformLogs());
+    }
+
     @GetMapping("/styles/{styleId}")
     public Result<StyleDTO> style(@PathVariable long styleId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
@@ -100,7 +122,9 @@ public class PlatformAdminController {
             HttpServletRequest request
     ) {
         accessGuard.requirePlatformAdmin(request);
-        return Result.success(storeService.createStyle(params));
+        StyleDTO style = storeService.createStyle(params);
+        recordPlatformLog(request, "STYLE_CREATE", "STYLE", String.valueOf(style.id()), "新增风格包：" + style.name());
+        return Result.success(style);
     }
 
     @PutMapping("/styles/{styleId}")
@@ -110,25 +134,32 @@ public class PlatformAdminController {
             HttpServletRequest request
     ) {
         accessGuard.requirePlatformAdmin(request);
-        return Result.success(storeService.updateStyle(styleId, params));
+        StyleDTO style = storeService.updateStyle(styleId, params);
+        recordPlatformLog(request, "STYLE_UPDATE", "STYLE", String.valueOf(style.id()), "更新风格包：" + style.name());
+        return Result.success(style);
     }
 
     @PutMapping("/styles/{styleId}/publish")
     public Result<StyleDTO> publishStyle(@PathVariable long styleId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
-        return Result.success(storeService.updateStyleStatus(styleId, StoreStyleStatus.ACTIVE));
+        StyleDTO style = storeService.updateStyleStatus(styleId, StoreStyleStatus.ACTIVE);
+        recordPlatformLog(request, "STYLE_PUBLISH", "STYLE", String.valueOf(style.id()), "上架风格包：" + style.name());
+        return Result.success(style);
     }
 
     @PutMapping("/styles/{styleId}/unpublish")
     public Result<StyleDTO> unpublishStyle(@PathVariable long styleId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
-        return Result.success(storeService.updateStyleStatus(styleId, StoreStyleStatus.INACTIVE));
+        StyleDTO style = storeService.updateStyleStatus(styleId, StoreStyleStatus.INACTIVE);
+        recordPlatformLog(request, "STYLE_UNPUBLISH", "STYLE", String.valueOf(style.id()), "下架风格包：" + style.name());
+        return Result.success(style);
     }
 
     @DeleteMapping("/styles/{styleId}")
     public Result<Void> deleteStyle(@PathVariable long styleId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
         storeService.deleteStyle(styleId);
+        recordPlatformLog(request, "STYLE_DELETE", "STYLE", String.valueOf(styleId), "删除风格包：" + styleId);
         return Result.success(null);
     }
 
@@ -154,6 +185,12 @@ public class PlatformAdminController {
     public Result<List<UserProfileDTO>> users(@PathVariable long storeId, HttpServletRequest request) {
         accessGuard.requirePlatformAdmin(request);
         return Result.success(usersForStore(storeId));
+    }
+
+    @GetMapping("/vendors/{storeId}/operation-logs")
+    public Result<List<OperationLogDTO>> vendorOperationLogs(@PathVariable long storeId, HttpServletRequest request) {
+        accessGuard.requirePlatformAdmin(request);
+        return Result.success(operationLogService.listVendorLogs(storeId));
     }
 
     private VendorWorkspaceDTO buildWorkspace(long storeId) {
@@ -191,5 +228,40 @@ public class PlatformAdminController {
                 .filter(order -> order.status() != OrderStatus.REJECTED)
                 .map(OrderDTO::totalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private void recordPlatformLog(
+            HttpServletRequest request,
+            String action,
+            String resourceType,
+            String resourceId,
+            String description
+    ) {
+        UserProfileDTO actor = userService.getProfile(currentUserResolver.resolve(request));
+        String account = adminAccountRepository.findByUserId(actor.id())
+                .map(adminAccount -> adminAccount.account)
+                .orElse(actor.role().name().toLowerCase());
+        operationLogService.record(new OperationLogRecordParams(
+                OperationLogScope.PLATFORM,
+                null,
+                actor.id(),
+                account,
+                actor.role(),
+                action,
+                resourceType,
+                resourceId,
+                description,
+                OperationLogResult.SUCCESS,
+                clientIp(request),
+                request.getHeader("User-Agent")
+        ));
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

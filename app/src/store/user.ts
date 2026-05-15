@@ -13,22 +13,27 @@ export interface UserInfo {
   createdAt: string
 }
 
+export type ViewMode = 'CUSTOMER' | 'VENDOR'
+
 export interface UserState {
   userInfo: UserInfo | null
   isLoggedIn: boolean
   isVendor: boolean
+  viewMode: ViewMode
+  hasVendorRole: boolean
   isLoading: boolean
 }
 
 export const useUserStore = defineStore('user', () => {
   // State
   const userInfo = ref<UserInfo | null>(null)
+  const viewMode = ref<ViewMode>('CUSTOMER')
   const isLoading = ref(false)
 
   // Getters
   const isLoggedIn = computed(() => !!userInfo.value)
-  
-  const isVendor = computed(() => userInfo.value?.role === 'VENDOR' || userInfo.value?.role === 'ADMIN')
+  const hasVendorRole = computed(() => userInfo.value?.role === 'VENDOR' || userInfo.value?.role === 'ADMIN')
+  const isVendor = computed(() => viewMode.value === 'VENDOR')
   
   const openid = computed(() => userInfo.value?.openid || '')
   
@@ -39,6 +44,9 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = info
     if (info) {
       Taro.setStorageSync(STORAGE_KEYS.USER_INFO, JSON.stringify(info))
+      if (!Taro.getStorageSync(STORAGE_KEYS.VIEW_MODE)) {
+        setViewMode(info.role === 'VENDOR' || info.role === 'ADMIN' ? 'VENDOR' : 'CUSTOMER')
+      }
     } else {
       Taro.removeStorageSync(STORAGE_KEYS.USER_INFO)
     }
@@ -53,6 +61,51 @@ export const useUserStore = defineStore('user', () => {
     } catch (e) {
       console.error('[UserStore] Failed to load user info', e)
     }
+    loadViewMode()
+  }
+
+  function loadViewMode() {
+    try {
+      const stored = Taro.getStorageSync(STORAGE_KEYS.VIEW_MODE)
+      viewMode.value = stored === 'VENDOR' ? 'VENDOR' : 'CUSTOMER'
+    } catch {
+      viewMode.value = 'CUSTOMER'
+    }
+  }
+
+  function setViewMode(mode: ViewMode) {
+    viewMode.value = mode
+    Taro.setStorageSync(STORAGE_KEYS.VIEW_MODE, mode)
+    syncTabBarForViewMode()
+  }
+
+  function switchToVendorMode() {
+    setViewMode('VENDOR')
+  }
+
+  function switchToCustomerMode() {
+    setViewMode('CUSTOMER')
+  }
+
+  function syncTabBarForViewMode() {
+    const vendorMode = viewMode.value === 'VENDOR'
+    const updates = [
+      Taro.setTabBarItem({
+        index: 1,
+        text: vendorMode ? '商品' : '点单',
+        iconPath: 'static/tabbar/home.png',
+        selectedIconPath: 'static/tabbar/home-active.png',
+      }),
+      Taro.setTabBarItem({
+        index: 2,
+        text: vendorMode ? '接单' : '订单',
+        iconPath: 'static/tabbar/order.png',
+        selectedIconPath: 'static/tabbar/order-active.png',
+      }),
+    ]
+    updates.forEach((update) => {
+      void update.catch(() => undefined)
+    })
   }
 
   function setLoading(loading: boolean) {
@@ -64,6 +117,7 @@ export const useUserStore = defineStore('user', () => {
     Taro.removeStorageSync(STORAGE_KEYS.ACCESS_TOKEN)
     Taro.removeStorageSync(STORAGE_KEYS.REFRESH_TOKEN)
     Taro.removeStorageSync(STORAGE_KEYS.USER_INFO)
+    setViewMode('CUSTOMER')
     
     // Clear cart
     Taro.removeStorageSync(STORAGE_KEYS.CART)
@@ -74,19 +128,27 @@ export const useUserStore = defineStore('user', () => {
 
   // Initialize on store creation
   loadUserInfo()
+  syncTabBarForViewMode()
 
   return {
     // State
     userInfo,
+    viewMode,
     isLoading,
     // Getters
     isLoggedIn,
     isVendor,
+    hasVendorRole,
     openid,
     phone,
     // Actions
     setUserInfo,
     loadUserInfo,
+    loadViewMode,
+    setViewMode,
+    switchToVendorMode,
+    switchToCustomerMode,
+    syncTabBarForViewMode,
     setLoading,
     logout,
   }

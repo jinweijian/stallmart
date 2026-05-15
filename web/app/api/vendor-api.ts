@@ -1,5 +1,5 @@
 import type { ApiRequest } from '~/api/client'
-import type { Cart, Order, Store, UserProfile, VendorWorkspace } from '~/types/admin'
+import type { Cart, OperationLog, Order, Store, UserProfile, VendorWorkspace } from '~/types/admin'
 
 export const createVendorApi = (request: ApiRequest) => ({
   vendorSummary: () => request<VendorWorkspace>('/admin/vendor/me/summary'),
@@ -12,4 +12,5 @@ export const createVendorApi = (request: ApiRequest) => ({
   vendorUsers: () => request<UserProfile[]>('/admin/vendor/me/users'),
   vendorUserOrders: (userId: number) => request<Order[]>(`/admin/vendor/me/users/${userId}/orders`),
   vendorCarts: () => request<Cart[]>('/admin/vendor/me/carts'),
+  vendorOperationLogs: () => request<OperationLog[]>('/admin/vendor/me/operation-logs'),
 })

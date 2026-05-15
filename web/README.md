@@ -37,6 +37,8 @@ npm run build
 - `/` 平台总览
 - `/platform/vendors` 平台商家列表
 - `/platform/vendors/:id` 平台进入商家模块
+- `/platform/operation-logs` 平台操作日志
+- `/platform/vendors/:id/operation-logs` 平台查看商家操作日志
 - `/vendor` 商家 H5 管理工作台
 - `/vendor/products` 商品管理
 - `/vendor/products/:id` 商品详情与上下架
@@ -48,10 +50,13 @@ npm run build
 - `/vendor/decoration` 装修设置，商家只能选择已上架风格包，并维护 Logo、封面、Banner 和展示描述
 - `/vendor/users` 用户管理
 - `/vendor/carts` 购物车管理
+- `/vendor/operation-logs` 商家操作日志
 
 ## 本地账号
 
 | 角色 | 账号 | 密码 |
 | --- | --- | --- |
-| 平台管理员 | `platform` | `platform123` |
-| 商家管理员 | `vendor` | `vendor123` |
+| 平台管理员 | `platform` | `stallmart&p@2026..` |
+| 商家管理员 | `vendor` | `stallmart&v@2026..` |
+
+登录连续失败 3 次后，服务端会要求验证码。登录页不展示默认密码，避免上线页面泄露口令。

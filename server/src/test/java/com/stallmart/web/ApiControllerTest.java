@@ -28,6 +28,9 @@ import org.springframework.test.web.servlet.MockMvc;
 @ActiveProfiles("test")
 class ApiControllerTest {
 
+    private static final String PLATFORM_PASSWORD = "stallmart&p@2026..";
+    private static final String VENDOR_PASSWORD = "stallmart&v@2026..";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -92,6 +95,97 @@ class ApiControllerTest {
     }
 
     @Test
+    void adminLoginUsesNewSeedPasswordsAndRejectsOldPasswords() throws Exception {
+        loginAdmin("platform", PLATFORM_PASSWORD);
+        loginAdmin("vendor", VENDOR_PASSWORD);
+
+        mockMvc.perform(post("/admin/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"account\":\"platform\",\"password\":\"platform123\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(10006));
+
+        mockMvc.perform(post("/admin/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"account\":\"vendor\",\"password\":\"vendor123\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(10006));
+    }
+
+    @Test
+    void adminLoginRequiresCaptchaAfterThreeFailures() throws Exception {
+        String remoteAddress = "203.0.113.10";
+
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/admin/auth/login")
+                            .with(request -> {
+                                request.setRemoteAddr(remoteAddress);
+                                return request;
+                            })
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"account\":\"vendor\",\"password\":\"bad-password\"}"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value(10006));
+        }
+
+        mockMvc.perform(post("/admin/auth/login")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"account\":\"vendor\",\"password\":\"" + VENDOR_PASSWORD + "\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(10007))
+                .andExpect(jsonPath("$.data.captchaRequired").value(true));
+
+        String captchaResponse = mockMvc.perform(get("/admin/auth/captcha"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.captchaId", notNullValue()))
+                .andExpect(jsonPath("$.data.question", containsString("+")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String captchaId = captchaResponse.replaceAll(".*\\\"captchaId\\\":\\\"([^\\\"]+)\\\".*", "$1");
+        String question = captchaResponse.replaceAll(".*\\\"question\\\":\\\"([^\\\"]+)\\\".*", "$1");
+        int captchaAnswer = solveCaptcha(question);
+
+        mockMvc.perform(post("/admin/auth/login")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"account":"vendor","password":"%s","captchaId":"%s","captchaAnswer":"wrong"}
+                                """.formatted(VENDOR_PASSWORD, captchaId)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(10008))
+                .andExpect(jsonPath("$.data.captchaRequired").value(true));
+
+        String freshCaptcha = mockMvc.perform(get("/admin/auth/captcha"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String freshCaptchaId = freshCaptcha.replaceAll(".*\\\"captchaId\\\":\\\"([^\\\"]+)\\\".*", "$1");
+        String freshQuestion = freshCaptcha.replaceAll(".*\\\"question\\\":\\\"([^\\\"]+)\\\".*", "$1");
+
+        mockMvc.perform(post("/admin/auth/login")
+                        .with(request -> {
+                            request.setRemoteAddr(remoteAddress);
+                            return request;
+                        })
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"account":"vendor","password":"%s","captchaId":"%s","captchaAnswer":"%d"}
+                                """.formatted(VENDOR_PASSWORD, freshCaptchaId, solveCaptcha(freshQuestion))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.accessToken", notNullValue()));
+    }
+
+    @Test
     void createOrderThenVendorAcceptsIt() throws Exception {
         String response = mockMvc.perform(post("/orders")
                         .header("X-User-Id", "1")
@@ -123,7 +217,7 @@ class ApiControllerTest {
 
     @Test
     void adminProductChangesAreVisibleToMiniProgramStoreEndpoint() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(get("/admin/vendor/me/summary")
                         .header("Authorization", "Bearer " + vendorToken))
@@ -171,7 +265,7 @@ class ApiControllerTest {
 
     @Test
     void vendorCanCreateProductCategory() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(post("/admin/vendor/me/categories")
                         .header("Authorization", "Bearer " + vendorToken)
@@ -215,8 +309,47 @@ class ApiControllerTest {
     }
 
     @Test
+    void vendorCanReadOwnOperationLogsAndPlatformCanReadVendorLogs() throws Exception {
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
+        String platformToken = loginAdmin("platform", PLATFORM_PASSWORD);
+
+        mockMvc.perform(post("/admin/vendor/me/categories")
+                        .header("Authorization", "Bearer " + vendorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "module": "PRODUCT",
+                                  "name": "日志测试分类",
+                                  "iconKey": "category1",
+                                  "sortOrder": 30,
+                                  "status": "ACTIVE"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        mockMvc.perform(get("/admin/vendor/me/operation-logs")
+                        .header("Authorization", "Bearer " + vendorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.data[0].scope").value("VENDOR"))
+                .andExpect(jsonPath("$.data[0].storeId").value(1))
+                .andExpect(jsonPath("$.data[0].action").value("CATEGORY_CREATE"))
+                .andExpect(jsonPath("$.data[0].description").value("新增分类：日志测试分类"));
+
+        mockMvc.perform(get("/admin/platform/vendors/1/operation-logs")
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.data[0].scope").value("VENDOR"))
+                .andExpect(jsonPath("$.data[0].storeId").value(1));
+    }
+
+    @Test
     void vendorCanUpdateProductSaleStatus() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(put("/admin/vendor/me/products/1/off-sale")
                         .header("Authorization", "Bearer " + vendorToken))
@@ -239,7 +372,7 @@ class ApiControllerTest {
 
     @Test
     void cannotDeleteLinkedSpec() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/vendor/me/specs/1")
                         .header("Authorization", "Bearer " + vendorToken))
@@ -249,7 +382,7 @@ class ApiControllerTest {
 
     @Test
     void vendorCanUploadProductImage() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
         MockMultipartFile image = new MockMultipartFile(
                 "file",
                 "product.png",
@@ -267,7 +400,7 @@ class ApiControllerTest {
 
     @Test
     void vendorCanUploadDecorationImageAndUpdateStoreDisplayFields() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
         MockMultipartFile image = new MockMultipartFile(
                 "file",
                 "banner.png",
@@ -304,7 +437,7 @@ class ApiControllerTest {
 
     @Test
     void vendorCannotOverrideStylePackageFieldsFromDecorationApi() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(put("/admin/vendor/me/decoration")
                         .header("Authorization", "Bearer " + vendorToken)
@@ -335,7 +468,7 @@ class ApiControllerTest {
 
     @Test
     void vendorCanReadCustomerOrderRecords() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(get("/admin/vendor/me/users/1/orders")
                         .header("Authorization", "Bearer " + vendorToken))
@@ -347,7 +480,7 @@ class ApiControllerTest {
 
     @Test
     void platformCanEnterVendorWorkspace() throws Exception {
-        String platformToken = loginAdmin("platform", "platform123");
+        String platformToken = loginAdmin("platform", PLATFORM_PASSWORD);
 
         mockMvc.perform(get("/admin/platform/vendors/1/summary")
                         .header("Authorization", "Bearer " + platformToken))
@@ -362,7 +495,7 @@ class ApiControllerTest {
 
     @Test
     void vendorTokenCannotReadPlatformApis() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(get("/admin/platform/vendors")
                         .header("Authorization", "Bearer " + vendorToken))
@@ -372,7 +505,7 @@ class ApiControllerTest {
 
     @Test
     void platformCanCreateUpdateAndDeleteUnusedStylePackage() throws Exception {
-        String platformToken = loginAdmin("platform", "platform123");
+        String platformToken = loginAdmin("platform", PLATFORM_PASSWORD);
 
         String response = mockMvc.perform(post("/admin/platform/styles")
                         .header("Authorization", "Bearer " + platformToken)
@@ -412,11 +545,19 @@ class ApiControllerTest {
         mockMvc.perform(get("/admin/platform/styles/" + styleId)
                         .header("Authorization", "Bearer " + platformToken))
                 .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/admin/platform/operation-logs")
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.data[0].scope").value("PLATFORM"))
+                .andExpect(jsonPath("$.data[0].action").value("STYLE_DELETE"));
     }
 
     @Test
     void platformCannotDeleteStylePackageUsedByStore() throws Exception {
-        String platformToken = loginAdmin("platform", "platform123");
+        String platformToken = loginAdmin("platform", PLATFORM_PASSWORD);
 
         mockMvc.perform(delete("/admin/platform/styles/6")
                         .header("Authorization", "Bearer " + platformToken))
@@ -426,7 +567,7 @@ class ApiControllerTest {
 
     @Test
     void vendorCannotWritePlatformStylePackage() throws Exception {
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(post("/admin/platform/styles")
                         .header("Authorization", "Bearer " + vendorToken)
@@ -438,8 +579,8 @@ class ApiControllerTest {
 
     @Test
     void vendorCannotSelectInactiveStylePackage() throws Exception {
-        String platformToken = loginAdmin("platform", "platform123");
-        String vendorToken = loginAdmin("vendor", "vendor123");
+        String platformToken = loginAdmin("platform", PLATFORM_PASSWORD);
+        String vendorToken = loginAdmin("vendor", VENDOR_PASSWORD);
 
         mockMvc.perform(put("/admin/platform/styles/1/unpublish")
                         .header("Authorization", "Bearer " + platformToken))
@@ -526,5 +667,10 @@ class ApiControllerTest {
                   }
                 }
                 """.formatted(name, code, status, code, name, primaryColor, primaryColor, name);
+    }
+
+    private int solveCaptcha(String question) {
+        String[] numbers = question.replaceAll("[^0-9+]", "").split("\\+");
+        return Integer.parseInt(numbers[0]) + Integer.parseInt(numbers[1]);
     }
 }

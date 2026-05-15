@@ -96,6 +96,10 @@ patch()
 - 修复时同步更新 [../api-server/index.md](../api-server/index.md) 和 [../specification/project-health.md](../specification/project-health.md)。
 - 修复后增加请求封装测试或最小联调验证。
 
+## 管理端接口变更对小程序的影响
+
+管理端登录验证码、后台账号密码盐和 `/admin/*/operation-logs` 操作日志接口只服务 Nuxt 管理端，不属于小程序业务 endpoint。小程序仍只通过 `Authorization: Bearer <token>` 调用顾客端接口，mock 契约和 H5 真实 API 联调流程不变。
+
 ## 当前顾客端 mock 契约
 
 在 `ENABLE_API_MOCK = true` 时，以下接口由 `src/mock/customer-api.ts` 直接返回，不经过 `Taro.request`：

@@ -11,4 +11,8 @@ public record Result<T>(int code, String message, T data, long timestamp) {
     public static <T> Result<T> error(int code, String message) {
         return new Result<>(code, message, null, Instant.now().getEpochSecond());
     }
+
+    public static <T> Result<T> error(int code, String message, T data) {
+        return new Result<>(code, message, data, Instant.now().getEpochSecond());
+    }
 }

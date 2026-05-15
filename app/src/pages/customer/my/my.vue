@@ -15,6 +15,7 @@ const currentTheme = ref(getCurrentCustomerTheme())
 useDidShow(() => {
   currentTheme.value = getCurrentCustomerTheme()
   userStore.loadUserInfo()
+  userStore.syncTabBarForViewMode()
   loadStats()
 })
 
@@ -22,6 +23,7 @@ useDidShow(() => {
 const userInfo = computed(() => userStore.userInfo)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isVendor = computed(() => userStore.isVendor)
+const viewMode = computed(() => userStore.viewMode)
 const hasPhone = computed(() => !!userInfo.value?.phone)
 const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
 const pageTheme = computed(() => currentTheme.value.pageThemes?.my || {})
@@ -125,11 +127,17 @@ function goToProfileEdit() {
 }
 
 function goToVendorEntry() {
-  if (isVendor.value) {
-    Taro.navigateTo({ url: '/pages/vendor/my-stall/my-stall' })
-  } else {
-    Taro.navigateTo({ url: '/pages/vendor/apply/apply' })
-  }
+  userStore.switchToVendorMode()
+  Taro.navigateTo({ url: '/pages/vendor/my-stall/my-stall' })
+}
+
+function switchViewMode(mode: 'CUSTOMER' | 'VENDOR') {
+  if (viewMode.value === mode) return
+  userStore.setViewMode(mode)
+  Taro.showToast({
+    title: mode === 'VENDOR' ? '已切到商家视角' : '已切到用户视角',
+    icon: 'none',
+  })
 }
 
 // ==================== Menu Actions ====================
@@ -273,6 +281,31 @@ function maskPhone(phone: string): string {
       <view class="stat-item" @tap="goToMyOrders">
         <text class="stat-num">{{ stats.total }}</text>
         <text class="stat-label">全部</text>
+      </view>
+    </view>
+
+    <view v-if="isLoggedIn" class="view-mode-card">
+      <view class="view-mode-copy">
+        <text class="view-mode-title">当前身份</text>
+        <text class="view-mode-desc">
+          {{ isVendor ? '商家视角可处理订单状态' : '用户视角可浏览、加购并下单' }}
+        </text>
+      </view>
+      <view class="view-mode-switch">
+        <view
+          class="view-mode-option"
+          :class="{ active: viewMode === 'VENDOR' }"
+          @tap="switchViewMode('VENDOR')"
+        >
+          <text>我是商家</text>
+        </view>
+        <view
+          class="view-mode-option"
+          :class="{ active: viewMode === 'CUSTOMER' }"
+          @tap="switchViewMode('CUSTOMER')"
+        >
+          <text>我是用户</text>
+        </view>
       </view>
     </view>
 
