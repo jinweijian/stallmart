@@ -8,6 +8,7 @@ const h5AssetBudgetBytes = 650 * 1024
 const h5EntrypointBudgetBytes = 900 * 1024
 
 export default defineConfig({
+  appid: process.env.WECHAT_APP_ID || 'touristappid',
   appType: 'vue3',
   framework: 'vue3',
   platform: 'weapp',
@@ -19,7 +20,6 @@ export default defineConfig({
   },
   env: {
     TARO_APP_API_BASE_URL: defineEnv('TARO_APP_API_BASE_URL'),
-    TARO_APP_ENABLE_API_MOCK: defineEnv('TARO_APP_ENABLE_API_MOCK'),
     TARO_APP_ID: defineEnv('TARO_APP_ID'),
   },
 

@@ -196,7 +196,7 @@ export async function checkAndRefreshToken(): Promise<string | null> {
 export async function bindPhone(phoneCode: string): Promise<boolean> {
   try {
     await request({
-      url: API_ENDPOINTS.USER_BIND_PHONE,
+      url: API_ENDPOINTS.AUTH_BIND_PHONE,
       method: 'POST',
       data: { code: phoneCode },
     })

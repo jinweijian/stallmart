@@ -10,7 +10,7 @@ const h5AssetBudgetBytes = 650 * 1024
 const h5EntrypointBudgetBytes = 900 * 1024
 
 module.exports = {
-  appid: 'wxe4f198ad2958a1fe',
+  appid: process.env.WECHAT_APP_ID || 'touristappid',
   projectName: 'stallmart-mini',
   dateVersion: '20260404',
   createTimestamp: Date.now(),
@@ -31,7 +31,6 @@ module.exports = {
   },
   env: {
     TARO_APP_API_BASE_URL: defineEnv('TARO_APP_API_BASE_URL'),
-    TARO_APP_ENABLE_API_MOCK: defineEnv('TARO_APP_ENABLE_API_MOCK'),
     TARO_APP_ID: defineEnv('TARO_APP_ID'),
   },
   plugins: [],

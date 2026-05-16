@@ -4,6 +4,7 @@ import { useDidShow } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useUserStore } from '@/store/user'
 import { get, put } from '@/utils/request'
+import { createCustomerThemeVars, getCurrentCustomerTheme } from '@/utils/customer-theme'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface OrderItem {
@@ -35,6 +36,7 @@ const allOrders = ref<VendorOrder[]>([])
 const isLoading = ref(false)
 const isRefreshing = ref(false)
 const actionLoadingId = ref<string | null>(null)
+const currentTheme = ref(getCurrentCustomerTheme())
 
 // Tab mapping
 const statusMap: Record<number, string[]> = {
@@ -48,6 +50,7 @@ const tabs = ['全部', '待接单', '进行中', '已完成']
 
 // ─── Computed ────────────────────────────────────────────────────────────────
 const isVendor = computed(() => userStore.isVendor)
+const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
 
 const newOrderCount = computed(() =>
   allOrders.value.filter((o) => o.status === 'NEW').length
@@ -79,6 +82,7 @@ const statusClass: Record<string, string> = {
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────
 useDidShow(() => {
+  currentTheme.value = getCurrentCustomerTheme()
   if (!isVendor.value) return
   loadOrders()
 })
@@ -256,7 +260,7 @@ function getActionLoading(orderId: string): boolean {
 </script>
 
 <template>
-  <view class="order-manage-page">
+  <view class="order-manage-page" :style="themeVars">
     <!-- Not Vendor State -->
     <block v-if="!isVendor">
       <view class="not-vendor">

@@ -146,7 +146,7 @@
 约束：
 
 - 四个 tab 根节点必须绑定 `createCustomerThemeVars()` 输出的 CSS 变量。
-- 点单页顶部 banner、订单页顶部 banner、我的页邀请 banner 由 `pageThemes` 驱动。
+- 点单页顶部 banner、订单页顶部活动 banner、我的页邀请 banner 由 `pageThemes` 驱动；订单页顶部活动 banner 使用 `promoBanner` 展示尺寸，点单和确认订单顶部 banner 使用 `cartHeaderBanner` 展示尺寸。
 - 当前不展示配送/外卖、会员、优惠券、卡包、礼品、成长值入口。
 - 固定底部结算栏必须用 `tabBarReserve` 预留原生 tabBar。
 

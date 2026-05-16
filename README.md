@@ -70,7 +70,7 @@ docker compose up -d mysql redis
 
 ## 当前约束
 
-- 前端 mock 数据保持开启，除非明确进入联调，不修改 mock 策略。
+- 小程序和 H5 均走真实 API 数据链路，本地调试需先启动服务端或通过 `TARO_APP_API_BASE_URL` 指向可用后端。
 - 后端 API 修改必须同步 `docs/api-server/index.md`、`docs/api-app/index.md` 和测试说明。
 - 目录、命名、测试组织遵循 `docs/specification/` 下的规范。
 - `site/` 是个人技术官网，只展示个人技术介绍，不承载业务、交易或 SaaS 叙事。

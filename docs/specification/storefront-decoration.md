@@ -119,7 +119,8 @@
 | 我的页菜单 icon | `menuIcon` | `44rpx x 44rpx` |
 | 数量步进器按钮 | `qtyStepper` | `44rpx x 44rpx` |
 | 订单进度 icon | `progressIcon` | `44rpx x 44rpx` |
-| 点单/订单页顶部 banner | `cartHeaderBanner` | `692rpx x 120rpx` |
+| 点单/确认订单页顶部 banner | `cartHeaderBanner` | `692rpx x 120rpx` |
+| 订单页顶部活动 banner | `promoBanner` | `692rpx x 220rpx` |
 | 我的页邀请 banner | `myInviteBanner` | `692rpx x 124rpx` |
 | 页面底部操作栏 | `bottomBarHeight` | `128rpx` |
 | 首页购物车浮条底部偏移 | `cartBarBottomOffset` | `60rpx`，用于控制浮条贴近原生 tabBar 的视觉位置 |

@@ -56,7 +56,7 @@ docker compose logs -f redis
 docker compose up -d app-h5
 ```
 
-浏览器打开 `http://localhost:10086/`。该服务默认关闭 mock，通过 `TARO_APP_ID=wx-stallmart-demo` 调用 `/app/bootstrap`，并通过 `TARO_APP_API_BASE_URL=http://localhost:8081/api/v1` 访问 Docker 后端。
+浏览器打开 `http://localhost:10086/`。该服务通过 `TARO_APP_ID=wx-stallmart-demo` 调用 `/app/bootstrap`，并通过 `TARO_APP_API_BASE_URL=http://localhost:8081/api/v1` 访问 Docker 后端。
 
 停止服务：
 
@@ -98,7 +98,6 @@ docker compose down -v
 - `STALLMART_CORS_ALLOWED_ORIGINS`
 - `WECHAT_APP_ID`
 - `WECHAT_APP_SECRET`
-- `TARO_APP_ENABLE_API_MOCK`
 - `TARO_APP_ID`
 - `TARO_APP_API_BASE_URL`
 - `TARO_APP_H5_PORT`

@@ -34,23 +34,18 @@
 
 ## 高优先级
 
-### 小程序 mock 数据仍未进入真实联调
+### 小程序已切换真实 API 链路
 
-当前 `app/src/app-config/index.ts` 中 `ENABLE_API_MOCK = true`。本次初始化不修改前端 mock 策略。
+当前小程序请求层已移除本地模拟数据分支，页面数据来自 `/api/v1` 真实接口。
 
 影响：
 
-- 页面行为不能代表真实 API 联调结果。
-- 服务端新增接口需要通过服务端测试验证。
+- 本地调试前需要启动服务端或配置 `TARO_APP_API_BASE_URL`。
+- 服务端新增接口仍需要通过服务端测试和小程序构建验证。
 
-### 小程序 endpoint 缺失
+### 小程序 endpoint 常量已收敛
 
-当前代码仍引用：
-
-- `API_ENDPOINTS.USER_BIND_PHONE`
-- `API_ENDPOINTS.STORE_INFO`
-
-本次按要求不改小程序 mock 和前端业务代码，后续联调前需要单独修复。
+小程序代码已使用现有 endpoint key：手机号绑定走 `API_ENDPOINTS.AUTH_BIND_PHONE`，店铺详情和更新走 `API_ENDPOINTS.STORE_DETAIL`。
 
 ## 中优先级
 

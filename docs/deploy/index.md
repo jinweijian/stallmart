@@ -44,7 +44,7 @@ docker compose up -d
 docker compose up -d app-h5
 ```
 
-浏览器打开 `http://localhost:10086/`。`app-h5` 默认关闭 mock，使用 `TARO_APP_ID=wx-stallmart-demo` 触发 `/app/bootstrap`，通过 `TARO_APP_API_BASE_URL=http://localhost:8081/api/v1` 访问 Docker 暴露的后端 API，并通过 `TARO_APP_H5_PORT=10086` 固定 Taro H5 dev server 端口。API 容器默认通过 `STALLMART_CORS_ALLOWED_ORIGINS` 允许该 H5 调试源跨域访问。
+浏览器打开 `http://localhost:10086/`。`app-h5` 使用 `TARO_APP_ID=wx-stallmart-demo` 触发 `/app/bootstrap`，通过 `TARO_APP_API_BASE_URL=http://localhost:8081/api/v1` 访问 Docker 暴露的后端 API，并通过 `TARO_APP_H5_PORT=10086` 固定 Taro H5 dev server 端口。API 容器默认通过 `STALLMART_CORS_ALLOWED_ORIGINS` 允许该 H5 调试源跨域访问。
 
 本地 Redis 默认映射到 `127.0.0.1:6380`，避免和本机已有 Redis 的 `6379` 冲突；容器内部仍通过 `redis:6379` 通信。
 `docker/mysql/init/01-init.sql` 不再创建业务表，业务 schema 和 seed 由 API 启动时的 Flyway migration 管理。

@@ -6,7 +6,9 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| `src/app-config/index.ts` | API base URL、endpoint、Storage key、颜色、分页、购物车配置。 |
+| `src/app-config/env.ts` | API base URL 和环境配置。 |
+| `src/app-config/endpoints.ts` | endpoint 常量。 |
+| `src/app-config/index.ts` | 设计 token、Storage key、分页和业务常量出口。 |
 | `src/utils/request.ts` | Taro request 统一封装。 |
 | `src/utils/auth.ts` | 微信登录、手机号绑定、token refresh、logout。 |
 | `src/utils/storage.ts` | Storage 类型安全封装和 token 快捷方法。 |
@@ -26,8 +28,8 @@
 - 页面中禁止硬编码完整 API 地址。
 - API base URL 只允许从 `API_BASE_URL` 获取。
 - 切换环境必须通过配置，不在页面里判断环境。
-- 微信小程序 request 合法域名未配置前，`ENABLE_API_MOCK` 默认开启，业务请求由 `src/mock/customer-api.ts` 返回后端契约形状的 mock 数据，不触发真实网络请求。
-- 本阶段 app 端优先使用 H5 联调真实 API。H5 使用 `TARO_APP_ENABLE_API_MOCK=false` 关闭 mock，并通过 `/app/bootstrap` 按 AppID 拉取启动主题；小程序 request 合法域名申请完成前，weapp 只要求构建和 mock 兜底保持可用。
+- 小程序和 H5 都走真实 API，请求失败时页面展示 loading/error/empty 状态，不回退到本地模拟数据。
+- H5 与小程序启动都通过 `/app/bootstrap` 按 AppID 拉取启动主题；本地调试可以用 `TARO_APP_ID=wx-stallmart-demo`。
 
 ## endpoint 命名规则
 
@@ -55,10 +57,7 @@ STYLE_SPECS: (styleId: string | number) => `/styles/${styleId}/specs`
 - 函数式 endpoint 的参数名称必须与后端路径变量一致。
 - endpoint 新增或修改必须同步 [../api-server/index.md](../api-server/index.md)。
 
-当前已知问题：
-
-- `USER_BIND_PHONE` 被代码引用但未定义，应改用或补齐 `AUTH_BIND_PHONE`。
-- `STORE_INFO` 被代码引用但未定义，应改用或补齐 `STORE_DETAIL`。
+当前代码不允许引用未定义 endpoint key；手机号绑定使用 `AUTH_BIND_PHONE`，店铺详情/更新使用 `STORE_DETAIL`。
 
 ## 请求封装规则
 
@@ -98,16 +97,16 @@ patch()
 
 ## 管理端接口变更对小程序的影响
 
-管理端登录图片验证码、后台账号密码盐和 `/admin/*/operation-logs` 操作日志接口只服务 Nuxt 管理端，不属于小程序业务 endpoint。小程序仍只通过 `Authorization: Bearer <token>` 调用顾客端接口，mock 契约和 H5 真实 API 联调流程不变。
+管理端登录图片验证码、后台账号密码盐和 `/admin/*/operation-logs` 操作日志接口只服务 Nuxt 管理端，不属于小程序业务 endpoint。小程序仍只通过 `Authorization: Bearer <token>` 调用顾客端真实接口。
 
-## 当前顾客端 mock 契约
+## 当前顾客端真实接口契约
 
-在 `ENABLE_API_MOCK = true` 时，以下接口由 `src/mock/customer-api.ts` 直接返回，不经过 `Taro.request`：
+小程序通过 `src/utils/request.ts` 调用以下真实接口：
 
 | 方法 | 路径 | 页面 |
 | --- | --- | --- |
 | `GET` | `/stores/{id}` | 首页店铺信息和风格包。 |
-| `GET` | `/app/bootstrap` | 按 AppID 获取启动店铺与主题，关闭 mock 后真实请求。 |
+| `GET` | `/app/bootstrap` | 按 AppID 获取启动店铺与主题。 |
 | `GET` | `/stores/qr/{qrCode}` | 扫码进店，返回同 `/stores/{id}` 的店铺与装修结构。 |
 | `GET` | `/stores/{storeId}/products` | 首页商品列表和加购。 |
 | `GET` | `/products/{id}` | 商品详情，返回商品基础字段、`specIds` 和 `skus`。 |
@@ -117,9 +116,9 @@ patch()
 | `PUT` | `/orders/{id}/reject` | 我的订单取消。 |
 | `GET` | `/orders/counts` | 我的页订单统计。 |
 | `GET` | `/user/profile` | 我的页用户资料。 |
-| `GET` | `/cart` | 购物车列表，后端已提供接口；当前小程序仍使用本地 mock/Storage。 |
-| `POST` | `/cart/items` | 加入购物车，后端已提供接口；当前小程序仍使用本地 mock/Storage。 |
-| `DELETE` | `/cart/stores/{storeId}` | 清空店铺购物车，后端已提供接口；当前小程序仍使用本地 mock/Storage。 |
+| `GET` | `/cart` | 购物车列表，后端已提供接口；当前点单页仍使用本地 Storage 保存待提交商品快照。 |
+| `POST` | `/cart/items` | 加入购物车，后端已提供接口；后续购物车 Store 化时接入。 |
+| `DELETE` | `/cart/stores/{storeId}` | 清空店铺购物车，后端已提供接口；后续购物车 Store 化时接入。 |
 
 页面内使用 ViewModel；后端字段进入页面前必须做适配，例如：
 

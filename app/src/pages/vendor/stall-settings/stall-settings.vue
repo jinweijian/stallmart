@@ -4,6 +4,7 @@ import { useDidShow } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useUserStore } from '@/store/user'
 import { get, put } from '@/utils/request'
+import { createCustomerThemeVars, getCurrentCustomerTheme } from '@/utils/customer-theme'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface StoreSettings {
@@ -30,14 +31,17 @@ const isLoading = ref(false)
 const isSaving = ref(false)
 const isUploadingLogo = ref(false)
 const localLogoPath = ref('') // local temp path for preview
+const currentTheme = ref(getCurrentCustomerTheme())
 
 // ─── Computed ────────────────────────────────────────────────────────────────
 const isVendor = computed(() => userStore.isVendor)
 const isOpen = computed(() => settings.value.status === 'OPEN')
+const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
 const hasChanges = ref(false)
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────
 useDidShow(() => {
+  currentTheme.value = getCurrentCustomerTheme()
   if (!isVendor.value) return
   loadSettings()
 })
@@ -211,7 +215,7 @@ function goToCustomerHome() {
 </script>
 
 <template>
-  <view class="stall-settings-page">
+  <view class="stall-settings-page" :style="themeVars">
     <!-- Not Vendor State -->
     <block v-if="!isVendor">
       <view class="not-vendor">

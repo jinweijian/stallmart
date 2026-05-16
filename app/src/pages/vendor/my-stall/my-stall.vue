@@ -5,6 +5,7 @@ import Taro from '@tarojs/taro'
 import { useUserStore } from '@/store/user'
 import { get, put } from '@/utils/request'
 import { API_ENDPOINTS } from '@/config'
+import { createCustomerThemeVars, getCurrentCustomerTheme } from '@/utils/customer-theme'
 
 // ─── Types ────────────────────────────────────────────────────────────────
 interface StallInfo {
@@ -43,9 +44,11 @@ const stallInfo = ref<StallInfo | null>(null)
 const recentOrders = ref<VendorOrder[]>([])
 const isLoading = ref(true)
 const isToggling = ref(false)
+const currentTheme = ref(getCurrentCustomerTheme())
 
 // ─── Computed ───────────────────────────────────────────────────────────────
 const isVendor = computed(() => userStore.isVendor)
+const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
 
 const statusLabel: Record<string, string> = {
   NEW: '新订单',
@@ -67,6 +70,7 @@ const statusClass: Record<string, string> = {
 
 // ─── Lifecycle ──────────────────────────────────────────────────────────────
 useDidShow(() => {
+  currentTheme.value = getCurrentCustomerTheme()
   if (!isVendor.value) return
   loadData()
 })
@@ -115,7 +119,7 @@ async function toggleOpen() {
   isToggling.value = true
   const newStatus = stallInfo.value.isOpen ? 'CLOSED' : 'OPEN'
   try {
-    await put(API_ENDPOINTS.STORE_INFO(stallInfo.value.storeId), {
+    await put(API_ENDPOINTS.STORE_DETAIL(stallInfo.value.storeId), {
       status: newStatus,
     })
     stallInfo.value.isOpen = !stallInfo.value.isOpen
@@ -177,7 +181,7 @@ function getItemSummary(items: OrderItem[]): string {
 </script>
 
 <template>
-  <view class="my-stall-page">
+  <view class="my-stall-page" :style="themeVars">
     <!-- Not Vendor State -->
     <block v-if="!isVendor">
       <view class="not-vendor">

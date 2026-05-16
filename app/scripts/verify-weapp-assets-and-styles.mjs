@@ -47,7 +47,8 @@ const sourceStyleFiles = [
 ]
 const maxDisplayAssetBytes = 512 * 1024
 const minNonBlankAssetBytes = 512
-const maxTabbarAssetBytes = 40 * 1024
+const maxTabbarAssetBytes = 20 * 1024
+const maxTabbarIconPixels = 96
 
 const failures = []
 
@@ -71,7 +72,54 @@ for (const file of requiredSourceAssets) {
     failures.push(`Storefront display asset is too large for mini program local rendering: ${file}`)
   }
   if (file.includes('/tabbar/') && /\.(png)$/i.test(file) && assetBytes > maxTabbarAssetBytes) {
-    failures.push(`Tabbar icon exceeds WeChat 40KB limit: ${file}`)
+    failures.push(`Tabbar icon is too large for stable WeChat DevTools loading: ${file}`)
+  }
+}
+
+const builtAppJsonPath = resolve(projectRoot, 'dist/app.json')
+if (existsSync(builtAppJsonPath)) {
+  const appJson = JSON.parse(readFileSync(builtAppJsonPath, 'utf8'))
+  const tabBarItems = appJson.tabBar?.list ?? []
+
+  tabBarItems.forEach((item, index) => {
+    for (const key of ['iconPath', 'selectedIconPath']) {
+      const iconPath = item[key]
+      if (!iconPath) {
+        failures.push(`dist/app.json tabBar item ${index} missing ${key}`)
+        continue
+      }
+
+      const builtIconPath = resolve(projectRoot, 'dist', iconPath)
+      if (!existsSync(builtIconPath)) {
+        failures.push(`dist/app.json tabBar item ${index} ${key} points to missing file: ${iconPath}`)
+        continue
+      }
+
+      const iconBytes = statSync(builtIconPath).size
+      if (iconBytes > maxTabbarAssetBytes) {
+        failures.push(`dist/app.json tabBar item ${index} ${key} is too large: ${iconPath}`)
+      }
+
+      const { width, height } = readPngSize(builtIconPath)
+      if (width > maxTabbarIconPixels || height > maxTabbarIconPixels) {
+        failures.push(`dist/app.json tabBar item ${index} ${key} exceeds ${maxTabbarIconPixels}px: ${iconPath}`)
+      }
+    }
+  })
+} else {
+  failures.push('Missing build output: dist/app.json')
+}
+
+function readPngSize(filePath) {
+  const header = readFileSync(filePath)
+  const signature = header.subarray(0, 8).toString('hex')
+  if (signature !== '89504e470d0a1a0a') {
+    throw new Error(`${filePath} is not a PNG file`)
+  }
+
+  return {
+    width: header.readUInt32BE(16),
+    height: header.readUInt32BE(20),
   }
 }
 
@@ -101,9 +149,13 @@ const appConfigPath = resolve(projectRoot, 'src/app-config/index.ts')
 const appConfigEndpointPath = resolve(projectRoot, 'src/app-config/endpoints.ts')
 const packageJsonPath = resolve(projectRoot, 'package.json')
 const tabbarOptimizerPath = resolve(projectRoot, 'scripts/optimize-tabbar-icons.mjs')
-const mockCustomerApiPath = resolve(projectRoot, 'src/mock/customer-api.ts')
+const requestUtilPath = resolve(projectRoot, 'src/utils/request.ts')
+const requestMockAdapterPath = resolve(projectRoot, 'src/utils/request/mock-adapter.ts')
+const appEnvPath = resolve(projectRoot, 'src/app-config/env.ts')
+const mockDirectoryPath = resolve(projectRoot, 'src/mock')
 const customerIndexVuePath = resolve(projectRoot, 'src/pages/customer/index/index.vue')
 const customerIndexScssPath = resolve(projectRoot, 'src/pages/customer/index/index.scss')
+const customerMyOrdersScssPath = resolve(projectRoot, 'src/pages/customer/my-orders/my-orders.scss')
 const customerThemeUtilPath = resolve(projectRoot, 'src/utils/customer-theme.ts')
 const customerDomainPaths = [
   resolve(projectRoot, 'src/domain/customer/storefront-theme.ts'),
@@ -202,26 +254,38 @@ if (!existsSync(tabbarOptimizerPath)) {
   }
 }
 
-if (existsSync(mockCustomerApiPath)) {
-  const source = readFileSync(mockCustomerApiPath, 'utf8')
-  const requiredMockSnippets = [
-    "iconKey: 'category1'",
-    "iconUrl: '/static/storefront/forest/icons/category-1.png'",
-    "iconKey: 'category2'",
-    "iconUrl: '/static/storefront/forest/icons/category-2.png'",
-    'interface MockProductSkuVO',
-    'interface MockSpecVO',
-    "status: 'OPEN'",
-    "status: 'ACTIVE'",
-    "specIds: [1, 2]",
-    'skus:',
-    'unitPrice: 18',
-    'specsText:',
-  ]
+const forbiddenMockFiles = [
+  requestMockAdapterPath,
+  mockDirectoryPath,
+]
 
-  for (const snippet of requiredMockSnippets) {
-    if (!source.includes(snippet)) {
-      failures.push(`src/mock/customer-api.ts missing provided category icon default: ${snippet}`)
+for (const file of forbiddenMockFiles) {
+  if (existsSync(file)) {
+    failures.push(`App mock artifact must be removed: ${file.replace(`${projectRoot}/`, '')}`)
+  }
+}
+
+const mockFreeSourceChecks = [
+  {
+    path: requestUtilPath,
+    snippets: ['resolveMockResponse', 'mock-adapter'],
+  },
+  {
+    path: appEnvPath,
+    snippets: ['ENABLE_API_MOCK', 'TARO_APP_ENABLE_API_MOCK'],
+  },
+  {
+    path: customerIndexVuePath,
+    snippets: ['createMockStore', 'getMockProducts'],
+  },
+]
+
+for (const check of mockFreeSourceChecks) {
+  if (!existsSync(check.path)) continue
+  const source = readFileSync(check.path, 'utf8')
+  for (const snippet of check.snippets) {
+    if (source.includes(snippet)) {
+      failures.push(`${check.path.replace(`${projectRoot}/`, '')} still contains mock hook: ${snippet}`)
     }
   }
 }
@@ -312,6 +376,20 @@ if (existsSync(customerIndexScssPath)) {
   for (const snippet of requiredScssSnippets) {
     if (!source.includes(snippet)) {
       failures.push(`customer/index.scss missing forced storefront size token: ${snippet}`)
+    }
+  }
+}
+
+if (existsSync(customerMyOrdersScssPath)) {
+  const source = readFileSync(customerMyOrdersScssPath, 'utf8')
+  const requiredScssSnippets = [
+    '--asset-promo-banner-width',
+    '--asset-promo-banner-height',
+  ]
+
+  for (const snippet of requiredScssSnippets) {
+    if (!source.includes(snippet)) {
+      failures.push(`customer/my-orders.scss missing order banner size token: ${snippet}`)
     }
   }
 }
