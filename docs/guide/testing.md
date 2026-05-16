@@ -46,9 +46,7 @@ cd app
 npm run test:weapp-assets
 ```
 
-该脚本会检查森系风格包 banner、`assetSizes` 展示尺寸 token、`pageThemes` 跨页配置、`categoryIconLibrary` 分类 icon 库、首页自动轮播结构、四个顾客端 tab 是否接入 `src/utils/customer-theme.ts`、关键静态资源和微信端样式产物，并校验顾客端 mock 数据保留后端 DTO 关键字段，例如商品 `mainImageUrl/specIds/skus`、规格 `/styles/{styleId}/specs`、订单 item `unitPrice/specsText` 和订单统计 `total/pending/preparing/completed`。
-
-前端仍使用 mock 数据时，`src/mock/customer-api.ts` 必须返回与真实接口一致的数据形状；页面内部可以再转换为 ViewModel，但不得依赖只存在于 mock 的字段。
+该脚本会检查森系风格包 banner、`assetSizes` 展示尺寸 token、`pageThemes` 跨页配置、`categoryIconLibrary` 分类 icon 库、首页自动轮播结构、四个顾客端 tab 是否接入 `src/utils/customer-theme.ts`、关键静态资源和微信端样式产物，并校验小程序端不存在本地模拟数据入口。
 
 替换小程序原生 tabBar 图标时，先将 8 个源图放入临时素材目录，再运行：
 
@@ -69,30 +67,28 @@ npm install
 npm run build
 ```
 
-管理端不维护独立 mock 数据，页面通过后端 `/admin/*` 接口读取初始化内存数据。
 管理端不维护独立 mock 数据，页面通过后端 `/admin/*` 接口读取 Flyway dev seed 或真实数据库数据。
 
 ## H5 真实 API 调试
 
-小程序域名未配置前，优先用 H5 验证真实数据链路。开发调试：
+小程序和 H5 都走真实数据链路。H5 开发调试：
 
 ```bash
 cd app
-TARO_APP_ENABLE_API_MOCK=false TARO_APP_ID=wx-stallmart-demo npm run dev:h5
+TARO_APP_ID=wx-stallmart-demo npm run dev:h5
 ```
 
 H5 构建验收：
 
 ```bash
 cd app
-TARO_APP_ENABLE_API_MOCK=false TARO_APP_ID=wx-stallmart-demo npm run build:h5
+TARO_APP_ID=wx-stallmart-demo npm run build:h5
 ```
 
 Windows CMD 可使用：
 
 ```cmd
 cd app
-set TARO_APP_ENABLE_API_MOCK=false
 set TARO_APP_ID=wx-stallmart-demo
 npm run dev:h5
 ```
@@ -110,9 +106,9 @@ curl -s -D - -o /tmp/stallmart-h5-cart.png http://localhost:10086/static/storefr
 file /tmp/stallmart-h5-cart.png
 ```
 
-预期 H5 返回 `HTTP/1.1 200 OK`，且正文不是目录索引；静态图片必须返回真实图片类型，不得回退为 H5 `index.html`。该容器默认关闭 mock，并通过 `TARO_APP_API_BASE_URL=http://localhost:8081/api/v1` 访问 Docker 后端。
+预期 H5 返回 `HTTP/1.1 200 OK`，且正文不是目录索引；静态图片必须返回真实图片类型，不得回退为 H5 `index.html`。该容器通过 `TARO_APP_API_BASE_URL=http://localhost:8081/api/v1` 访问 Docker 后端。
 
-小程序 request 合法域名申请完成前，weapp 构建需要保持通过，但真实 API 联调先不作为阻塞项：
+小程序 request 合法域名申请完成前，weapp 构建需要保持通过；真实接口访问需要配置合法域名：
 
 ```bash
 cd app

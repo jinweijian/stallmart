@@ -46,21 +46,27 @@ const stats = ref({
 })
 
 async function loadStats() {
-  if (!isLoggedIn.value) return
+  if (!isLoggedIn.value && !isVendor.value) {
+    resetStats()
+    return
+  }
   try {
-    // Mock data — replace with real API call when backend is ready
-    stats.value = {
-      pending: 0,
-      inProgress: 0,
-      completed: 0,
-      total: 0,
-    }
+    resetStats()
     const res = await get<OrderCountsResponse>('/orders/counts')
     if (res?.data) {
       stats.value = normalizeOrderCounts(res.data)
     }
   } catch {
     // keep defaults
+  }
+}
+
+function resetStats() {
+  stats.value = {
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    total: 0,
   }
 }
 
@@ -134,6 +140,7 @@ function goToVendorEntry() {
 function switchViewMode(mode: 'CUSTOMER' | 'VENDOR') {
   if (viewMode.value === mode) return
   userStore.setViewMode(mode)
+  void loadStats()
   Taro.showToast({
     title: mode === 'VENDOR' ? '已切到商家视角' : '已切到用户视角',
     icon: 'none',
@@ -284,9 +291,9 @@ function maskPhone(phone: string): string {
       </view>
     </view>
 
-    <view v-if="isLoggedIn" class="view-mode-card">
+    <view class="view-mode-card">
       <view class="view-mode-copy">
-        <text class="view-mode-title">当前身份</text>
+        <text class="view-mode-title">当前视角</text>
         <text class="view-mode-desc">
           {{ isVendor ? '商家视角可处理订单状态' : '用户视角可浏览、加购并下单' }}
         </text>
@@ -310,7 +317,7 @@ function maskPhone(phone: string): string {
     </view>
 
     <!-- ==================== Vendor Entry ==================== -->
-    <view v-if="isLoggedIn && isVendor" class="vendor-card" @tap="goToVendorEntry">
+    <view v-if="isVendor" class="vendor-card" @tap="goToVendorEntry">
       <view class="vendor-icon-bg">
         <text class="vendor-icon-emoji">🏪</text>
       </view>

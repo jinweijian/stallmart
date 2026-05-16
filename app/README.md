@@ -34,8 +34,8 @@ npm run dev:weapp
 
 ## 当前约束
 
-- 微信小程序域名未配置前，weapp 侧 `ENABLE_API_MOCK` 保持开启，前端仍使用 mock 数据。
-- 本阶段 app 端优先使用 H5 做真实 API 调试：`TARO_APP_ENABLE_API_MOCK=false TARO_APP_ID=wx-stallmart-demo npm run dev:h5`。
+- 小程序和 H5 均使用真实 API；本地运行前先启动服务端，或通过 `TARO_APP_API_BASE_URL` 指向可用后端。
+- H5 真实 API 调试：`TARO_APP_ID=wx-stallmart-demo npm run dev:h5`。
 - Docker H5 联调使用 `cd ../docker && docker compose up -d app-h5`，浏览器访问 `http://localhost:10086/`，端口由 `TARO_APP_H5_PORT` 控制。
 - 业务页面不得直接调用 `Taro.request`，统一走 `src/utils/request.ts`。
 - 新增 endpoint 必须写入 `src/app-config/index.ts` 并同步 API 文档。

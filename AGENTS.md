@@ -26,6 +26,6 @@
 
 ## 当前项目关键风险
 
-- 小程序仍处于 mock 数据模式，联调前不得误判为真实 API 数据。
+- 小程序已切换为真实 API 数据链路；本地调试前需启动服务端或配置 `TARO_APP_API_BASE_URL` 指向可用后端。
 - 管理端已落地到 `web/`，Docker `admin-web` build context 必须保持指向 `web/`。
 - 数据库初始化当前以 `docker/mysql/init/01-init.sql` 为准，服务端持久化接入后需要补迁移策略。

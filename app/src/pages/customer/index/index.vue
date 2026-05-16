@@ -4,7 +4,6 @@ import { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import {
   API_ENDPOINTS,
-  DEFAULT_STORE_THEME,
   type StorefrontBannerConfig,
   type StorefrontCategoryConfig,
 } from '@/config'
@@ -12,11 +11,9 @@ import { useUserStore } from '@/store/user'
 import { get } from '@/utils/request'
 import { createCustomerThemeVars, persistCustomerTheme } from '@/utils/customer-theme'
 import {
-  createMockStore,
   normalizeStore,
   resolveCategories,
   resolveCurrentTheme,
-  resolveFallbackCategories,
   type StoreInfo,
 } from '@/domain/customer/storefront-theme'
 import {
@@ -24,7 +21,6 @@ import {
   createSelectedCartProduct,
   filterProductsByCategory,
   findSelectedSku,
-  getMockProducts,
   getStatusText,
   isProductDisabled,
   isSkuOptionAvailable,
@@ -39,7 +35,7 @@ import {
 } from '@/domain/customer/product-catalog'
 
 const userStore = useUserStore()
-const categories = ref<StorefrontCategoryConfig[]>(resolveFallbackCategories(DEFAULT_STORE_THEME))
+const categories = ref<StorefrontCategoryConfig[]>([])
 
 const storeInfo = ref<StoreInfo | null>(null)
 const products = ref<Product[]>([])
@@ -132,11 +128,13 @@ async function loadData() {
     products.value = (productsRes.data || []).map(normalizeProduct)
     styleSpecs.value = specsRes.data || []
     Taro.setStorageSync('current_store_id', storeInfo.value.id)
-  } catch {
-    storeInfo.value = createMockStore()
-    categories.value = resolveCategories(storeInfo.value)
-    products.value = getMockProducts()
+  } catch (error) {
+    console.error('[CustomerIndex] Load store data failed:', error)
+    storeInfo.value = null
+    categories.value = []
+    products.value = []
     styleSpecs.value = []
+    Taro.showToast({ title: '店铺数据加载失败，请下拉刷新', icon: 'none' })
   } finally {
     persistCustomerTheme(currentTheme.value)
     isLoading.value = false
@@ -384,11 +382,12 @@ onBeforeUnmount(() => {
             </view>
 
             <view
+              v-if="!isVendorMode"
               class="add-button"
               :class="{ disabled: isProductDisabled(product) }"
               @tap.stop="openProductDetail(product)"
             >
-              <text>{{ isVendorMode ? '看' : '+' }}</text>
+              <text>+</text>
             </view>
           </view>
         </scroll-view>

@@ -49,8 +49,9 @@
 - 店铺信息和商品列表不能硬编码到页面中。
 - 店铺装修必须消费服务端 `decoration` 和本地 `STORE_THEME_PACKAGES` 合并后的配置，颜色、文案、icon、banner、分类 icon 库和展示尺寸都不得散落硬编码。首页轮播 banner 必须由合并后的 `banners` 驱动，头图和轮播默认只展示图片本身，不在图片上追加演示文案或符号层；分类入口必须来自服务端 `decoration.categories`，分类 icon 由分类的 `iconKey` 解析得到，icon 与图片展示大小必须由 `assetSizes` 统一约束。首页需要将合并后的主题缓存给点单、订单、我的三个 tab 使用。完整规则见 [storefront-decoration.md](storefront-decoration.md)。
 - 小程序启动时 App Shell 可调用 `API_ENDPOINTS.APP_BOOTSTRAP`，按 AppID 获取当前商家基础配置和主题，成功后写入 `src/utils/customer-theme.ts` 缓存；失败时继续使用缓存或默认主题。
+- 商家视角和 `pages/vendor` 分包页面必须读取同一份 `src/utils/customer-theme.ts` 主题变量，不能回退到硬编码默认商家色。
 - 商品详情弹层必须从商品 `specIds/skus` 和风格规格接口 `/styles/{styleId}/specs` 生成 SKU 选项；不可售 SKU 不得允许选择。加入购物车时保存商品快照、选中 SKU id、规格文案和最终价格。
-- 商家视角下首页不展示购物车、加购、结算和购买数量控件；商品详情仍可查看规格、状态、库存、销量。
+- 商家视角下首页不展示购物车、商品加购按钮、结算和购买数量控件；商品详情仍可查看规格、状态、库存、销量。
 - 搜索、分类筛选只处理当前页面视图状态，持久化规则另行设计。
 
 ### 购物车模块
@@ -122,7 +123,7 @@
 - 不在顾客端暴露摊主操作按钮。
 - 只有当前身份为商家视角时才展示接单、拒单、备餐、待取餐、完成等摊主操作。
 - 订单状态文案必须与后端状态枚举映射统一。
-- 顾客端订单页展示风格必须读取 `src/utils/customer-theme.ts` 生成的 CSS 变量，顶部 banner、状态色、进度 icon 和底部 tabBar 预留由风格包 `pageThemes.orders` 与 `assetSizes` 驱动。
+- 顾客端订单页展示风格必须读取 `src/utils/customer-theme.ts` 生成的 CSS 变量，顶部 banner、状态色、进度 icon 和底部 tabBar 预留由风格包 `pageThemes.orders` 与 `assetSizes` 驱动；订单页顶部活动 banner 使用 `promoBanner` 展示尺寸，避免 `692rpx x 220rpx` 素材被压缩。
 - 订单卡必须常显取餐码，展开状态只用于完整明细和操作按钮；列表底部必须保留足够空间，避免最后一张订单被原生 tabBar 遮挡。
 - 商家视角订单列表使用 `API_ENDPOINTS.VENDOR_ORDERS` 或等价 `/vendor/orders` 数据源，状态流转必须遵循 `NEW -> ACCEPTED -> PREPARING -> READY -> COMPLETED`，拒单只能从新订单或指定可拒绝状态进入。
 
@@ -148,7 +149,7 @@
 - 默认头像使用 `/static/default-avatar.png`。
 - 不直接操作 token，必须通过 auth/storage 工具。
 - 我的页展示风格必须读取 `src/utils/customer-theme.ts` 生成的 CSS 变量。当前只展示现有功能入口，不新增会员、优惠券、卡包、礼品、成长值。
-- 当前身份视角必须本地持久化；切回用户视角后购物车、下单、我的订单与普通用户一致。
+- 当前身份视角必须本地持久化，切换控件在未登录状态下也必须可见；切回用户视角后购物车、下单、我的订单与普通用户一致。
 
 ## 摊主端业务模块
 

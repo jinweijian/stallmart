@@ -8,7 +8,7 @@
 | --- | --- |
 | [guide/](guide/index.md) | 开发环境、配置、测试等日常指引。 |
 | [api-server/](api-server/index.md) | 服务端 API 契约。 |
-| [api-app/](api-app/index.md) | 小程序端 API、状态和 mock 约束。 |
+| [api-app/](api-app/index.md) | 小程序端 API、状态和真实接口约束。 |
 | [specification/](specification/index.md) | 架构、服务端、小程序、文档和质量规范。 |
 | [deploy/](deploy/index.md) | Docker、本地部署和发布检查。 |
 | [standards/](standards/README.md) | 通用代码风格、安全、Git 和 Review 规则。 |

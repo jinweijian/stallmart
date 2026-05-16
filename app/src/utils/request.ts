@@ -1,7 +1,6 @@
 import Taro from '@tarojs/taro'
 import { buildUrl } from './request/url-builder'
 import { createRequestHeader } from './request/headers'
-import { resolveMockResponse } from './request/mock-adapter'
 import { businessFailure, httpFailure, networkFailure, requestFailure } from './request/error-mapper'
 import { refreshTokenAndRetry } from './request/token-refresh'
 import type { ApiResponse, RequestOptions } from './request/types'
@@ -38,10 +37,6 @@ async function handleResponse(
 
 async function doRequest(options: RequestOptions, token?: string): Promise<ApiResponse> {
   const { url, method = 'GET', data, params, header = {}, timeout, skipAuth } = options
-  const mockResponse = resolveMockResponse(options)
-  if (mockResponse) {
-    return mockResponse
-  }
 
   return new Promise((resolve, reject) => {
     Taro.request({

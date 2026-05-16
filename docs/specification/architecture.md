@@ -17,7 +17,7 @@ docs/     开发文档
 后台管理 -> web/app/api/stallmart-api.ts -> /api/v1/admin/* -> server 领域服务
 ```
 
-当前小程序仍启用 mock 数据；联调前不要把页面数据视为真实后端数据。
+当前小程序与 H5 都通过 `app/src/utils/request.ts` 访问真实 `/api/v1` 接口；本地调试前需要启动服务端或配置 `TARO_APP_API_BASE_URL`。
 
 ## 服务端结构
 

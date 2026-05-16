@@ -210,19 +210,9 @@ async function loadOrders(isRefresh = false) {
 
     isEmpty.value = orders.value.length === 0
     hasMore.value = list.length >= 20
-
-    // Fallback to mock data if API returns empty
-    if (orders.value.length === 0 && isRefresh) {
-      orders.value = getMockOrders()
-      isEmpty.value = false
-    }
   } catch (err) {
     console.error('[MyOrders] Load orders failed:', err)
-    // Fallback to mock data on error
-    if (isRefresh && orders.value.length === 0) {
-      orders.value = getMockOrders()
-      isEmpty.value = false
-    }
+    if (isRefresh) isEmpty.value = orders.value.length === 0
     Taro.showToast({ title: '加载失败，请下拉刷新', icon: 'none' })
   } finally {
     isLoading.value = false
@@ -468,96 +458,6 @@ function canConfirmPickup(order: Order): boolean {
 
 function isActionLoading(order: Order): boolean {
   return actionLoadingId.value === order.id
-}
-
-// ============================================================
-// Mock Data (for development fallback)
-// ============================================================
-function getMockOrders(): Order[] {
-  const now = Date.now()
-  return [
-    {
-      id: '1',
-      orderNo: 'SM20260402001',
-      storeId: 'store-001',
-      storeName: '老王煎饼摊',
-      status: 'READY',
-      confirmCode: 'A108',
-      totalAmount: 15.0,
-      remark: '不要香菜',
-      createdAt: new Date(now - 10 * 60000).toISOString(),
-      items: [
-        { productId: 'p1', productName: '招牌煎饼果子', quantity: 1, unitPrice: 11.0, specs: [{ name: '加料', option: '加蛋+薄脆', extraPrice: 2 }] },
-        { productId: 'p2', productName: '现磨豆浆', quantity: 1, unitPrice: 4.0, specs: [{ name: '温度', option: '热/大杯', extraPrice: 0 }] },
-      ],
-    },
-    {
-      id: '2',
-      orderNo: 'SM20260402002',
-      storeId: 'store-002',
-      storeName: '小李烤串',
-      status: 'PREPARING',
-      confirmCode: 'B205',
-      totalAmount: 42.0,
-      createdAt: new Date(now - 25 * 60000).toISOString(),
-      items: [
-        { productId: 'p3', productName: '羊肉串', quantity: 10, unitPrice: 3.0 },
-        { productId: 'p4', productName: '烤茄子', quantity: 1, unitPrice: 12.0 },
-      ],
-    },
-    {
-      id: '3',
-      orderNo: 'SM20260401003',
-      storeId: 'store-001',
-      storeName: '老王煎饼摊',
-      status: 'COMPLETED',
-      confirmCode: 'C033',
-      totalAmount: 9.0,
-      createdAt: new Date(now - 86400000).toISOString(),
-      items: [
-        { productId: 'p1', productName: '招牌煎饼果子', quantity: 1, unitPrice: 9.0, specs: [{ name: '加料', option: '加蛋', extraPrice: 1 }] },
-      ],
-    },
-    {
-      id: '4',
-      orderNo: 'SM20260401004',
-      storeId: 'store-003',
-      storeName: '阿婆凉茶铺',
-      status: 'NEW',
-      confirmCode: 'D017',
-      totalAmount: 22.0,
-      createdAt: new Date(now - 5 * 60000).toISOString(),
-      items: [
-        { productId: 'p5', productName: '茅根竹蔗水', quantity: 2, unitPrice: 11.0 },
-      ],
-    },
-    {
-      id: '5',
-      orderNo: 'SM20260401005',
-      storeId: 'store-002',
-      storeName: '小李烤串',
-      status: 'REJECTED',
-      confirmCode: 'E009',
-      totalAmount: 30.0,
-      createdAt: new Date(now - 2 * 86400000).toISOString(),
-      items: [
-        { productId: 'p6', productName: '牛肉串', quantity: 10, unitPrice: 3.0 },
-      ],
-    },
-    {
-      id: '6',
-      orderNo: 'SM20260331006',
-      storeId: 'store-001',
-      storeName: '老王煎饼摊',
-      status: 'ACCEPTED',
-      confirmCode: 'F120',
-      totalAmount: 18.0,
-      createdAt: new Date(now - 3 * 60000).toISOString(),
-      items: [
-        { productId: 'p7', productName: '豪华煎饼套餐', quantity: 1, unitPrice: 18.0, specs: [{ name: '套餐', option: '双蛋+生菜', extraPrice: 5 }] },
-      ],
-    },
-  ]
 }
 </script>
 

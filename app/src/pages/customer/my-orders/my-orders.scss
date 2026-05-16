@@ -10,8 +10,8 @@
 
 .orders-theme-banner {
   position: relative;
-  width: var(--asset-cart-header-banner-width, 692rpx);
-  height: var(--asset-cart-header-banner-height, 120rpx);
+  width: var(--asset-promo-banner-width, 692rpx);
+  height: var(--asset-promo-banner-height, 220rpx);
   margin: 24rpx auto 18rpx;
   overflow: hidden;
   background: var(--style-surface, #FFFDF4);
@@ -99,7 +99,7 @@
 }
 
 .orders-scroll {
-  height: calc(100vh - 242rpx);
+  height: calc(100vh - var(--asset-promo-banner-height, 220rpx) - 122rpx);
   padding: 0 24rpx;
   box-sizing: border-box;
 }
