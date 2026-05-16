@@ -20,8 +20,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import com.stallmart.auth.internal.service.AdminLoginSecurityService;
+import java.util.Map;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -33,6 +36,9 @@ class ApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private AdminLoginSecurityService adminLoginSecurityService;
 
     @Test
     void h5LocalOriginCanCallAppApi() throws Exception {
@@ -143,13 +149,12 @@ class ApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.captchaId", notNullValue()))
-                .andExpect(jsonPath("$.data.question", containsString("+")))
+                .andExpect(jsonPath("$.data.question").doesNotExist())
+                .andExpect(jsonPath("$.data.imageBase64", containsString("data:image/")))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
         String captchaId = captchaResponse.replaceAll(".*\\\"captchaId\\\":\\\"([^\\\"]+)\\\".*", "$1");
-        String question = captchaResponse.replaceAll(".*\\\"question\\\":\\\"([^\\\"]+)\\\".*", "$1");
-        int captchaAnswer = solveCaptcha(question);
 
         mockMvc.perform(post("/admin/auth/login")
                         .with(request -> {
@@ -169,7 +174,7 @@ class ApiControllerTest {
                 .getResponse()
                 .getContentAsString();
         String freshCaptchaId = freshCaptcha.replaceAll(".*\\\"captchaId\\\":\\\"([^\\\"]+)\\\".*", "$1");
-        String freshQuestion = freshCaptcha.replaceAll(".*\\\"question\\\":\\\"([^\\\"]+)\\\".*", "$1");
+        String freshAnswer = captchaAnswer(freshCaptchaId);
 
         mockMvc.perform(post("/admin/auth/login")
                         .with(request -> {
@@ -178,8 +183,8 @@ class ApiControllerTest {
                         })
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"account":"vendor","password":"%s","captchaId":"%s","captchaAnswer":"%d"}
-                                """.formatted(VENDOR_PASSWORD, freshCaptchaId, solveCaptcha(freshQuestion))))
+                                {"account":"vendor","password":"%s","captchaId":"%s","captchaAnswer":"%s"}
+                                """.formatted(VENDOR_PASSWORD, freshCaptchaId, freshAnswer)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.accessToken", notNullValue()));
@@ -669,8 +674,9 @@ class ApiControllerTest {
                 """.formatted(name, code, status, code, name, primaryColor, primaryColor, name);
     }
 
-    private int solveCaptcha(String question) {
-        String[] numbers = question.replaceAll("[^0-9+]", "").split("\\+");
-        return Integer.parseInt(numbers[0]) + Integer.parseInt(numbers[1]);
+    private String captchaAnswer(String captchaId) {
+        Map<?, ?> captchas = (Map<?, ?>) ReflectionTestUtils.getField(adminLoginSecurityService, "captchas");
+        Object captchaState = captchas.get(captchaId);
+        return (String) ReflectionTestUtils.getField(captchaState, "answer");
     }
 }

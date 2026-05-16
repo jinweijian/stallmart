@@ -87,25 +87,35 @@ export const useUserStore = defineStore('user', () => {
     setViewMode('CUSTOMER')
   }
 
+  function ignoreTaroTabBarResult(action: () => unknown) {
+    try {
+      const result = action()
+      if (result && typeof (result as { catch?: unknown }).catch === 'function') {
+        void (result as Promise<unknown>).catch(() => undefined)
+      }
+    } catch {
+      // H5 may throw plain objects for unsupported native tabBar APIs.
+    }
+  }
+
   function syncTabBarForViewMode() {
     const vendorMode = viewMode.value === 'VENDOR'
-    const updates = [
+    ignoreTaroTabBarResult(() =>
       Taro.setTabBarItem({
         index: 1,
         text: vendorMode ? '商品' : '点单',
         iconPath: 'static/tabbar/home.png',
         selectedIconPath: 'static/tabbar/home-active.png',
-      }),
+      })
+    )
+    ignoreTaroTabBarResult(() =>
       Taro.setTabBarItem({
         index: 2,
         text: vendorMode ? '接单' : '订单',
         iconPath: 'static/tabbar/order.png',
         selectedIconPath: 'static/tabbar/order-active.png',
-      }),
-    ]
-    updates.forEach((update) => {
-      void update.catch(() => undefined)
-    })
+      })
+    )
   }
 
   function setLoading(loading: boolean) {

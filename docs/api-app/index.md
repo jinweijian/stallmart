@@ -98,7 +98,7 @@ patch()
 
 ## 管理端接口变更对小程序的影响
 
-管理端登录验证码、后台账号密码盐和 `/admin/*/operation-logs` 操作日志接口只服务 Nuxt 管理端，不属于小程序业务 endpoint。小程序仍只通过 `Authorization: Bearer <token>` 调用顾客端接口，mock 契约和 H5 真实 API 联调流程不变。
+管理端登录图片验证码、后台账号密码盐和 `/admin/*/operation-logs` 操作日志接口只服务 Nuxt 管理端，不属于小程序业务 endpoint。小程序仍只通过 `Authorization: Bearer <token>` 调用顾客端接口，mock 契约和 H5 真实 API 联调流程不变。
 
 ## 当前顾客端 mock 契约
 

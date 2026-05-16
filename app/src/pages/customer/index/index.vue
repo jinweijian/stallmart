@@ -185,6 +185,17 @@ function recalcCart() {
   cartTotal.value = cartItems.value.reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0)
 }
 
+function ignoreNativeTabBarResult(action: () => unknown) {
+  try {
+    const result = action()
+    if (result && typeof (result as { catch?: unknown }).catch === 'function') {
+      void (result as Promise<unknown>).catch(() => undefined)
+    }
+  } catch {
+    // H5 may throw plain objects for unsupported native tabBar APIs.
+  }
+}
+
 function openProductDetail(product: Product) {
   if (!isVendorMode.value && isProductDisabled(product)) {
     Taro.showToast({ title: getStatusText(product) || '暂不可购买', icon: 'none' })
@@ -195,7 +206,7 @@ function openProductDetail(product: Product) {
   selectedQuantity.value = 1
   selectedRemark.value = ''
   selectedOptions.value = resolveDefaultSkuOptions(product, styleSpecs.value)
-  void Taro.hideTabBar({ animation: true }).catch(() => undefined)
+  ignoreNativeTabBarResult(() => Taro.hideTabBar({ animation: true }))
 }
 
 function closeProductDetail() {
@@ -203,7 +214,7 @@ function closeProductDetail() {
   selectedOptions.value = {}
   selectedQuantity.value = 1
   selectedRemark.value = ''
-  void Taro.showTabBar({ animation: true }).catch(() => undefined)
+  ignoreNativeTabBarResult(() => Taro.showTabBar({ animation: true }))
 }
 
 function selectSkuOption(group: SkuGroup, option: string) {
@@ -282,7 +293,7 @@ function formatPrice(price: number): string {
 }
 
 onBeforeUnmount(() => {
-  void Taro.showTabBar({ animation: false }).catch(() => undefined)
+  ignoreNativeTabBarResult(() => Taro.showTabBar({ animation: false }))
 })
 </script>
 

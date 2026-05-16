@@ -17,9 +17,9 @@ web/app/
 - 平台管理页面放在 `web/app/pages/platform/`。
 - 商家 H5 管理页面放在 `web/app/pages/vendor/`。
 - 平台进入单个商家模块时，读取服务端 `/admin/platform/vendors/{storeId}/summary`。
-- 商家自己的后台使用 `/admin/vendor/me/*`，当前开发种子商家账号为 `vendor / stallmart&v@2026..`。
+- 商家自己的后台使用 `/admin/vendor/me/*`，当前开发种子商家账号为 `vendor`，密码由部署负责人单独分发，不写入仓库。
 - 登录页放在 `web/app/pages/auth/login/index.vue`。
-- 登录页连续失败 3 次后显示服务端验证码，验证码接口为 `/admin/auth/captcha`。
+- 登录页连续失败 3 次后显示服务端图片验证码，验证码接口为 `/admin/auth/captcha`，前端只展示 `imageBase64`，不得依赖题目文本或答案。
 - 操作日志页面放在 `platform/operation-logs/index.vue`、`platform/vendors/[id]/operation-logs/index.vue` 和 `vendor/operation-logs/index.vue`。
 - 全局鉴权放在 `web/app/middleware/auth.global.ts`，页面通过 `definePageMeta({ role: 'ADMIN' | 'VENDOR' })` 区分角色。
 

@@ -99,6 +99,8 @@ docker/.env
 
 H5 是本阶段 app 端真实 API 优先调试入口。小程序 request 合法域名申请完成前，先通过 H5 关闭 mock 验证主题和数据链路：
 
+微信开发者工具打开 `app/` 时，`app/project.config.json` 必须将 `miniprogramRoot` 指向 `dist/`，确保工具读取 Taro weapp 构建产物。若直接打开 `app/dist/`，产物内的 `project.config.json` 会使用 `miniprogramRoot: "./"`。
+
 | 变量 | 用途 |
 | --- | --- |
 | `TARO_APP_ENABLE_API_MOCK=false` | 关闭小程序端 mock，让 H5 请求真实 API。 |

@@ -16,7 +16,7 @@ const showPassword = ref(false)
 const errorMessage = ref('')
 const failedAttempts = ref(0)
 const captchaVisible = ref(false)
-const captcha = ref<{ captchaId: string, question: string } | null>(null)
+const captcha = ref<{ captchaId: string, imageBase64: string } | null>(null)
 
 onMounted(async () => {
   auth.restore()
@@ -86,7 +86,10 @@ const submit = async () => {
         <div v-if="captchaVisible" class="field full">
           <label>验证码</label>
           <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-            <input v-model="form.captchaAnswer" inputmode="numeric" autocomplete="off" :placeholder="captcha?.question ?? '加载中'" required>
+            <div class="grid gap-2">
+              <img v-if="captcha?.imageBase64" :src="captcha.imageBase64" alt="验证码" class="h-11 w-[130px] rounded-lg border border-ink-200 bg-white object-contain">
+              <input v-model="form.captchaAnswer" inputmode="numeric" autocomplete="off" placeholder="输入图片验证码" required>
+            </div>
             <button class="button" type="button" @click="loadCaptcha">换一题</button>
           </div>
         </div>

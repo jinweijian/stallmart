@@ -38,7 +38,7 @@ export interface AdminLoginInput {
 
 export interface AdminCaptcha {
   captchaId: string
-  question: string
+  imageBase64: string
 }
 
 export interface AdminLoginFailure {

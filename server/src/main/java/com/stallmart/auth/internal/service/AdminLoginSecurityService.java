@@ -1,7 +1,8 @@
 package com.stallmart.auth.internal.service;
 
 import com.stallmart.auth.dto.AdminCaptchaDTO;
-import java.security.SecureRandom;
+import com.wf.captcha.SpecCaptcha;
+import com.wf.captcha.base.Captcha;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
@@ -17,19 +18,18 @@ public class AdminLoginSecurityService {
     private static final Duration FAILURE_TTL = Duration.ofMinutes(15);
     private static final Duration CAPTCHA_TTL = Duration.ofMinutes(5);
 
-    private final SecureRandom random = new SecureRandom();
     private final Map<String, FailureState> failures = new ConcurrentHashMap<>();
     private final Map<String, CaptchaState> captchas = new ConcurrentHashMap<>();
 
     public AdminCaptchaDTO createCaptcha() {
-        int left = random.nextInt(9) + 1;
-        int right = random.nextInt(9) + 1;
+        SpecCaptcha captcha = new SpecCaptcha(130, 44, 4);
+        captcha.setCharType(Captcha.TYPE_ONLY_NUMBER);
         String captchaId = UUID.randomUUID().toString();
         captchas.put(captchaId, new CaptchaState(
-                String.valueOf(left + right),
+                captcha.text(),
                 Instant.now().plus(CAPTCHA_TTL)
         ));
-        return new AdminCaptchaDTO(captchaId, left + " + " + right + " = ?");
+        return new AdminCaptchaDTO(captchaId, captcha.toBase64());
     }
 
     public boolean isCaptchaRequired(String account, String ipAddress) {

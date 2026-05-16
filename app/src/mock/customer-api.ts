@@ -392,6 +392,17 @@ export function getMockApiResponse(options: RequestOptions): ApiResponse | null 
     return ok(mockStore)
   }
 
+  if (method === 'GET' && url === '/app/bootstrap') {
+    return ok({
+      appId: 'wx-stallmart-demo',
+      storeId: mockStore.id,
+      storefront: {
+        store: mockStore,
+        decoration: mockStore.decoration,
+      },
+    })
+  }
+
   if (method === 'GET' && /^\/stores\/qr\/[^/]+$/.test(url)) {
     return ok(mockStore)
   }

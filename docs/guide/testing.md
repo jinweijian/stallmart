@@ -27,7 +27,7 @@ cd server
 - Spring 集成测试使用 `@SpringBootTest` 和 `@ActiveProfiles("test")`。
 - 测试方法命名使用 `should<Outcome>_when<Condition>`。
 - 管理端装修权限回归由 `ApiControllerTest` 覆盖：商家可更新 Logo、封面、Banner、展示描述和已上架风格包选择，但提交 `colors/iconUrls/categoryIconUrls/imageUrls/copywriting` 必须返回 HTTP `400`。
-- 管理端认证加固由 `PersistenceMigrationTest` 和 `ApiControllerTest` 覆盖：后台账号必须有独立 `password_salt`，新密码可登录，旧密码拒绝，连续失败 3 次后必须验证码。
+- 管理端认证加固由 `PersistenceMigrationTest` 和 `ApiControllerTest` 覆盖：后台账号必须有独立 `password_salt`，新密码可登录，旧密码拒绝，连续失败 3 次后必须图片验证码，验证码响应不得暴露题目文本或答案。
 - 管理端操作日志由 `ApiControllerTest` 覆盖：商家写操作生成商家日志，商家只能读自己的日志；平台写操作生成平台日志，平台可读平台日志和指定商家日志。
 
 ## 小程序

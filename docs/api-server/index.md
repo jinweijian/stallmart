@@ -53,15 +53,15 @@
 
 | 角色 | 账号 | 密码 | 登录后入口 |
 | --- | --- | --- | --- |
-| 平台管理员 | `platform` | `stallmart&p@2026..` | `/platform/vendors` |
-| 商家管理员 | `vendor` | `stallmart&v@2026..` | `/vendor` |
+| 平台管理员 | `platform` | 由部署负责人单独分发，不写入仓库 | `/platform/vendors` |
+| 商家管理员 | `vendor` | 由部署负责人单独分发，不写入仓库 | `/vendor` |
 
 权限边界：
 
 - `ADMIN` 可访问 `/admin/platform/*`，用于查看全部商家并进入单个商家模块。
 - `VENDOR` 只能访问 `/admin/vendor/me/*`，服务端按 accessToken 解析当前商家并绑定自己的店铺。
 - 商家订单、商品、规格、装修操作都会校验资源归属。
-- 管理端登录同一 `account + IP` 连续失败 3 次后，后续登录必须提交验证码。
+- 管理端登录同一 `account + IP` 连续失败 3 次后，后续登录必须提交验证码。验证码由服务端使用图形验证码库生成，接口只返回图片 Base64 和 `captchaId`，不返回题目文本或答案。
 - 管理端鉴权失败返回 HTTP `401`，越权返回 HTTP `403`，业务码分别沿用 `10001/10002/10003/10006/10007/10008` 与 `10005`。
 
 ## Endpoint 列表
@@ -72,7 +72,7 @@
 | `POST` | `/auth/phone/bind` | 绑定手机号 |
 | `POST` | `/auth/refresh` | 刷新 token |
 | `POST` | `/auth/logout` | 登出 |
-| `GET` | `/admin/auth/captcha` | 获取管理端登录验证码题目 |
+| `GET` | `/admin/auth/captcha` | 获取管理端登录图片验证码 |
 | `POST` | `/admin/auth/login` | 管理端账号密码登录 |
 | `POST` | `/admin/auth/refresh` | 管理端刷新 accessToken |
 | `GET` | `/admin/auth/me` | 获取当前管理端登录态 |
@@ -164,7 +164,7 @@
 
 ## 管理端共享数据约束
 
-- 管理端登录请求体为 `account/password`，验证码触发后追加 `captchaId/captchaAnswer`；`GET /admin/auth/captcha` 只返回题目和 ID，不返回答案。
+- 管理端登录请求体为 `account/password`，验证码触发后追加 `captchaId/captchaAnswer`；`GET /admin/auth/captcha` 只返回 `captchaId/imageBase64`，不返回答案或可直接计算的题目文本。
 - 管理端写操作会写入 `admin_operation_log`。商家只能读取自己店铺日志；平台可读取平台日志，也可按 `storeId` 读取商家日志。
 - 操作日志不得记录密码、token、验证码答案、完整手机号或其他敏感密钥。
 - 管理端新增或更新商品走 `StoreService`，小程序 `/stores/{storeId}/products` 同步读取同一份商品数据。
