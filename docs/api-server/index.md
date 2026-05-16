@@ -49,19 +49,20 @@
 
 ## 管理端账号
 
-当前为本地初始化账号，后续接入数据库后需要迁移为账号表和密码哈希：
+当前为 Flyway seed 初始化账号。`admin_account` 保存 `password_salt` 与 `password_hash`，登录时使用 `BCrypt(password + passwordSalt)` 比对，不保存明文密码。
 
 | 角色 | 账号 | 密码 | 登录后入口 |
 | --- | --- | --- | --- |
-| 平台管理员 | `platform` | `platform123` | `/platform/vendors` |
-| 商家管理员 | `vendor` | `vendor123` | `/vendor` |
+| 平台管理员 | `platform` | 由部署负责人单独分发，不写入仓库 | `/platform/vendors` |
+| 商家管理员 | `vendor` | 由部署负责人单独分发，不写入仓库 | `/vendor` |
 
 权限边界：
 
 - `ADMIN` 可访问 `/admin/platform/*`，用于查看全部商家并进入单个商家模块。
 - `VENDOR` 只能访问 `/admin/vendor/me/*`，服务端按 accessToken 解析当前商家并绑定自己的店铺。
 - 商家订单、商品、规格、装修操作都会校验资源归属。
-- 管理端鉴权失败返回 HTTP `401`，越权返回 HTTP `403`，业务码分别沿用 `10001/10002/10003/10006` 与 `10005`。
+- 管理端登录同一 `account + IP` 连续失败 3 次后，后续登录必须提交验证码。验证码由服务端使用图形验证码库生成，接口只返回图片 Base64 和 `captchaId`，不返回题目文本或答案。
+- 管理端鉴权失败返回 HTTP `401`，越权返回 HTTP `403`，业务码分别沿用 `10001/10002/10003/10006/10007/10008` 与 `10005`。
 
 ## Endpoint 列表
 
@@ -71,6 +72,7 @@
 | `POST` | `/auth/phone/bind` | 绑定手机号 |
 | `POST` | `/auth/refresh` | 刷新 token |
 | `POST` | `/auth/logout` | 登出 |
+| `GET` | `/admin/auth/captcha` | 获取管理端登录图片验证码 |
 | `POST` | `/admin/auth/login` | 管理端账号密码登录 |
 | `POST` | `/admin/auth/refresh` | 管理端刷新 accessToken |
 | `GET` | `/admin/auth/me` | 获取当前管理端登录态 |
@@ -104,6 +106,8 @@
 | `GET` | `/admin/platform/vendors/{storeId}/orders` | 平台查看商家订单 |
 | `GET` | `/admin/platform/vendors/{storeId}/carts` | 平台查看商家购物车 |
 | `GET` | `/admin/platform/vendors/{storeId}/users` | 平台查看商家关联用户 |
+| `GET` | `/admin/platform/operation-logs` | 平台查看平台操作日志 |
+| `GET` | `/admin/platform/vendors/{storeId}/operation-logs` | 平台查看指定商家操作日志 |
 | `GET` | `/admin/platform/styles` | 平台风格包列表 |
 | `POST` | `/admin/platform/styles` | 平台新增风格包 |
 | `GET` | `/admin/platform/styles/{styleId}` | 平台查看风格包详情 |
@@ -130,6 +134,7 @@
 | `GET` | `/admin/vendor/me/orders/{orderId}` | 商家订单详情 |
 | `PUT` | `/admin/vendor/me/orders/{orderId}/{action}` | 商家订单流转，`action` 为 `accept/reject/prepare/ready/complete` |
 | `GET` | `/admin/vendor/me/carts` | 商家购物车列表 |
+| `GET` | `/admin/vendor/me/operation-logs` | 商家查看自己的操作日志 |
 | `GET` | `/admin/vendor/me/users` | 商家用户列表 |
 | `GET` | `/admin/vendor/me/users/{userId}/orders` | 商家查看顾客订单记录 |
 | `GET` | `/admin/vendor/me/decoration` | 商家装修设置 |
@@ -159,6 +164,9 @@
 
 ## 管理端共享数据约束
 
+- 管理端登录请求体为 `account/password`，验证码触发后追加 `captchaId/captchaAnswer`；`GET /admin/auth/captcha` 只返回 `captchaId/imageBase64`，不返回答案或可直接计算的题目文本。
+- 管理端写操作会写入 `admin_operation_log`。商家只能读取自己店铺日志；平台可读取平台日志，也可按 `storeId` 读取商家日志。
+- 操作日志不得记录密码、token、验证码答案、完整手机号或其他敏感密钥。
 - 管理端新增或更新商品走 `StoreService`，小程序 `/stores/{storeId}/products` 同步读取同一份商品数据。
 - 商品必须绑定 `categoryId`、主图、至少一个 `specId` 和至少一个 SKU；商品列表 `price` 为 SKU 最低价，单独商品价格不作为售卖价格。
 - 商品主图通过 `/admin/vendor/me/assets/product-image` 上传，返回 `url` 后写入商品 `mainImageUrl`，单图大小上限为 10MB。
@@ -198,5 +206,6 @@
 
 - `V1__init_schema.sql`：用户、后台账号、店铺、风格包、装修、分类、商品、SKU、规格、购物车、订单表。
 - `V2__seed_dev_data.sql`：本地联调种子数据，包含 `platform/vendor` 后台账号、演示店铺、森系风格包、商品、购物车和订单。
+- `V3__admin_auth_audit_hardening.sql`：后台账号显式密码盐、新线上口令哈希和管理端操作日志表。
 
 服务端实现不得再把业务数据硬编码在 `ConcurrentHashMap` 中；dev seed 是本地演示数据的唯一来源。

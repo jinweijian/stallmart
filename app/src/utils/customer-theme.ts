@@ -12,6 +12,11 @@ function getAssetSizes(theme: StoreThemePackage) {
 
 function toRuntimeCssSize(value: string | undefined, fallback: string): string {
   const size = (value || fallback).trim()
+  const isWeb = Taro.getEnv() === Taro.ENV_TYPE.WEB
+  if (!isWeb) {
+    return size
+  }
+
   const match = size.match(RPX_VALUE_PATTERN)
 
   if (!match) {

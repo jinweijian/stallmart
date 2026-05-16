@@ -8,6 +8,8 @@ public enum ErrorCode {
     NOT_FOUND(10004, "not_found"),
     FORBIDDEN(10005, "forbidden"),
     INVALID_CREDENTIALS(10006, "invalid_credentials"),
+    CAPTCHA_REQUIRED(10007, "captcha_required"),
+    CAPTCHA_INVALID(10008, "captcha_invalid"),
     INVALID_ORDER_STATUS(30001, "invalid_order_status"),
     INVALID_STORE_STATUS(30002, "invalid_store_status"),
     INVALID_PRODUCT_STATUS(30003, "invalid_product_status"),

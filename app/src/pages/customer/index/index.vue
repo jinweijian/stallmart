@@ -8,6 +8,7 @@ import {
   type StorefrontBannerConfig,
   type StorefrontCategoryConfig,
 } from '@/config'
+import { useUserStore } from '@/store/user'
 import { get } from '@/utils/request'
 import { createCustomerThemeVars, persistCustomerTheme } from '@/utils/customer-theme'
 import {
@@ -37,6 +38,7 @@ import {
   type StorefrontSpec,
 } from '@/domain/customer/product-catalog'
 
+const userStore = useUserStore()
 const categories = ref<StorefrontCategoryConfig[]>(resolveFallbackCategories(DEFAULT_STORE_THEME))
 
 const storeInfo = ref<StoreInfo | null>(null)
@@ -57,6 +59,7 @@ const currentTheme = computed(() => {
   return resolveCurrentTheme(storeInfo.value)
 })
 
+const isVendorMode = computed(() => userStore.isVendor)
 const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
 
 const copywriting = computed(() => currentTheme.value.copywriting || {})
@@ -102,6 +105,8 @@ const promoSubtitle = computed(() => copywriting.value.promoSubtitle || '当季�
 const promoActionText = computed(() => copywriting.value.promoActionText || '立即尝鲜')
 
 useDidShow(() => {
+  userStore.loadViewMode()
+  userStore.syncTabBarForViewMode()
   loadData()
   loadCart()
 })
@@ -180,8 +185,19 @@ function recalcCart() {
   cartTotal.value = cartItems.value.reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0)
 }
 
+function ignoreNativeTabBarResult(action: () => unknown) {
+  try {
+    const result = action()
+    if (result && typeof (result as { catch?: unknown }).catch === 'function') {
+      void (result as Promise<unknown>).catch(() => undefined)
+    }
+  } catch {
+    // H5 may throw plain objects for unsupported native tabBar APIs.
+  }
+}
+
 function openProductDetail(product: Product) {
-  if (isProductDisabled(product)) {
+  if (!isVendorMode.value && isProductDisabled(product)) {
     Taro.showToast({ title: getStatusText(product) || '暂不可购买', icon: 'none' })
     return
   }
@@ -190,7 +206,7 @@ function openProductDetail(product: Product) {
   selectedQuantity.value = 1
   selectedRemark.value = ''
   selectedOptions.value = resolveDefaultSkuOptions(product, styleSpecs.value)
-  void Taro.hideTabBar({ animation: true }).catch(() => undefined)
+  ignoreNativeTabBarResult(() => Taro.hideTabBar({ animation: true }))
 }
 
 function closeProductDetail() {
@@ -198,10 +214,11 @@ function closeProductDetail() {
   selectedOptions.value = {}
   selectedQuantity.value = 1
   selectedRemark.value = ''
-  void Taro.showTabBar({ animation: true }).catch(() => undefined)
+  ignoreNativeTabBarResult(() => Taro.showTabBar({ animation: true }))
 }
 
 function selectSkuOption(group: SkuGroup, option: string) {
+  if (isVendorMode.value) return
   if (isSkuOptionDisabled(group, option)) return
   selectedOptions.value = {
     ...selectedOptions.value,
@@ -214,12 +231,14 @@ function isSkuOptionDisabled(group: SkuGroup, option: string): boolean {
 }
 
 function changeSelectedQuantity(delta: number) {
+  if (isVendorMode.value) return
   const stockLimit = selectedSku.value?.stock ?? selectedProduct.value?.stock ?? 1
   const nextQuantity = selectedQuantity.value + delta
   selectedQuantity.value = Math.min(Math.max(nextQuantity, 1), Math.min(stockLimit, 10))
 }
 
 function addSelectedProductToCart() {
+  if (isVendorMode.value) return
   const product = selectedProduct.value
   if (!product) return
   if (product.skus && product.skus.length > 0 && !selectedSku.value) {
@@ -246,6 +265,10 @@ function addSelectedProductToCart() {
 }
 
 function goToCart() {
+  if (isVendorMode.value) {
+    Taro.showToast({ title: '商家视角不使用购物车', icon: 'none' })
+    return
+  }
   Taro.switchTab({ url: '/pages/customer/cart/cart' })
 }
 
@@ -254,6 +277,10 @@ function goToProduct(product: Product) {
 }
 
 function goToCheckout() {
+  if (isVendorMode.value) {
+    Taro.showToast({ title: '切回用户视角即可下单', icon: 'none' })
+    return
+  }
   if (cartCount.value <= 0) {
     Taro.showToast({ title: '先选一杯吧', icon: 'none' })
     return
@@ -266,12 +293,12 @@ function formatPrice(price: number): string {
 }
 
 onBeforeUnmount(() => {
-  void Taro.showTabBar({ animation: false }).catch(() => undefined)
+  ignoreNativeTabBarResult(() => Taro.showTabBar({ animation: false }))
 })
 </script>
 
 <template>
-  <view class="fruit-tea-page" :style="themeVars">
+  <view class="fruit-tea-page" :class="{ 'vendor-mode': isVendorMode }" :style="themeVars">
     <view class="hero-section">
       <image v-if="imageUrls.heroIllustration" class="hero-image" :src="imageUrls.heroIllustration" mode="aspectFill" />
     </view>
@@ -312,7 +339,7 @@ onBeforeUnmount(() => {
 
       <view class="menu-panel">
         <view class="section-heading">
-          <text class="section-title">人气推荐</text>
+          <text class="section-title">{{ isVendorMode ? '商品浏览' : '人气推荐' }}</text>
           <image v-if="iconUrls.sectionLeaf" class="section-leaf-image" :src="iconUrls.sectionLeaf" mode="aspectFit" />
           <text v-else class="section-leaf">⌁</text>
         </view>
@@ -361,7 +388,7 @@ onBeforeUnmount(() => {
               :class="{ disabled: isProductDisabled(product) }"
               @tap.stop="openProductDetail(product)"
             >
-              <text>+</text>
+              <text>{{ isVendorMode ? '看' : '+' }}</text>
             </view>
           </view>
         </scroll-view>
@@ -395,8 +422,8 @@ onBeforeUnmount(() => {
 
         <view v-for="group in skuGroups" :key="group.id" class="sku-section">
           <view class="sku-section-head">
-            <text class="sku-section-title">选择{{ group.name }}</text>
-            <text v-if="!group.required" class="sku-section-optional">（可多选）</text>
+            <text class="sku-section-title">{{ isVendorMode ? group.name : `选择${group.name}` }}</text>
+            <text v-if="!group.required && !isVendorMode" class="sku-section-optional">（可多选）</text>
           </view>
           <view class="sku-options">
             <view
@@ -405,7 +432,8 @@ onBeforeUnmount(() => {
               class="sku-option"
               :class="{
                 active: selectedOptions[group.id] === option,
-                disabled: isSkuOptionDisabled(group, option),
+                readonly: isVendorMode,
+                disabled: !isVendorMode && isSkuOptionDisabled(group, option),
               }"
               @tap="selectSkuOption(group, option)"
             >
@@ -415,7 +443,22 @@ onBeforeUnmount(() => {
           </view>
         </view>
 
-        <view class="detail-quantity-row">
+        <view v-if="isVendorMode && selectedProduct" class="vendor-product-meta">
+          <view class="vendor-meta-item">
+            <text class="vendor-meta-label">商品状态</text>
+            <text class="vendor-meta-value">{{ getStatusText(selectedProduct) || '在售' }}</text>
+          </view>
+          <view class="vendor-meta-item">
+            <text class="vendor-meta-label">当前库存</text>
+            <text class="vendor-meta-value">{{ selectedSku?.stock ?? selectedProduct.stock ?? 0 }}</text>
+          </view>
+          <view class="vendor-meta-item">
+            <text class="vendor-meta-label">销量</text>
+            <text class="vendor-meta-value">{{ selectedProduct.sales || 0 }}</text>
+          </view>
+        </view>
+
+        <view v-if="!isVendorMode" class="detail-quantity-row">
           <text class="detail-quantity-title">购买数量</text>
           <view class="detail-stepper">
             <view class="detail-stepper-btn" :class="{ disabled: selectedQuantity <= 1 }" @tap="changeSelectedQuantity(-1)">−</view>
@@ -430,7 +473,7 @@ onBeforeUnmount(() => {
           </view>
         </view>
 
-        <view class="detail-remark-row">
+        <view v-if="!isVendorMode" class="detail-remark-row">
           <text class="detail-remark-title">订单备注</text>
           <input
             v-model="selectedRemark"
@@ -441,7 +484,7 @@ onBeforeUnmount(() => {
           <text class="detail-remark-arrow">›</text>
         </view>
 
-        <view class="detail-submit-bar">
+        <view v-if="!isVendorMode" class="detail-submit-bar">
           <view class="detail-selected">
             <text class="detail-selected-price">¥{{ formatPrice(selectedProductTotal) }}</text>
             <text class="detail-selected-text">已选：{{ selectedSpecsText || '默认规格' }}</text>
@@ -450,10 +493,14 @@ onBeforeUnmount(() => {
             加入购物车
           </view>
         </view>
+
+        <view v-else class="vendor-detail-footer">
+          <text>商家视角仅查看商品信息，切回用户视角后可加入购物车。</text>
+        </view>
       </view>
     </view>
 
-    <view class="cart-bar">
+    <view v-if="!isVendorMode" class="cart-bar">
       <view
         class="cart-mascot"
         :style="iconUrls.cart ? { backgroundImage: `url(${iconUrls.cart})` } : undefined"

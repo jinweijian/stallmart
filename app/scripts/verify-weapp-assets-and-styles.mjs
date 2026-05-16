@@ -104,6 +104,7 @@ const tabbarOptimizerPath = resolve(projectRoot, 'scripts/optimize-tabbar-icons.
 const mockCustomerApiPath = resolve(projectRoot, 'src/mock/customer-api.ts')
 const customerIndexVuePath = resolve(projectRoot, 'src/pages/customer/index/index.vue')
 const customerIndexScssPath = resolve(projectRoot, 'src/pages/customer/index/index.scss')
+const customerThemeUtilPath = resolve(projectRoot, 'src/utils/customer-theme.ts')
 const customerDomainPaths = [
   resolve(projectRoot, 'src/domain/customer/storefront-theme.ts'),
   resolve(projectRoot, 'src/domain/customer/product-catalog.ts'),
@@ -311,6 +312,21 @@ if (existsSync(customerIndexScssPath)) {
   for (const snippet of requiredScssSnippets) {
     if (!source.includes(snippet)) {
       failures.push(`customer/index.scss missing forced storefront size token: ${snippet}`)
+    }
+  }
+}
+
+if (existsSync(customerThemeUtilPath)) {
+  const source = readFileSync(customerThemeUtilPath, 'utf8')
+  const requiredRuntimeUnitSnippets = [
+    'Taro.getEnv() === Taro.ENV_TYPE.WEB',
+    'return size',
+    'return `${Number(rem.toFixed(4))}rem`',
+  ]
+
+  for (const snippet of requiredRuntimeUnitSnippets) {
+    if (!source.includes(snippet)) {
+      failures.push(`customer-theme.ts missing runtime unit guard for weapp sizing: ${snippet}`)
     }
   }
 }

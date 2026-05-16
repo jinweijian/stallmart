@@ -5,7 +5,12 @@ import com.stallmart.cart.dto.CartDTO;
 import com.stallmart.management.VendorAssetService;
 import com.stallmart.management.VendorOrderCommandService;
 import com.stallmart.management.VendorWorkspaceService;
+import com.stallmart.management.OperationLogService;
+import com.stallmart.management.dto.OperationLogDTO;
+import com.stallmart.management.dto.OperationLogRecordParams;
 import com.stallmart.management.dto.VendorWorkspaceDTO;
+import com.stallmart.management.internal.model.OperationLogResult;
+import com.stallmart.management.internal.model.OperationLogScope;
 import com.stallmart.management.internal.security.AdminAccessGuard;
 import com.stallmart.order.OrderService;
 import com.stallmart.order.dto.OrderDTO;
@@ -24,8 +29,11 @@ import com.stallmart.store.dto.UpdateDecorationParams;
 import com.stallmart.store.dto.UpdateStoreParams;
 import com.stallmart.support.exception.AppException;
 import com.stallmart.support.exception.ErrorCode;
+import com.stallmart.support.security.CurrentUserResolver;
 import com.stallmart.support.web.Result;
+import com.stallmart.user.UserService;
 import com.stallmart.user.dto.UserProfileDTO;
+import com.stallmart.user.internal.repository.AdminAccountRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -52,6 +60,10 @@ public class VendorAdminController {
     private final VendorOrderCommandService vendorOrderCommandService;
     private final VendorWorkspaceService vendorWorkspaceService;
     private final AdminAccessGuard accessGuard;
+    private final OperationLogService operationLogService;
+    private final CurrentUserResolver currentUserResolver;
+    private final UserService userService;
+    private final AdminAccountRepository adminAccountRepository;
 
     public VendorAdminController(
             StoreService storeService,
@@ -60,7 +72,11 @@ public class VendorAdminController {
             VendorAssetService vendorAssetService,
             VendorOrderCommandService vendorOrderCommandService,
             VendorWorkspaceService vendorWorkspaceService,
-            AdminAccessGuard accessGuard
+            AdminAccessGuard accessGuard,
+            OperationLogService operationLogService,
+            CurrentUserResolver currentUserResolver,
+            UserService userService,
+            AdminAccountRepository adminAccountRepository
     ) {
         this.storeService = storeService;
         this.orderService = orderService;
@@ -69,6 +85,10 @@ public class VendorAdminController {
         this.vendorOrderCommandService = vendorOrderCommandService;
         this.vendorWorkspaceService = vendorWorkspaceService;
         this.accessGuard = accessGuard;
+        this.operationLogService = operationLogService;
+        this.currentUserResolver = currentUserResolver;
+        this.userService = userService;
+        this.adminAccountRepository = adminAccountRepository;
     }
 
     @GetMapping("/summary")
@@ -84,7 +104,9 @@ public class VendorAdminController {
     @PutMapping("/store")
     public Result<StoreDTO> updateStore(@RequestBody UpdateStoreParams params, HttpServletRequest request) {
         StoreDTO store = resolveStore(request);
-        return Result.success(storeService.updateStore(store.id(), params));
+        StoreDTO updated = storeService.updateStore(store.id(), params);
+        recordVendorLog(request, store, "STORE_UPDATE", "STORE", String.valueOf(store.id()), "更新店铺资料：" + updated.name());
+        return Result.success(updated);
     }
 
     @GetMapping("/products")
@@ -105,7 +127,10 @@ public class VendorAdminController {
             @Valid @RequestBody CategoryUpsertParams params,
             HttpServletRequest request
     ) {
-        return Result.success(storeService.createCategory(resolveStore(request).id(), params));
+        StoreDTO store = resolveStore(request);
+        CategoryDTO category = storeService.createCategory(store.id(), params);
+        recordVendorLog(request, store, "CATEGORY_CREATE", "CATEGORY", String.valueOf(category.id()), "新增分类：" + category.name());
+        return Result.success(category);
     }
 
     @PutMapping("/categories/{categoryId}")
@@ -114,7 +139,10 @@ public class VendorAdminController {
             @Valid @RequestBody CategoryUpsertParams params,
             HttpServletRequest request
     ) {
-        return Result.success(storeService.updateCategory(resolveStore(request).id(), categoryId, params));
+        StoreDTO store = resolveStore(request);
+        CategoryDTO category = storeService.updateCategory(store.id(), categoryId, params);
+        recordVendorLog(request, store, "CATEGORY_UPDATE", "CATEGORY", String.valueOf(category.id()), "更新分类：" + category.name());
+        return Result.success(category);
     }
 
     @PostMapping("/assets/product-image")
@@ -122,7 +150,10 @@ public class VendorAdminController {
             @RequestParam("file") MultipartFile file,
             HttpServletRequest request
     ) throws IOException {
-        return uploadAsset(file, request, "products");
+        StoreDTO store = resolveStore(request);
+        AssetDTO asset = vendorAssetService.upload(store, file, "products");
+        recordVendorLog(request, store, "ASSET_UPLOAD", "ASSET", asset.filename(), "上传商品图片：" + asset.filename());
+        return Result.success(asset);
     }
 
     @PostMapping("/assets/decoration-image")
@@ -130,20 +161,18 @@ public class VendorAdminController {
             @RequestParam("file") MultipartFile file,
             HttpServletRequest request
     ) throws IOException {
-        return uploadAsset(file, request, "decoration");
-    }
-
-    private Result<AssetDTO> uploadAsset(
-            MultipartFile file,
-            HttpServletRequest request,
-            String folder
-    ) throws IOException {
-        return Result.success(vendorAssetService.upload(resolveStore(request), file, folder));
+        StoreDTO store = resolveStore(request);
+        AssetDTO asset = vendorAssetService.upload(store, file, "decoration");
+        recordVendorLog(request, store, "ASSET_UPLOAD", "ASSET", asset.filename(), "上传装修图片：" + asset.filename());
+        return Result.success(asset);
     }
 
     @PostMapping("/products")
     public Result<ProductDTO> createProduct(@Valid @RequestBody ProductUpsertParams params, HttpServletRequest request) {
-        return Result.success(storeService.createProduct(resolveStore(request).id(), params));
+        StoreDTO store = resolveStore(request);
+        ProductDTO product = storeService.createProduct(store.id(), params);
+        recordVendorLog(request, store, "PRODUCT_CREATE", "PRODUCT", String.valueOf(product.id()), "新增商品：" + product.name());
+        return Result.success(product);
     }
 
     @PutMapping("/products/{productId}")
@@ -152,7 +181,10 @@ public class VendorAdminController {
             @Valid @RequestBody ProductUpsertParams params,
             HttpServletRequest request
     ) {
-        return Result.success(storeService.updateProduct(resolveStore(request).id(), productId, params));
+        StoreDTO store = resolveStore(request);
+        ProductDTO product = storeService.updateProduct(store.id(), productId, params);
+        recordVendorLog(request, store, "PRODUCT_UPDATE", "PRODUCT", String.valueOf(product.id()), "更新商品：" + product.name());
+        return Result.success(product);
     }
 
     @GetMapping("/products/{productId}")
@@ -165,17 +197,17 @@ public class VendorAdminController {
 
     @PutMapping("/products/{productId}/on-sale")
     public Result<ProductDTO> onSale(@PathVariable long productId, HttpServletRequest request) {
-        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, ProductStatus.ACTIVE));
+        return updateProductStatus(productId, ProductStatus.ACTIVE, "PRODUCT_ON_SALE", "商品上架", request);
     }
 
     @PutMapping("/products/{productId}/off-sale")
     public Result<ProductDTO> offSale(@PathVariable long productId, HttpServletRequest request) {
-        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, ProductStatus.INACTIVE));
+        return updateProductStatus(productId, ProductStatus.INACTIVE, "PRODUCT_OFF_SALE", "商品下架", request);
     }
 
     @PutMapping("/products/{productId}/sold-out")
     public Result<ProductDTO> soldOut(@PathVariable long productId, HttpServletRequest request) {
-        return Result.success(storeService.updateProductStatus(resolveStore(request).id(), productId, ProductStatus.SOLD_OUT));
+        return updateProductStatus(productId, ProductStatus.SOLD_OUT, "PRODUCT_SOLD_OUT", "商品售罄", request);
     }
 
     @GetMapping("/orders")
@@ -185,7 +217,10 @@ public class VendorAdminController {
 
     @PutMapping("/orders/{orderId}/{action}")
     public Result<OrderDTO> transitionOrder(@PathVariable long orderId, @PathVariable String action, HttpServletRequest request) {
-        return Result.success(vendorOrderCommandService.transition(resolveStore(request), orderId, action));
+        StoreDTO store = resolveStore(request);
+        OrderDTO order = vendorOrderCommandService.transition(store, orderId, action);
+        recordVendorLog(request, store, "ORDER_TRANSITION", "ORDER", String.valueOf(order.id()), "订单流转：" + action);
+        return Result.success(order);
     }
 
     @GetMapping("/orders/{orderId}")
@@ -199,6 +234,11 @@ public class VendorAdminController {
     @GetMapping("/carts")
     public Result<List<CartDTO>> carts(HttpServletRequest request) {
         return Result.success(cartService.listByStore(resolveStore(request).id()));
+    }
+
+    @GetMapping("/operation-logs")
+    public Result<List<OperationLogDTO>> operationLogs(HttpServletRequest request) {
+        return Result.success(operationLogService.listVendorLogs(resolveStore(request).id()));
     }
 
     @GetMapping("/users")
@@ -227,7 +267,10 @@ public class VendorAdminController {
             @RequestBody UpdateDecorationParams params,
             HttpServletRequest request
     ) {
-        return Result.success(storeService.updateDecoration(resolveStore(request).id(), params));
+        StoreDTO store = resolveStore(request);
+        StoreDecorationDTO decoration = storeService.updateDecoration(store.id(), params);
+        recordVendorLog(request, store, "DECORATION_UPDATE", "DECORATION", String.valueOf(store.id()), "更新店铺装修");
+        return Result.success(decoration);
     }
 
     @GetMapping("/specs")
@@ -239,7 +282,9 @@ public class VendorAdminController {
     @PostMapping("/specs")
     public Result<SpecDTO> createSpec(@Valid @RequestBody SpecUpsertParams params, HttpServletRequest request) {
         StoreDTO store = resolveStore(request);
-        return Result.success(storeService.createSpec(store.styleId(), params));
+        SpecDTO spec = storeService.createSpec(store.styleId(), params);
+        recordVendorLog(request, store, "SPEC_CREATE", "SPEC", String.valueOf(spec.id()), "新增规格：" + spec.name());
+        return Result.success(spec);
     }
 
     @PutMapping("/specs/{specId}")
@@ -249,18 +294,70 @@ public class VendorAdminController {
             HttpServletRequest request
     ) {
         StoreDTO store = resolveStore(request);
-        return Result.success(storeService.updateSpec(store.styleId(), specId, params));
+        SpecDTO spec = storeService.updateSpec(store.styleId(), specId, params);
+        recordVendorLog(request, store, "SPEC_UPDATE", "SPEC", String.valueOf(spec.id()), "更新规格：" + spec.name());
+        return Result.success(spec);
     }
 
     @DeleteMapping("/specs/{specId}")
     public Result<Void> deleteSpec(@PathVariable long specId, HttpServletRequest request) {
         StoreDTO store = resolveStore(request);
         storeService.deleteSpec(store.styleId(), specId);
+        recordVendorLog(request, store, "SPEC_DELETE", "SPEC", String.valueOf(specId), "删除规格：" + specId);
         return Result.success(null);
+    }
+
+    private Result<ProductDTO> updateProductStatus(
+            long productId,
+            ProductStatus status,
+            String action,
+            String description,
+            HttpServletRequest request
+    ) {
+        StoreDTO store = resolveStore(request);
+        ProductDTO product = storeService.updateProductStatus(store.id(), productId, status);
+        recordVendorLog(request, store, action, "PRODUCT", String.valueOf(product.id()), description + "：" + product.name());
+        return Result.success(product);
     }
 
     private StoreDTO resolveStore(HttpServletRequest request) {
         return accessGuard.requireVendorStore(request);
+    }
+
+    private void recordVendorLog(
+            HttpServletRequest request,
+            StoreDTO store,
+            String action,
+            String resourceType,
+            String resourceId,
+            String description
+    ) {
+        UserProfileDTO actor = userService.getProfile(currentUserResolver.resolve(request));
+        String account = adminAccountRepository.findByUserId(actor.id())
+                .map(adminAccount -> adminAccount.account)
+                .orElse(actor.role().name().toLowerCase());
+        operationLogService.record(new OperationLogRecordParams(
+                OperationLogScope.VENDOR,
+                store.id(),
+                actor.id(),
+                account,
+                actor.role(),
+                action,
+                resourceType,
+                resourceId,
+                description,
+                OperationLogResult.SUCCESS,
+                clientIp(request),
+                request.getHeader("User-Agent")
+        ));
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
 }

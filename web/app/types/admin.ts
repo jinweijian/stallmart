@@ -32,6 +32,37 @@ export interface AdminSession {
 export interface AdminLoginInput {
   account: string
   password: string
+  captchaId?: string
+  captchaAnswer?: string
+}
+
+export interface AdminCaptcha {
+  captchaId: string
+  imageBase64: string
+}
+
+export interface AdminLoginFailure {
+  captchaRequired: boolean
+}
+
+export type OperationLogScope = 'PLATFORM' | 'VENDOR'
+export type OperationLogResult = 'SUCCESS' | 'FAILURE'
+
+export interface OperationLog {
+  id: number
+  scope: OperationLogScope
+  storeId: number | null
+  actorUserId: number | null
+  actorAccount: string | null
+  actorRole: UserRole | null
+  action: string
+  resourceType: string
+  resourceId: string | null
+  description: string
+  result: OperationLogResult
+  ipAddress: string | null
+  userAgent: string | null
+  createdAt: string
 }
 
 export interface AdminSummary {

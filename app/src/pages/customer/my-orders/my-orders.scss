@@ -448,6 +448,16 @@
     background: #ffffff;
     border: 2rpx solid rgba(111, 150, 70, 0.38);
   }
+
+  &.danger {
+    color: #D14343;
+    background: #ffffff;
+    border: 2rpx solid rgba(209, 67, 67, 0.32);
+  }
+
+  &.disabled {
+    opacity: 0.58;
+  }
 }
 
 .empty-state {

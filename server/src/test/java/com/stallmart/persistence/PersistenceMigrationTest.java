@@ -33,10 +33,27 @@ class PersistenceMigrationTest {
                 "select password_hash from admin_account where account = 'vendor'",
                 String.class
         );
+        String vendorPasswordSalt = jdbcTemplate.queryForObject(
+                "select password_salt from admin_account where account = 'vendor'",
+                String.class
+        );
+        String platformPasswordSalt = jdbcTemplate.queryForObject(
+                "select password_salt from admin_account where account = 'platform'",
+                String.class
+        );
+        Integer logTableCount = jdbcTemplate.queryForObject(
+                "select count(*) from admin_operation_log",
+                Integer.class
+        );
 
         assertThat(styleCount).isEqualTo(1);
         assertThat(storeCount).isEqualTo(1);
         assertThat(passwordHash).startsWith("$2");
         assertThat(passwordHash).doesNotContain("vendor123");
+        assertThat(passwordHash).doesNotContain("stallmart&v@2026..");
+        assertThat(vendorPasswordSalt).isNotBlank();
+        assertThat(platformPasswordSalt).isNotBlank();
+        assertThat(vendorPasswordSalt).isNotEqualTo(platformPasswordSalt);
+        assertThat(logTableCount).isZero();
     }
 }

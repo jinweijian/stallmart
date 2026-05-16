@@ -40,6 +40,7 @@ const { data: workspace } = await useAsyncData('vendor-h5-summary', () => api.ve
       <NuxtLink class="button" to="/vendor/decoration">装修</NuxtLink>
       <NuxtLink class="button" to="/vendor/users">用户</NuxtLink>
       <NuxtLink class="button" to="/vendor/carts">购物车</NuxtLink>
+      <NuxtLink class="button" to="/vendor/operation-logs">日志</NuxtLink>
     </section>
 
     <section class="section">

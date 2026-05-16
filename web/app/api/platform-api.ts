@@ -1,10 +1,12 @@
 import type { ApiRequest } from '~/api/client'
-import type { AdminSummary, Store, Style, StyleInput, VendorWorkspace } from '~/types/admin'
+import type { AdminSummary, OperationLog, Store, Style, StyleInput, VendorWorkspace } from '~/types/admin'
 
 export const createPlatformApi = (request: ApiRequest) => ({
   platformSummary: () => request<AdminSummary>('/admin/platform/summary'),
   platformVendors: () => request<Store[]>('/admin/platform/vendors'),
   platformVendor: (storeId: number) => request<VendorWorkspace>(`/admin/platform/vendors/${storeId}/summary`),
+  platformOperationLogs: () => request<OperationLog[]>('/admin/platform/operation-logs'),
+  platformVendorOperationLogs: (storeId: number) => request<OperationLog[]>(`/admin/platform/vendors/${storeId}/operation-logs`),
   platformStyles: () => request<Style[]>('/admin/platform/styles'),
   platformStyle: (styleId: number) => request<Style>(`/admin/platform/styles/${styleId}`),
   createPlatformStyle: (payload: StyleInput) => request<Style>('/admin/platform/styles', {

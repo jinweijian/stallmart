@@ -80,10 +80,18 @@ const statusMap: Record<OrderStatus, { label: string; color: string }> = {
   'REJECTED': { label: '已取消', color: '#999999' },
 }
 
-const tabs: StatusTab[] = [
+const customerTabs: StatusTab[] = [
   { label: '全部', value: 'ALL' },
   { label: '待接单', value: 'NEW' },
   { label: '进行中', value: 'IN_PROGRESS' },
+  { label: '已完成', value: 'COMPLETED' },
+]
+
+const vendorTabs: StatusTab[] = [
+  { label: '全部', value: 'ALL' },
+  { label: '新订单', value: 'NEW' },
+  { label: '制作中', value: 'MAKING' },
+  { label: '待取餐', value: 'READY' },
   { label: '已完成', value: 'COMPLETED' },
 ]
 
@@ -104,12 +112,15 @@ const expandedOrderId = ref<string | null>(null)
 const currentPage = ref(1)
 const hasMore = ref(true)
 const currentTheme = ref(getCurrentCustomerTheme())
+const actionLoadingId = ref<string | null>(null)
 
 // ============================================================
 // Computed
 // ============================================================
+const isVendorMode = computed(() => userStore.isVendor)
+const tabs = computed(() => isVendorMode.value ? vendorTabs : customerTabs)
 const filteredOrders = computed(() => {
-  const tab = tabs[currentTabIndex.value]
+  const tab = tabs.value[currentTabIndex.value] || tabs.value[0]
 
   if (tab.value === 'ALL') {
     return orders.value
@@ -125,6 +136,16 @@ const filteredOrders = computed(() => {
     )
   }
 
+  if (tab.value === 'MAKING') {
+    return orders.value.filter((o) =>
+      ['ACCEPTED', 'PREPARING'].includes(o.status)
+    )
+  }
+
+  if (tab.value === 'READY') {
+    return orders.value.filter((o) => o.status === 'READY')
+  }
+
   if (tab.value === 'COMPLETED') {
     return orders.value.filter((o) => o.status === 'COMPLETED' || o.status === 'REJECTED')
   }
@@ -138,12 +159,16 @@ const pageTheme = computed(() => currentTheme.value.pageThemes?.orders || {})
 // Lifecycle
 // ============================================================
 onMounted(() => {
+  userStore.loadViewMode()
   loadOrders(true)
 })
 
 useDidShow(() => {
   // Refresh on page show (e.g., after order is placed)
   currentTheme.value = getCurrentCustomerTheme()
+  userStore.loadViewMode()
+  userStore.syncTabBarForViewMode()
+  Taro.setNavigationBarTitle({ title: isVendorMode.value ? '接单管理' : '我的订单' })
   loadOrders(true)
 })
 
@@ -174,7 +199,7 @@ async function loadOrders(isRefresh = false) {
   }
 
   try {
-    const res = await get<BackendOrder[]>('/orders')
+    const res = await get<BackendOrder[]>(isVendorMode.value ? '/vendor/orders' : '/orders')
     const list = (res.data || []).map(normalizeOrder)
 
     if (isRefresh) {
@@ -233,6 +258,49 @@ async function cancelOrder(order: Order) {
   })
 }
 
+async function acceptOrder(order: Order) {
+  await transitionVendorOrder(order, 'ACCEPTED', `/orders/${order.id}/accept`, '已接单')
+}
+
+async function rejectOrder(order: Order) {
+  const res = await Taro.showModal({
+    title: '确认拒单',
+    content: `确定要拒接订单 ${order.orderNo} 吗？`,
+    confirmText: '拒单',
+    confirmColor: '#D14343',
+  })
+  if (res.confirm) {
+    await transitionVendorOrder(order, 'REJECTED', `/orders/${order.id}/reject`, '已拒单')
+  }
+}
+
+async function startPreparing(order: Order) {
+  await transitionVendorOrder(order, 'PREPARING', `/orders/${order.id}/prepare`, '开始备餐')
+}
+
+async function markReady(order: Order) {
+  await transitionVendorOrder(order, 'READY', `/orders/${order.id}/ready`, '已标记待取餐')
+}
+
+async function completeOrder(order: Order) {
+  await transitionVendorOrder(order, 'COMPLETED', `/orders/${order.id}/complete`, '订单已完成')
+}
+
+async function transitionVendorOrder(order: Order, nextStatus: OrderStatus, endpoint: string, toastTitle: string) {
+  if (actionLoadingId.value) return
+  actionLoadingId.value = order.id
+  try {
+    await put(endpoint)
+    order.status = nextStatus
+    Taro.showToast({ title: toastTitle, icon: 'success' })
+  } catch (err) {
+    console.error('[MyOrders] Vendor transition failed:', err)
+    Taro.showToast({ title: '操作失败，请重试', icon: 'none' })
+  } finally {
+    actionLoadingId.value = null
+  }
+}
+
 async function doCancelOrder(orderId: string) {
   try {
     await put('/orders/' + orderId + '/reject')
@@ -278,7 +346,7 @@ async function reorderItems(order: Order) {
   }
 }
 
-async function confirmPickup(order: Order) {
+async function confirmPickup(_order: Order) {
   Taro.showToast({ title: '已确认取餐', icon: 'success' })
 }
 
@@ -315,10 +383,16 @@ function formatTime(dateStr: string): string {
 
 function getStatusInfo(order: Order) {
   const info = statusMap[order.status] || { label: order.status, color: '#999999' }
+  const label = isVendorMode.value && order.status === 'REJECTED' ? '已拒单' : info.label
   return {
     ...info,
+    label,
     color: pageTheme.value.statusColors?.[order.status] || info.color,
   }
+}
+
+function getOrderTitle(order: Order): string {
+  return isVendorMode.value ? `取餐码 ${order.confirmCode}` : order.storeName
 }
 
 function normalizeOrder(raw: BackendOrder): Order {
@@ -390,6 +464,10 @@ function canReorder(order: Order): boolean {
 
 function canConfirmPickup(order: Order): boolean {
   return order.status === 'READY'
+}
+
+function isActionLoading(order: Order): boolean {
+  return actionLoadingId.value === order.id
 }
 
 // ============================================================
@@ -538,9 +616,9 @@ function getMockOrders(): Order[] {
       <view class="empty-icon-wrap">
         <text class="empty-icon">📋</text>
       </view>
-      <text class="empty-title">{{ pageTheme.emptyTitle || '暂无订单' }}</text>
-      <text class="empty-desc">{{ pageTheme.emptySubtitle || '快去点一杯清爽果茶吧' }}</text>
-      <view class="empty-btn" @tap="goShopping">
+      <text class="empty-title">{{ isVendorMode ? '暂无待处理订单' : (pageTheme.emptyTitle || '暂无订单') }}</text>
+      <text class="empty-desc">{{ isVendorMode ? '新订单会自动出现在接单列表中' : (pageTheme.emptySubtitle || '快去点一杯清爽果茶吧') }}</text>
+      <view v-if="!isVendorMode" class="empty-btn" @tap="goShopping">
         <text class="empty-btn-text">去逛逛</text>
       </view>
     </view>
@@ -562,7 +640,7 @@ function getMockOrders(): Order[] {
         <!-- ==================== Card Header ==================== -->
         <view class="order-header">
           <view class="order-header-left">
-            <text class="store-name">{{ order.storeName }}</text>
+            <text class="store-name">{{ getOrderTitle(order) }}</text>
             <view class="status-badge" :style="{ backgroundColor: getStatusInfo(order).color }">
               <text class="status-text">{{ getStatusInfo(order).label }}</text>
             </view>
@@ -663,32 +741,77 @@ function getMockOrders(): Order[] {
 
           <!-- Action Buttons -->
           <view class="detail-actions">
-            <!-- 待接单: 取消订单 -->
-            <view
-              v-if="canCancel(order)"
-              class="action-btn secondary"
-              @tap.stop="cancelOrder(order)"
-            >
-              <text>取消订单</text>
-            </view>
+            <template v-if="isVendorMode">
+              <template v-if="order.status === 'NEW'">
+                <view
+                  class="action-btn danger"
+                  :class="{ disabled: isActionLoading(order) }"
+                  @tap.stop="rejectOrder(order)"
+                >
+                  <text>{{ isActionLoading(order) ? '处理中' : '拒单' }}</text>
+                </view>
+                <view
+                  class="action-btn primary"
+                  :class="{ disabled: isActionLoading(order) }"
+                  @tap.stop="acceptOrder(order)"
+                >
+                  <text>{{ isActionLoading(order) ? '处理中' : '接单' }}</text>
+                </view>
+              </template>
+              <view
+                v-else-if="order.status === 'ACCEPTED'"
+                class="action-btn primary"
+                :class="{ disabled: isActionLoading(order) }"
+                @tap.stop="startPreparing(order)"
+              >
+                <text>{{ isActionLoading(order) ? '处理中' : '开始备餐' }}</text>
+              </view>
+              <view
+                v-else-if="order.status === 'PREPARING'"
+                class="action-btn primary"
+                :class="{ disabled: isActionLoading(order) }"
+                @tap.stop="markReady(order)"
+              >
+                <text>{{ isActionLoading(order) ? '处理中' : '备餐完成' }}</text>
+              </view>
+              <view
+                v-else-if="order.status === 'READY'"
+                class="action-btn primary"
+                :class="{ disabled: isActionLoading(order) }"
+                @tap.stop="completeOrder(order)"
+              >
+                <text>{{ isActionLoading(order) ? '处理中' : '完成订单' }}</text>
+              </view>
+            </template>
 
-            <!-- 待取餐: 确认取餐 -->
-            <view
-              v-if="canConfirmPickup(order)"
-              class="action-btn primary"
-              @tap.stop="confirmPickup(order)"
-            >
-              <text>确认取餐</text>
-            </view>
+            <template v-else>
+              <!-- 待接单: 取消订单 -->
+              <view
+                v-if="canCancel(order)"
+                class="action-btn secondary"
+                @tap.stop="cancelOrder(order)"
+              >
+                <text>取消订单</text>
+              </view>
 
-            <!-- 已完成/已取消: 再来一单 -->
-            <view
-              v-if="canReorder(order)"
-              class="action-btn primary"
-              @tap.stop="reorderItems(order)"
-            >
-              <text>再来一单</text>
-            </view>
+              <!-- 待取餐: 确认取餐 -->
+              <view
+                v-if="canConfirmPickup(order)"
+                class="action-btn primary"
+                @tap.stop="confirmPickup(order)"
+              >
+                <text>确认取餐</text>
+              </view>
+
+              <!-- 已完成/已取消: 再来一单 -->
+              <view
+                v-if="canReorder(order)"
+                class="action-btn primary"
+                @tap.stop="reorderItems(order)"
+              >
+                <text>再来一单</text>
+              </view>
+            </template>
           </view>
         </view>
       </view>

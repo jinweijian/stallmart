@@ -1,7 +1,8 @@
 import type { ApiRequest } from '~/api/client'
-import type { AdminLoginInput, AdminSession } from '~/types/admin'
+import type { AdminCaptcha, AdminLoginInput, AdminSession } from '~/types/admin'
 
 export const createAuthApi = (request: ApiRequest) => ({
+  captcha: () => request<AdminCaptcha>('/admin/auth/captcha', {}, false),
   login: (payload: AdminLoginInput) => request<AdminSession>('/admin/auth/login', {
     method: 'POST',
     body: payload,

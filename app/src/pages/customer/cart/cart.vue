@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useDidShow } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
+import { useUserStore } from '@/store/user'
 import { createCustomerThemeVars, getCurrentCustomerTheme } from '@/utils/customer-theme'
 
 // ============================================================
@@ -33,11 +34,13 @@ interface CartItem {
 const cartItems = ref<CartItem[]>([])
 const isLoading = ref(false)
 const currentTheme = ref(getCurrentCustomerTheme())
+const userStore = useUserStore()
 
 // ============================================================
 // Computed
 // ============================================================
 const isEmpty = computed(() => cartItems.value.length === 0)
+const isVendorMode = computed(() => userStore.isVendor)
 const themeVars = computed(() => createCustomerThemeVars(currentTheme.value))
 const pageTheme = computed(() => currentTheme.value.pageThemes?.cart || {})
 const imageUrls = computed(() => currentTheme.value.imageUrls || {})
@@ -61,6 +64,13 @@ const totalPrice = computed(() => {
 // ============================================================
 useDidShow(() => {
   currentTheme.value = getCurrentCustomerTheme()
+  userStore.loadViewMode()
+  userStore.syncTabBarForViewMode()
+  if (isVendorMode.value) {
+    Taro.showToast({ title: '商家视角不使用购物车', icon: 'none' })
+    Taro.switchTab({ url: '/pages/customer/index/index' })
+    return
+  }
   loadCart()
 })
 

@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
 
     private HttpStatus statusOf(ErrorCode errorCode) {
         return switch (errorCode) {
-            case UNAUTHORIZED, TOKEN_INVALID, TOKEN_EXPIRED, INVALID_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
+            case UNAUTHORIZED, TOKEN_INVALID, TOKEN_EXPIRED, INVALID_CREDENTIALS, CAPTCHA_REQUIRED, CAPTCHA_INVALID -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
             default -> HttpStatus.BAD_REQUEST;

@@ -338,8 +338,8 @@ function createOrderResponse(data: unknown): MockOrderVO {
   })
   const totalAmount = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
 
-  return {
-    id: 600,
+  const order: MockOrderVO = {
+    id: Date.now(),
     orderNo: 'ORD202604300099',
     userId: 9,
     storeId: payload.storeId || 1,
@@ -350,6 +350,17 @@ function createOrderResponse(data: unknown): MockOrderVO {
     createdAt: new Date().toISOString(),
     items,
   }
+  mockOrders.unshift(order)
+  return order
+}
+
+function updateOrderStatus(url: string, status: OrderStatus): ApiResponse<null> {
+  const orderId = Number(url.split('/')[2])
+  const order = mockOrders.find((item) => item.id === orderId)
+  if (order) {
+    order.status = status
+  }
+  return ok(null)
 }
 
 function addCartItem(data: unknown): MockCartVO {
@@ -381,6 +392,17 @@ export function getMockApiResponse(options: RequestOptions): ApiResponse | null 
     return ok(mockStore)
   }
 
+  if (method === 'GET' && url === '/app/bootstrap') {
+    return ok({
+      appId: 'wx-stallmart-demo',
+      storeId: mockStore.id,
+      storefront: {
+        store: mockStore,
+        decoration: mockStore.decoration,
+      },
+    })
+  }
+
   if (method === 'GET' && /^\/stores\/qr\/[^/]+$/.test(url)) {
     return ok(mockStore)
   }
@@ -400,7 +422,7 @@ export function getMockApiResponse(options: RequestOptions): ApiResponse | null 
     return ok(mockSpecs.filter((spec) => spec.styleId === styleId))
   }
 
-  if (method === 'GET' && url === '/orders') {
+  if (method === 'GET' && (url === '/orders' || url === '/vendor/orders')) {
     return ok(mockOrders)
   }
 
@@ -408,8 +430,24 @@ export function getMockApiResponse(options: RequestOptions): ApiResponse | null 
     return ok(createOrderResponse(options.data))
   }
 
+  if (method === 'PUT' && /^\/orders\/\d+\/accept$/.test(url)) {
+    return updateOrderStatus(url, 'ACCEPTED')
+  }
+
   if (method === 'PUT' && /^\/orders\/\d+\/reject$/.test(url)) {
-    return ok(null)
+    return updateOrderStatus(url, 'REJECTED')
+  }
+
+  if (method === 'PUT' && /^\/orders\/\d+\/prepare$/.test(url)) {
+    return updateOrderStatus(url, 'PREPARING')
+  }
+
+  if (method === 'PUT' && /^\/orders\/\d+\/ready$/.test(url)) {
+    return updateOrderStatus(url, 'READY')
+  }
+
+  if (method === 'PUT' && /^\/orders\/\d+\/complete$/.test(url)) {
+    return updateOrderStatus(url, 'COMPLETED')
   }
 
   if (method === 'GET' && url === '/orders/counts') {

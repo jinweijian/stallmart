@@ -19,6 +19,8 @@ public class AdminAccountEntity {
     public String account;
     @Column(name = "password_hash")
     public String passwordHash;
+    @Column(name = "password_salt")
+    public String passwordSalt;
     @Column(name = "user_id")
     public Long userId;
     @Column(name = "store_id")

@@ -1,15 +1,22 @@
 <script setup lang="ts">
+import { useStallmartApi } from '~/api/stallmart-api'
+
 definePageMeta({
   auth: false,
 })
 
 const auth = useAdminAuth()
+const api = useStallmartApi()
 const form = reactive({
   account: '',
   password: '',
+  captchaAnswer: '',
 })
 const showPassword = ref(false)
 const errorMessage = ref('')
+const failedAttempts = ref(0)
+const captchaVisible = ref(false)
+const captcha = ref<{ captchaId: string, imageBase64: string } | null>(null)
 
 onMounted(async () => {
   auth.restore()
@@ -18,15 +25,40 @@ onMounted(async () => {
   }
 })
 
+const loadCaptcha = async () => {
+  captcha.value = await api.captcha()
+  form.captchaAnswer = ''
+}
+
 const submit = async () => {
   errorMessage.value = ''
   try {
     await auth.login({
       account: form.account.trim(),
       password: form.password,
+      ...(captchaVisible.value && captcha.value
+        ? {
+            captchaId: captcha.value.captchaId,
+            captchaAnswer: form.captchaAnswer,
+          }
+        : {}),
     })
-  } catch {
-    errorMessage.value = '账号或密码错误'
+  } catch (error: any) {
+    failedAttempts.value += 1
+    const response = error?.data || error?.response?._data
+    const message = response?.message
+    const shouldShowCaptcha = response?.data?.captchaRequired || failedAttempts.value >= 3
+    if (shouldShowCaptcha) {
+      captchaVisible.value = true
+      await loadCaptcha()
+    }
+    if (message === 'captcha_required') {
+      errorMessage.value = '请输入验证码后再登录'
+    } else if (message === 'captcha_invalid') {
+      errorMessage.value = '验证码错误，请重新输入'
+    } else {
+      errorMessage.value = shouldShowCaptcha ? '账号、密码或验证码错误' : '账号或密码错误'
+    }
   }
 }
 </script>
@@ -51,12 +83,22 @@ const submit = async () => {
             <button class="button" type="button" @click="showPassword = !showPassword">{{ showPassword ? '隐藏' : '显示' }}</button>
           </div>
         </div>
+        <div v-if="captchaVisible" class="field full">
+          <label>验证码</label>
+          <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <div class="grid gap-2">
+              <img v-if="captcha?.imageBase64" :src="captcha.imageBase64" alt="验证码" class="h-11 w-[130px] rounded-lg border border-ink-200 bg-white object-contain">
+              <input v-model="form.captchaAnswer" inputmode="numeric" autocomplete="off" placeholder="输入图片验证码" required>
+            </div>
+            <button class="button" type="button" @click="loadCaptcha">换一题</button>
+          </div>
+        </div>
         <p v-if="errorMessage" class="form-error full">{{ errorMessage }}</p>
         <button class="button primary full" type="submit">登录</button>
       </form>
       <div class="grid gap-1.5 text-sm text-ink-500">
-        <span>平台：platform / platform123</span>
-        <span>商家：vendor / vendor123</span>
+        <span>请使用已分配的后台账号登录。</span>
+        <span>连续输错后需要完成验证码验证。</span>
       </div>
     </section>
   </main>
